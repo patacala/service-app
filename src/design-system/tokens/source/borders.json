@@ -1,0 +1,20 @@
+{
+  "border": {
+    "solid": {
+      "1": { "value": 1, "type": "border" },
+      "2": { "value": 2, "type": "border" },
+      "3": { "value": 3, "type": "border" },
+      "4": { "value": 4, "type": "border" },
+      "5": { "value": 5, "type": "border" }
+    },
+    "radius": {
+      "none": { "value": 0, "type": "borderRadius" },
+      "xs": { "value": 4, "type": "borderRadius" },
+      "sm": { "value": 8, "type": "borderRadius" },
+      "md": { "value": 12, "type": "borderRadius" },
+      "lg": { "value": 16, "type": "borderRadius" },
+      "pill": { "value": 50, "type": "borderRadius" },
+      "full": { "value": 9999, "type": "borderRadius" }
+    }
+  }
+} 
