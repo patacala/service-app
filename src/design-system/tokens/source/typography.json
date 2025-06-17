@@ -1,0 +1,59 @@
+{
+  "typography": {
+    "family": {
+      "base": { "value": "Lexend Deca" }
+    },
+    "weight": {
+      "regular": { "value": "400" },
+      "medium": { "value": "500" },
+      "semiBold": { "value": "600" },
+      "bold": { "value": "700" }
+    },
+    "heading": {
+      "primary": {
+        "fontFamily": { "value": "Lexend Deca" },
+        "fontSize": { "value": 26 },
+        "lineHeight": { "value": 32.5 },
+        "fontWeight": { "value": "{typography.weight.bold.value}" }
+      },
+      "secondary": {
+        "fontFamily": { "value": "Lexend Deca" },
+        "fontSize": { "value": 20 },
+        "lineHeight": { "value": 28 },
+        "fontWeight": { "value": "{typography.weight.semiBold.value}" }
+      }
+    },
+    "body": {
+      "regular": {
+        "fontFamily": { "value": "Lexend Deca" },
+        "fontSize": { "value": 16 },
+        "lineHeight": { "value": 24 },
+        "fontWeight": { "value": "{typography.weight.regular.value}" }
+      },
+      "large": {
+        "fontFamily": { "value": "Lexend Deca" },
+        "fontSize": { "value": 18 },
+        "fontWeight": { "value": "{typography.weight.regular.value}" },
+        "lineHeight": { "value": 22.5 }
+      },
+      "medium": {
+        "fontFamily": { "value": "Lexend Deca" },
+        "fontSize": { "value": 16 },
+        "lineHeight": { "value": 24 },
+        "fontWeight": { "value": "{typography.weight.medium.value}" }
+      },
+      "small": {
+        "fontFamily": { "value": "Lexend Deca" },
+        "fontSize": { "value": 14 },
+        "fontWeight": { "value": "{typography.weight.regular.value}" },
+        "lineHeight": { "value": 18 }
+      }
+    },
+    "button": {
+      "fontFamily": { "value": "Lexend Deca" },
+      "fontSize": { "value": 18 },
+      "lineHeight": { "value": 22.5 },
+      "fontWeight": { "value": "{typography.weight.medium.value}" }
+    }
+  }
+} 
