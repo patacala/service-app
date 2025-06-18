@@ -1,15 +1,23 @@
 import React, { useState } from 'react';
+import { Platform } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { useTranslation } from 'react-i18next';
 import { Box, Button, Input, theme, Typography } from '@/design-system';
 import { AuthenticationCard } from '../components/AuthenticationCard/AuthenticationCard';
 import { login } from '@/infrastructure/services/api/endpoints/auth.api';
 import { SessionManager } from '@/infrastructure/session/session';
-import { LoginPayload } from '@/infrastructure/services/api/types/auth.types';
 import { AuthStackNavigationProp } from '@/assembler/navigation/types';
 import { Row } from '@/design-system/components/layout/Row/Row';
 import { getLoginStyles } from './login/login.style';
 import Toast from 'react-native-toast-message';
+
+import { signInWithEmailAndPassword, signInWithCredential, GoogleAuthProvider, OAuthProvider } from 'firebase/auth';
+import { auth } from '@/infrastructure/auth/firebaseConfig';
+import * as Google from 'expo-auth-session/providers/google';
+import * as WebBrowser from 'expo-web-browser';
+import * as AppleAuthentication from 'expo-apple-authentication';
+
+WebBrowser.maybeCompleteAuthSession();
 
 interface LoginFormData {
   phoneNumber: string;
@@ -38,6 +46,12 @@ export const LoginScreen = () => {
   });
 
   const [loading, setLoading] = useState(false);
+
+  const [request, response, promptAsync] = Google.useAuthRequest({
+    clientId: process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID,
+    iosClientId: process.env.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID,
+    androidClientId: process.env.EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID,
+  });
 
   const validateForm = () => {
     let isValid = true;
@@ -82,28 +96,95 @@ export const LoginScreen = () => {
     setLoading(true);
 
     try {
-      const payload: LoginPayload = {
-        phonenumber: `+57${inputValues.phoneNumber}`,
-        password: inputValues.password,
-      };
+      const rawPhone = inputValues.phoneNumber.trim();
+      const email = `${rawPhone}@auth.com`;
+      const password = inputValues.password;
 
-      const response = await login(payload);
+      const userCredential = await signInWithEmailAndPassword(auth, email, password);
+      const idToken = await userCredential.user.getIdToken();
+
+      const response = await login({ firebaseToken: idToken });
       const { token } = response.data;
 
       await session.setSession(token);
+
       Toast.show({
         type: 'success',
         text1: 'Login successful',
       });
+
+      navigation.navigate('Main');
+    } catch (err: any) {
+      const isFirebaseError =
+        err?.code?.startsWith('auth/') ||
+        err?.response?.status === 401;
+
+      Toast.show({
+        type: 'error',
+        text1: 'Login failed',
+        text2: isFirebaseError
+          ? 'Invalid phone number or password.'
+          : 'An unexpected error occurred. Please try again.',
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleGoogleLogin = async () => {
+    try {
+      const result = await promptAsync();
+
+      if (result.type !== 'success') return;
+
+      const credential = GoogleAuthProvider.credential(result.authentication?.idToken);
+      const userCredential = await signInWithCredential(auth, credential);
+      const idToken = await userCredential.user.getIdToken();
+
+      const response = await login({ firebaseToken: idToken });
+      const { token } = response.data;
+
+      await session.setSession(token);
+      Toast.show({ type: 'success', text1: 'Login successful' });
       navigation.navigate('Main');
     } catch (err) {
       Toast.show({
         type: 'error',
         text1: 'Login failed',
-        text2: 'Please check your credentials.',
+        text2: 'Google login could not complete.',
       });
-    } finally {
-      setLoading(false);
+    }
+  };
+
+  const handleAppleLogin = async () => {
+    try {
+      const appleCredential = await AppleAuthentication.signInAsync({
+        requestedScopes: [
+          AppleAuthentication.AppleAuthenticationScope.EMAIL,
+          AppleAuthentication.AppleAuthenticationScope.FULL_NAME,
+        ],
+      });
+
+      const provider = new OAuthProvider('apple.com');
+      const credential = provider.credential({
+        idToken: appleCredential.identityToken!,
+      });
+
+      const userCredential = await signInWithCredential(auth, credential);
+      const idToken = await userCredential.user.getIdToken();
+
+      const response = await login({ firebaseToken: idToken });
+      const { token } = response.data;
+
+      await session.setSession(token);
+      Toast.show({ type: 'success', text1: 'Login successful' });
+      navigation.navigate('Main');
+    } catch (err) {
+      Toast.show({
+        type: 'error',
+        text1: 'Login failed',
+        text2: 'Apple login could not complete.',
+      });
     }
   };
 
@@ -183,6 +264,20 @@ export const LoginScreen = () => {
           onPress={handleForgotPassword}
           style={{ width: '100%', maxWidth: 195 }}
         />
+      </Box>
+
+      <Box marginTop="lg">
+        <Button
+          label="Continue with Google"
+          onPress={handleGoogleLogin}
+          style={{ marginBottom: 10 }}
+        />
+        {Platform.OS === 'ios' && (
+          <Button
+            label="Continue with Apple"
+            onPress={handleAppleLogin}
+          />
+        )}
       </Box>
     </AuthenticationCard>
   );

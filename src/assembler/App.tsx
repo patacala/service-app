@@ -39,7 +39,7 @@ const App = () => {
   }, []);
 
   if (!fontsLoaded) {
-    return null; // o un SplashScreen si usas uno
+    return null;
   }
 
   const dismissKeyboard = () => {

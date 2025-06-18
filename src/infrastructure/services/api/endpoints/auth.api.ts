@@ -1,12 +1,13 @@
 import { httpClient } from '../clients/httpClient';
 import {
-  LoginPayload,
   RegisterPayload,
   VerifyOtpInitialPayload,
   VerifyOtpSimplePayload,
   ChangePasswordWithTokenPayload,
+  LoginPayload,
 } from '../types/auth.types';
 
+// Mantienes estos tal como están
 export const register = (data: RegisterPayload) =>
   httpClient.post('/auth/register', data);
 
@@ -25,5 +26,7 @@ export const verifyOtpSimple = (data: VerifyOtpSimplePayload) =>
 export const changePasswordWithToken = (data: ChangePasswordWithTokenPayload) =>
   httpClient.post('/auth/change-password-with-token', data);
 
-export const login = (data: LoginPayload) =>
-  httpClient.post('/auth/login', data);
+export const login = async (data: LoginPayload) => {
+  const response = await httpClient.post('/auth/firebase-login', data);
+  return response;
+};
