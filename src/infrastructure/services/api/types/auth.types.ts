@@ -23,6 +23,5 @@ export interface ChangePasswordWithTokenPayload  {
 }
 
 export interface LoginPayload {
-  phonenumber: string;
-  password: string;
+  firebaseToken: string;
 }
