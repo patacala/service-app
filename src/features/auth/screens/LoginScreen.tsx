@@ -180,6 +180,7 @@ export const LoginScreen = () => {
       Toast.show({ type: 'success', text1: 'Login successful' });
       navigation.navigate('Main');
     } catch (err) {
+      console.log(err);
       Toast.show({
         type: 'error',
         text1: 'Login failed',
