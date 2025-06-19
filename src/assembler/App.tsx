@@ -19,6 +19,7 @@ import {
 } from 'react-native';
 import { DataManagerProvider } from '@/infrastructure/dataManager/DataManager';
 import { toastConfig } from '@/design-system/components/customToast/CustomToast';
+import { AuthProvider } from '@/infrastructure/auth/AuthContext';
 
 const App = () => {
   const [fontsLoaded] = useFonts({
@@ -49,22 +50,24 @@ const App = () => {
   return (
     <SafeAreaProvider>
       <Provider store={store}>
-        <ThemeProvider>
-          <DataManagerProvider>
-            <KeyboardAvoidingView
-              behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-              style={styles.container}
-              keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 10}
-            >
-              <TouchableWithoutFeedback onPress={dismissKeyboard}>
-                <View style={styles.container}>
-                  <AppNavigator />
-                  <Toast config={toastConfig} /> 
-                </View>
-              </TouchableWithoutFeedback>
-            </KeyboardAvoidingView>
-          </DataManagerProvider>
-        </ThemeProvider>
+        <AuthProvider>
+          <ThemeProvider>
+            <DataManagerProvider>
+              <KeyboardAvoidingView
+                behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+                style={styles.container}
+                keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 10}
+              >
+                <TouchableWithoutFeedback onPress={dismissKeyboard}>
+                  <View style={styles.container}>
+                    <AppNavigator />
+                    <Toast config={toastConfig} /> 
+                  </View>
+                </TouchableWithoutFeedback>
+              </KeyboardAvoidingView>
+            </DataManagerProvider>
+          </ThemeProvider>
+        </AuthProvider>
       </Provider>
     </SafeAreaProvider>
   );
