@@ -4,14 +4,10 @@
     "slug": "awesome-app-expo",
     "version": "1.0.0",
     "runtimeVersion": "1.0.0",
-    "cli": {
-      "appVersionSource": "appVersion"
-    },
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "myapp",
     "userInterfaceStyle": "automatic",
-    "sdkVersion": "53.0.0",
     "newArchEnabled": true,
     "ios": {
       "supportsTablet": true,
@@ -41,6 +37,9 @@
       "@react-native-firebase/app",
       "@react-native-firebase/auth",
       [
+        "@react-native-google-signin/google-signin"
+      ],
+      [
         "expo-build-properties",
         {
           "ios": {
@@ -64,7 +63,8 @@
           "photosPermission": "The app needs access to your photos to select images.",
           "cameraPermission": "The app needs access to your camera to take photos."
         }
-      ]
+      ],
+      "expo-font"
     ],
     "experiments": {
       "typedRoutes": true
