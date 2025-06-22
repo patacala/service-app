@@ -1,16 +1,15 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import auth from '@react-native-firebase/auth';
 import { Platform } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { useTranslation } from 'react-i18next';
 import { Box, Button, Input, theme, Typography } from '@/design-system';
 import { AuthenticationCard } from '../components/AuthenticationCard/AuthenticationCard';
-/* import { login } from '@/infrastructure/services/api/endpoints/auth.api'; */
-/* import { SessionManager } from '@/infrastructure/session/session'; */
 import { AuthStackNavigationProp } from '@/assembler/navigation/types';
 import { Row } from '@/design-system/components/layout/Row/Row';
 import { getLoginStyles } from './login/login.style';
 import Toast from 'react-native-toast-message';
+import { GoogleSignin, statusCodes } from '@react-native-google-signin/google-signin';
 
 interface LoginFormData {
   phoneNumber: string;
@@ -38,6 +37,13 @@ export const LoginScreen = () => {
   });
 
   const [loading, setLoading] = useState(false);
+  const [googleLoading, setGoogleLoading] = useState(false);
+
+  useEffect(() => {
+    GoogleSignin.configure({
+      webClientId: '343824714542-csdtgbqf7ff8n4hi40a4mka4811b80nl.apps.googleusercontent.com',
+    });
+  }, []);
 
   const validateForm = () => {
     let isValid = true;
@@ -50,11 +56,6 @@ export const LoginScreen = () => {
       newErrors.phoneNumber = t('login.phone-invalid');
       isValid = false;
     }
-
-    /* if (!inputValues.password) {
-      newErrors.password = t('login.password-required');
-      isValid = false;
-    } */
 
     setErrors(newErrors);
 
@@ -79,18 +80,16 @@ export const LoginScreen = () => {
     if (!validateForm()) return;
     setLoading(true);
 
-    try {
-      const rawPhone = inputValues.phoneNumber.trim();
-      const fullPhoneNumber = `+57${rawPhone}`;
+    const rawPhone = inputValues.phoneNumber.trim();
+    const fullPhoneNumber = `+57${rawPhone}`;
 
-      // 1. Send verification SMS using Firebase
+    try {
       const confirmation = await auth().signInWithPhoneNumber(fullPhoneNumber);
 
-      // 2. Navigate to the screen where the user enters the OTP manually
       /* navigation.navigate('VerifyCode', {
-        confirmation, // object with `.confirm(code)` method
-        phoneNumber: fullPhoneNumber,
-      }); */
+        confirmation,
+        phoneNumber: fullPhoneNumber,
+      }); */
 
       Toast.show({
         type: 'info',
@@ -103,10 +102,68 @@ export const LoginScreen = () => {
       Toast.show({
         type: 'error',
         text1: 'Login failed',
-        text2: 'Could not send verification code. Please check the number.',
+        text2: `${fullPhoneNumber} - ${err}`,
       });
     } finally {
       setLoading(false);
+    }
+  };
+
+  const onGoogleButtonPress = async () => {
+    setGoogleLoading(true);
+    try {
+      await GoogleSignin.hasPlayServices({ showPlayServicesUpdateDialog: true });
+      
+      const signInResult = await GoogleSignin.signIn();
+      
+      // Validar que signInResult existe
+      if (!signInResult || !signInResult.data) {
+        throw new Error('No se pudo obtener la información del usuario.');
+      }
+      
+      // Obtener tokens después del sign-in
+      const tokens = await GoogleSignin.getTokens();
+      const { idToken, accessToken } = tokens;
+      
+      // Validar idToken
+      if (!idToken) {
+        throw new Error('No se pudo obtener el idToken desde Google.');
+      }
+      
+      // Crear credenciales con ambos tokens
+      const googleCredential = auth.GoogleAuthProvider.credential(idToken, accessToken);
+      await auth().signInWithCredential(googleCredential);
+      
+      Toast.show({
+        type: 'success',
+        text1: '¡Éxito!',
+        text2: 'Has iniciado sesión con Google.',
+      });
+    } catch (error: any) {
+      console.error('Google Sign-In Error:', error);
+      
+      // Manejo más específico de errores
+      if (error.code === statusCodes.SIGN_IN_CANCELLED || error.code === '12501') {
+        console.log('El usuario canceló el flujo de inicio de sesión con Google.');
+        return;
+      } else if (error.code === statusCodes.IN_PROGRESS) {
+        console.log('Inicio de sesión en progreso...');
+        return;
+      } else if (error.code === statusCodes.PLAY_SERVICES_NOT_AVAILABLE) {
+        Toast.show({
+          type: 'error',
+          text1: 'Error',
+          text2: 'Google Play Services no está disponible.',
+        });
+      } else {
+        Toast.show({
+          type: 'error',
+          text1: 'Error de inicio de sesión',
+          text2: error.message || 'No se pudo iniciar sesión con Google.',
+        });
+      }
+    } finally {
+      setGoogleLoading(false);
     }
   };
 
@@ -147,7 +204,7 @@ export const LoginScreen = () => {
       subtitle={t('login.sub-title')}
       onPrimaryButtonPress={handleLogin}
       onSecondaryButtonPress={handleGoBack}
-      primaryButtonDisabled={loading}
+      primaryButtonDisabled={loading || googleLoading}
     >
       <Row justify="space-between">
         <Box style={styles.prefix} padding="md">
@@ -160,43 +217,25 @@ export const LoginScreen = () => {
           placeholder={t('signupCompletion.text-input-number')}
           keyboardType="numeric"
           value={inputValues.phoneNumber}
-          onChangeText={(value) =>
+          onChangeText={value =>
             handleInputChange(
               'phoneNumber',
-              value.replace(/[^0-9]/g, '').slice(0, 10)
+              value.replace(/[^0-9]/g, '').slice(0, 10),
             )
           }
           error={errors.phoneNumber}
           style={{ width: 250 }}
         />
       </Row>
-      {/* <Input
-        label={t('login.password-input')}
-        placeholder={t('login.text-input-password')}
-        variant="password"
-        value={inputValues.password}
-        onChangeText={(value) => handleInputChange('password', value)}
-        error={errors.password}
-      /> */}
-      {/* <Box alignItems="center">
-        <Button
-          variant="ghost"
-          label={t('login.forgot-password')}
-          onPress={handleForgotPassword}
-          style={{ width: '100%', maxWidth: 195 }}
-        />
-      </Box> */}
       <Box marginTop="lg">
         <Button
           label="Continue with Google"
-          onPress={() => {}}
+          onPress={onGoogleButtonPress}
+          disabled={googleLoading || loading}
           style={{ marginBottom: 10 }}
         />
         {Platform.OS === 'ios' && (
-          <Button
-            label="Continue with Apple"
-            onPress={() => {}}
-          />
+          <Button label="Continue with Apple" onPress={() => {}} />
         )}
       </Box>
     </AuthenticationCard>
