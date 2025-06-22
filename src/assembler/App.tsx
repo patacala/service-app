@@ -19,7 +19,6 @@ import {
 } from 'react-native';
 import { DataManagerProvider } from '@/infrastructure/dataManager/DataManager';
 import { toastConfig } from '@/design-system/components/customToast/CustomToast';
-import { AuthProvider } from '@/infrastructure/auth/AuthContext';
 
 const App = () => {
   const [fontsLoaded] = useFonts({
@@ -50,7 +49,6 @@ const App = () => {
   return (
     <SafeAreaProvider>
       <Provider store={store}>
-        <AuthProvider>
           <ThemeProvider>
             <DataManagerProvider>
               <KeyboardAvoidingView
@@ -67,7 +65,6 @@ const App = () => {
               </KeyboardAvoidingView>
             </DataManagerProvider>
           </ThemeProvider>
-        </AuthProvider>
       </Provider>
     </SafeAreaProvider>
   );
