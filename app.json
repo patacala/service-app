@@ -3,6 +3,10 @@
     "name": "awesome-app-expo",
     "slug": "awesome-app-expo",
     "version": "1.0.0",
+    "runtimeVersion": "1.0.0",
+    "cli": {
+      "appVersionSource": "appVersion"
+    },
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "myapp",
@@ -11,7 +15,9 @@
     "newArchEnabled": true,
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.anonymous.wordsearchpicspuzzle"
+      "bundleIdentifier": "com.anonymous.wordsearchpicspuzzle",
+      "googleServicesFile": "./GoogleService-Info.plist",
+      "buildNumber": "1"
     },
     "android": {
       "adaptiveIcon": {
@@ -19,8 +25,10 @@
         "backgroundColor": "#ffffff"
       },
       "package": "com.anonymous.wordsearchpicspuzzle",
+      "versionCode": 1,
+      "googleServicesFile": "./google-services.json",
       "permissions": [
-        "android.permission.RECORD_AUDIO"
+        "android.permission.CAMERA"
       ]
     },
     "web": {
@@ -30,6 +38,16 @@
     },
     "plugins": [
       "expo-router",
+      "@react-native-firebase/app",
+      "@react-native-firebase/auth",
+      [
+        "expo-build-properties",
+        {
+          "ios": {
+            "useFrameworks": "static"
+          }
+        }
+      ],
       [
         "expo-splash-screen",
         {
