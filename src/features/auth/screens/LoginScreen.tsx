@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import auth from '@react-native-firebase/auth';
+const { getApp } = await import('@react-native-firebase/app');
+const { getAuth, signInWithPhoneNumber } = await import('@react-native-firebase/auth');
 import { Platform } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { useTranslation } from 'react-i18next';
@@ -38,6 +40,7 @@ export const LoginScreen = () => {
 
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
+  const [msgError, setMsgError] = useState('');
 
   useEffect(() => {
     GoogleSignin.configure({
@@ -81,15 +84,14 @@ export const LoginScreen = () => {
     setLoading(true);
 
     const rawPhone = inputValues.phoneNumber.trim();
-    const fullPhoneNumber = `+57${rawPhone}`;
+    const fullPhoneNumber = `+1${rawPhone}`;
 
     try {
       const confirmation = await auth().signInWithPhoneNumber(fullPhoneNumber);
-
-      /* navigation.navigate('VerifyCode', {
-        confirmation,
-        phoneNumber: fullPhoneNumber,
-      }); */
+      navigation.navigate('Otp', {
+        confirmation,
+        phoneNumber: fullPhoneNumber,
+      });
 
       Toast.show({
         type: 'info',
@@ -98,11 +100,23 @@ export const LoginScreen = () => {
       });
     } catch (err: any) {
       console.error('Phone login error:', err);
+      setMsgError(err);
+
+      let errorMessage = `${fullPhoneNumber} - ${err}`;
+      
+      // Manejar errores específicos de Firebase
+      if (err.code === 'auth/invalid-phone-number') {
+        errorMessage = 'The phone number format is invalid.';
+      } else if (err.code === 'auth/too-many-requests') {
+        errorMessage = 'Too many requests. Please try again later.';
+      } else if (err.code === 'auth/quota-exceeded') {
+        errorMessage = 'SMS quota exceeded. Please try again later.';
+      }
 
       Toast.show({
         type: 'error',
         text1: 'Login failed',
-        text2: `${fullPhoneNumber} - ${err}`,
+        text2: errorMessage,
       });
     } finally {
       setLoading(false);
@@ -209,7 +223,7 @@ export const LoginScreen = () => {
       <Row justify="space-between">
         <Box style={styles.prefix} padding="md">
           <Typography variant="bodyRegular" colorVariant="secondary">
-            +57
+            +1
           </Typography>
         </Box>
         <Input
@@ -228,8 +242,11 @@ export const LoginScreen = () => {
         />
       </Row>
       <Box marginTop="lg">
+        <Typography variant="bodyRegular" colorVariant="secondary">
+          {msgError}
+        </Typography>
         <Button
-          label="Continue with Google"
+          label="Continue Google"
           onPress={onGoogleButtonPress}
           disabled={googleLoading || loading}
           style={{ marginBottom: 10 }}
