@@ -1,7 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import auth from '@react-native-firebase/auth';
-const { getApp } = await import('@react-native-firebase/app');
-const { getAuth, signInWithPhoneNumber } = await import('@react-native-firebase/auth');
 import { Platform } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { useTranslation } from 'react-i18next';
