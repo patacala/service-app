@@ -67,7 +67,7 @@ export const Otp = forwardRef<OtpRef, OtpProps>(({
           style={style}
         >
           {Array(qtyDigits).fill(0).map((_, index) => (
-            <Box key={index} width={60} marginHorizontal="md">
+            <Box key={index} width={50} marginHorizontal="xs">
               <Input
                 variant="otp"
                 value={otpValues[index]}
