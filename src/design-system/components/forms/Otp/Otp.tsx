@@ -67,7 +67,7 @@ export const Otp = forwardRef<OtpRef, OtpProps>(({
           style={style}
         >
           {Array(qtyDigits).fill(0).map((_, index) => (
-            <Box key={index} width={50} marginHorizontal="xs">
+            <Box key={index} width={50} height={50} marginHorizontal="xs">
               <Input
                 variant="otp"
                 value={otpValues[index]}
@@ -78,6 +78,7 @@ export const Otp = forwardRef<OtpRef, OtpProps>(({
                 ref={(ref) => { inputRefs.current[index] = ref; }}
                 onSubmitEditing={dismissKeyboard}
                 submitBehavior="blurAndSubmit"
+                style={{ height: 50 }}
               />
             </Box>
           ))}
