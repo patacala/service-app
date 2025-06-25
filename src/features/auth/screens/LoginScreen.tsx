@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
+import { Image, ImageSourcePropType, Platform, TouchableOpacity } from 'react-native';
 import auth from '@react-native-firebase/auth';
-import { Platform } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { useTranslation } from 'react-i18next';
 import { Box, Button, Input, theme, Typography } from '@/design-system';
@@ -10,6 +10,7 @@ import { Row } from '@/design-system/components/layout/Row/Row';
 import { getLoginStyles } from './login/login.style';
 import Toast from 'react-native-toast-message';
 import { GoogleSignin, statusCodes } from '@react-native-google-signin/google-signin';
+import images from '@/assets/images/images';
 
 interface LoginFormData {
   phoneNumber: string;
@@ -151,6 +152,8 @@ export const LoginScreen = () => {
         text1: '¡Éxito!',
         text2: 'Has iniciado sesión con Google.',
       });
+
+      navigation.navigate('Main');
     } catch (error: any) {
       console.error('Google Sign-In Error:', error);
       
@@ -239,19 +242,36 @@ export const LoginScreen = () => {
           style={{ width: 250 }}
         />
       </Row>
+
       <Box marginTop="lg">
         <Typography variant="bodyRegular" colorVariant="secondary">
           {msgError}
         </Typography>
-        <Button
-          label="Continue Google"
-          onPress={onGoogleButtonPress}
-          disabled={googleLoading || loading}
-          style={{ marginBottom: 10 }}
-        />
-        {Platform.OS === 'ios' && (
-          <Button label="Continue with Apple" onPress={() => {}} />
-        )}
+
+        <Row justifyContent="center">
+          <TouchableOpacity 
+            onPress={onGoogleButtonPress}
+            activeOpacity={0.7}
+          >
+            <Image
+              source={images.gmailLogo as ImageSourcePropType}
+              resizeMode="contain"
+              style={styles.logos}
+            />
+          </TouchableOpacity>
+          {Platform.OS === 'ios' && (
+            <TouchableOpacity 
+              onPress={() => {}}
+              activeOpacity={0.7}
+            >
+              <Image
+                source={images.appleLogo as ImageSourcePropType}
+                resizeMode="contain"
+                style={styles.logos}
+              />
+            </TouchableOpacity>
+          )}
+        </Row>
       </Box>
     </AuthenticationCard>
   );
