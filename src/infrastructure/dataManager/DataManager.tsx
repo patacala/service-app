@@ -26,10 +26,15 @@ export const DataManagerProvider: React.FC<{children: ReactNode}> = ({ children 
         const result = await AsyncStorage.multiGet(keys);
         
         const loadedData: TemporaryData = {};
-        result.forEach(([key, value]) => {
+          result.forEach(([key, value]) => {
           if (key && value) {
             try {
-              loadedData[key] = JSON.parse(value);
+              if (key === '@app:auth_token') {
+                // Es un string plano, no lo parses
+                loadedData[key] = value;
+              } else {
+                loadedData[key] = JSON.parse(value); // Solo parseas si es JSON válido
+              }
             } catch (parseError) {
               console.error(`Error parsing data for key ${key}:`, parseError);
             }
