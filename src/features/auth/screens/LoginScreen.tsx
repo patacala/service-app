@@ -3,7 +3,7 @@ import { Image, ImageSourcePropType, Platform, TouchableOpacity } from 'react-na
 import auth from '@react-native-firebase/auth';
 import { useNavigation } from '@react-navigation/native';
 import { useTranslation } from 'react-i18next';
-import { Box, Button, Input, theme, Typography } from '@/design-system';
+import { Box, Input, theme, Typography } from '@/design-system';
 import { AuthenticationCard } from '../components/AuthenticationCard/AuthenticationCard';
 import { AuthStackNavigationProp } from '@/assembler/navigation/types';
 import { Row } from '@/design-system/components/layout/Row/Row';
@@ -11,7 +11,6 @@ import { getLoginStyles } from './login/login.style';
 import Toast from 'react-native-toast-message';
 import { GoogleSignin, statusCodes } from '@react-native-google-signin/google-signin';
 import images from '@/assets/images/images';
-import { useDispatch } from 'react-redux';
 import { SessionManager } from '@/infrastructure/session';
 
 interface LoginFormData {
