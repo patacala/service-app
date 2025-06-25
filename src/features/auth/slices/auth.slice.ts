@@ -38,6 +38,9 @@ const authSlice = createSlice({
       state.user = action.payload.user;
       state.token = action.payload.token;
     },
+    setToken: (state, action: PayloadAction<string | null>) => {
+      state.token = action.payload;
+    },
     loginFailure: (state, action: PayloadAction<string>) => {
       state.isLoading = false;
       state.error = action.payload;
@@ -50,6 +53,6 @@ const authSlice = createSlice({
   },
 });
 
-export const {loginStart, loginSuccess, loginFailure, logout} =
+export const {loginStart, loginSuccess, setToken, loginFailure, logout} =
   authSlice.actions;
 export default authSlice.reducer;

@@ -11,6 +11,8 @@ import { getLoginStyles } from './login/login.style';
 import Toast from 'react-native-toast-message';
 import { GoogleSignin, statusCodes } from '@react-native-google-signin/google-signin';
 import images from '@/assets/images/images';
+import { useDispatch } from 'react-redux';
+import { SessionManager } from '@/infrastructure/session';
 
 interface LoginFormData {
   phoneNumber: string;
@@ -26,7 +28,7 @@ export const LoginScreen = () => {
   const navigation = useNavigation<AuthStackNavigationProp>();
   const { t } = useTranslation('auth');
   const styles = getLoginStyles(theme);
-
+  
   const [inputValues, setInputValues] = useState<LoginFormData>({
     phoneNumber: '',
     password: '',
@@ -122,11 +124,13 @@ export const LoginScreen = () => {
     }
   };
 
-  const onGoogleButtonPress = async () => {
+  const onGmailButtonPress = async () => {
     setGoogleLoading(true);
     try {
-      await GoogleSignin.hasPlayServices({ showPlayServicesUpdateDialog: true });
+      const sessionManager = SessionManager.getInstance();
+      await sessionManager.initialize();
       
+      await GoogleSignin.hasPlayServices({ showPlayServicesUpdateDialog: true });
       const signInResult = await GoogleSignin.signIn();
       
       // Validar que signInResult existe
@@ -142,10 +146,11 @@ export const LoginScreen = () => {
       if (!idToken) {
         throw new Error('No se pudo obtener el idToken desde Google.');
       }
-      
+
       // Crear credenciales con ambos tokens
       const googleCredential = auth.GoogleAuthProvider.credential(idToken, accessToken);
       await auth().signInWithCredential(googleCredential);
+      await sessionManager.setSession(idToken);
       
       Toast.show({
         type: 'success',
@@ -250,7 +255,7 @@ export const LoginScreen = () => {
 
         <Row justifyContent="center">
           <TouchableOpacity 
-            onPress={onGoogleButtonPress}
+            onPress={onGmailButtonPress}
             activeOpacity={0.7}
           >
             <Image
