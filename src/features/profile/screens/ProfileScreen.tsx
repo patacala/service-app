@@ -15,6 +15,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import { useTranslation } from 'react-i18next';
 import { useTheme } from '@shopify/restyle';
 import * as ImagePicker from 'expo-image-picker';
+import auth from '@react-native-firebase/auth';
 
 // Design System
 import { Box, Button, Input, Typography, Theme, GroupChipSelector, PremiumCard, SubscriptionPlans, SubscriptionPlan, ChipOption } from '@/design-system';
@@ -31,13 +32,15 @@ import {
   fetchProfileStart,
   updateProfileStart,
 } from '../slices/profile.slice';
-import { logout } from '../../auth/slices/auth.slice';
 import { Icon } from '@/design-system/components/layout/Icon';
 import { RatingReview } from '@/features/detail/components/RatingReview';
 import { InfoMain } from '@/features/provMode/components/InfoMain';
 import { DetailInfo } from '@/features/provMode/components/DetailInfo';
 import { DetailService } from '@/features/provMode/components/DetailService';
 import { ProviderForm } from '@/features/provMode/components/ProviderForm';
+import { SessionManager } from '@/infrastructure/session';
+import { useNavigation } from 'expo-router';
+import { AuthStackNavigationProp } from '@/assembler/navigation/types';
 
 // Interfaces
 interface ServiceData {
@@ -101,6 +104,7 @@ export const ProfileScreen = () => {
   const dispatch = useDispatch();
   const { t } = useTranslation('auth');
   const theme = useTheme<Theme>();
+  const navigation = useNavigation<AuthStackNavigationProp>();
   
   const { data: profile, isLoading } = useSelector(
     (state: RootState) => state.profile
@@ -236,17 +240,6 @@ export const ProfileScreen = () => {
     if (firstError?.message) {
       Alert.alert('Validation Error', firstError.message);
     }
-  };
-
-  const handleLogout = () => {
-    Alert.alert(
-      'Logout',
-      'Are you sure you want to logout?',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        { text: 'Logout', style: 'destructive', onPress: () => dispatch(logout()) }
-      ]
-    );
   };
 
   const handleHelpPress = () => {
@@ -906,6 +899,35 @@ export const ProfileScreen = () => {
     title: editingServiceId ? "Service Updated!" : "Services Successfully Created",
     description: "",
     height: "62%"
+  };
+
+  const handleLogout = () => {
+    Alert.alert(
+      'Logout',
+      'Are you sure you want to logout?',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        { text: 'Logout', style: 'destructive', onPress: proceedLogout }
+      ]
+    );
+  };
+
+  const proceedLogout = async () => {
+    try {
+      // Cerrar sesión de Firebase
+      await auth().signOut();
+
+      // Limpiar sesión local y storage
+      const sessionManager = SessionManager.getInstance();
+      await sessionManager.clearSession();
+
+      // Redirigir al AuthNavigator y limpiar la pila de navegación
+      navigation.navigate('Login');
+
+      console.log('Session successfully closed.');
+    } catch (error) {
+      console.error('Error while signing out:', error);
+    }
   };
 
   return (
