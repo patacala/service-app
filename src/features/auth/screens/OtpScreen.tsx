@@ -72,33 +72,12 @@ export const OtpScreen = () => {
       // Verificar el código con Firebase
       const credential = await confirmation.confirm(code);
       
-      console.log('User signed in successfully:', credential.user);
-
       // Obtener el token de Firebase
       const token = await credential.user.getIdToken();
       
       // Guardar la sesión
       const session = SessionManager.getInstance();
       await session.setSession(token);
-
-      // Obtener datos adicionales si es necesario para el registro
-      const step1 = await getData('registerForm');
-      const step2 = await getData('registerCompletionForm');
-
-      // Si tienes datos de registro pendientes, podrías enviarlos a tu backend aquí
-      if (step1 && step2) {
-        // Opcional: Enviar datos adicionales a tu backend
-        // await completUserRegistration({
-        //   firebaseUid: credential.user.uid,
-        //   city: step2.city,
-        //   servicetagids: step2.selectedServices,
-        //   // otros datos...
-        // });
-        
-        // Limpiar la data de registro
-        await removeData('registerForm');
-        await removeData('registerCompletionForm');
-      }
 
       Toast.show({
         type: 'success',
