@@ -147,7 +147,7 @@ export const RegisterCompletionScreen = () => {
       onSecondaryButtonPress={allowGoBack ? handleGoBack : undefined}
       primaryButtonDisabled={isSubmitting}
     >
-      <Box gap='md' marginBottom='sm'>
+      {/* <Box gap='md' marginBottom='sm'>
         <Row justify='space-between'>
           <Box style={styles.prefix} padding="md">
             <Typography variant="bodyRegular" colorVariant="secondary">+57</Typography>
@@ -169,7 +169,7 @@ export const RegisterCompletionScreen = () => {
           onChangeText={(value) => handleInputChange('city', value)}
           error={errors.city}
         />
-      </Box>
+      </Box> */}
 
       <GroupChipSelector
         multiSelect

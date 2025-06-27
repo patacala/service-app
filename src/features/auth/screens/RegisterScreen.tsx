@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Input } from '@/design-system';
-import { useNavigation } from '@react-navigation/native';
-import { AuthStackNavigationProp } from '@/assembler/navigation/types';
+import { RouteProp, useNavigation, useRoute } from '@react-navigation/native';
+import { AuthStackNavigationProp, AuthStackParamList } from '@/assembler/navigation/types';
 import { useTranslation } from 'react-i18next';
 import { AuthenticationCard } from '../components/AuthenticationCard/AuthenticationCard';
 import { useDataManager } from '@/infrastructure/dataManager/DataManager';
@@ -11,33 +11,40 @@ import { SessionManager } from '@/infrastructure/session';
 import Toast from 'react-native-toast-message';
 
 interface FormData extends RegisterPayload {
-  confirmPassword: string;
+  name: string;
+  city: string;
+  // confirmPassword: string;
 }
 
 interface FormErrors {
   name: string;
-  email: string;
+  city: string;
+  /* email: string;
   password: string;
-  confirmPassword: string;
+  confirmPassword: string; */
 }
 
 export const RegisterScreen = () => {
   const navigation = useNavigation<AuthStackNavigationProp>();
   const { t } = useTranslation('auth');
   const { getData, setData, removeData } = useDataManager();
+  const route = useRoute<RouteProp<AuthStackParamList, 'Register'>>();
+  const { name, email } = route.params || {};
 
   const [formData, setFormData] = useState<FormData>({
-    name: '',
-    email: '',
+    name: name || '',
+    city: ''
+    /* email: email || '',
     password: '',
-    confirmPassword: ''
+    confirmPassword: '' */
   });
 
   const [errors, setErrors] = useState<FormErrors>({
     name: '',
-    email: '',
+    city: ''
+    /* email: '',
     password: '',
-    confirmPassword: ''
+    confirmPassword: '' */
   });
 
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -49,7 +56,7 @@ export const RegisterScreen = () => {
         setFormData((prev) => ({
           ...prev,
           name: savedFormData.name || '',
-          email: savedFormData.email || '',
+          city: savedFormData.city || '',
         }));
       }
     };
@@ -60,7 +67,7 @@ export const RegisterScreen = () => {
     let isValid = true;
     const newErrors: FormErrors = { ...errors };
 
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    // const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
     if (!formData.name.trim()) {
       newErrors.name = t('signup.name-required');
@@ -69,7 +76,14 @@ export const RegisterScreen = () => {
       newErrors.name = '';
     }
 
-    if (!formData.email.trim()) {
+    if (!formData.city.trim()) {
+      newErrors.city = t('signupCompletion.text-input-city');
+      isValid = false;
+    } else {
+      newErrors.city = '';
+    }
+
+    /* if (!formData.email.trim()) {
       newErrors.email = t('signup.email-required');
       isValid = false;
     } else if (!emailRegex.test(formData.email)) {
@@ -97,7 +111,7 @@ export const RegisterScreen = () => {
       isValid = false;
     } else {
       newErrors.confirmPassword = '';
-    }
+    } */
 
     setErrors(newErrors);
     return isValid;
@@ -119,28 +133,30 @@ export const RegisterScreen = () => {
     try {
       const payload: RegisterPayload = {
         name: formData.name,
-        email: formData.email,
-        password: formData.password,
+        city: formData.city
+        /* email: formData.email,
+        password: formData.password, */
       };
 
-      const response = await register(payload);
+      /* const response = await register(payload);
       const { user } = response.data;
 
       await setData('registerForm', {
-        userId: user.user.id,
         name: user.user.name,
-        email: user.user.email,
-      });
+        city: user.user.email,
+      }); */
 
-      const session = SessionManager.getInstance();
-      await session.setSession(user.token);
+      /* const session = SessionManager.getInstance();
+      await session.setSession(user.token); */
+
+      await setData('registerForm', payload);
 
       navigation.navigate('RegisterCompletion');
     } catch (err: any) {
       Toast.show({
         type: 'error',
         text1: 'Registration failed',
-        text2: err?.response?.data?.message || 'There was an unexpected error.',
+        text2: 'There was an unexpected error.',
       });
     } finally {
       setIsSubmitting(false);
@@ -171,6 +187,14 @@ export const RegisterScreen = () => {
         error={errors.name}
       />
       <Input
+        label={t('signupCompletion.city')}
+        placeholder={t('signupCompletion.text-input-city')}
+        autoCapitalize="words"
+        value={formData.city}
+        onChangeText={(value) => handleInputChange('city', value)}
+        error={errors.city}
+      />
+      {/* <Input
         label={t('signup.email')}
         placeholder={t('signup.text-input-email')}
         autoCapitalize="none"
@@ -194,7 +218,7 @@ export const RegisterScreen = () => {
         value={formData.confirmPassword}
         onChangeText={(value) => handleInputChange('confirmPassword', value)}
         error={errors.confirmPassword}
-      />
+      /> */}
     </AuthenticationCard>
   );
 };
