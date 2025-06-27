@@ -45,11 +45,11 @@ export const IntroScreen = () => {
             label={t('intro.login-button')}
             onPress={handleLogin}
           />
-          <Button
+          {/* <Button
             variant="outlined"
             label={t('intro.signup-button')}
             onPress={handleSignUp}
-          />
+          /> */}
         </Box>
       </Box>
     </SafeContainer>

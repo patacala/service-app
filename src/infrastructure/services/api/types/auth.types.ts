@@ -1,7 +1,8 @@
 export interface RegisterPayload {
   name: string;
-  email: string;
-  password: string;
+  city: string;
+  /* email: string;
+  password: string; */
 }
 
 export interface VerifyOtpInitialPayload {
