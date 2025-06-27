@@ -19,6 +19,7 @@ import {
 } from 'react-native';
 import { DataManagerProvider } from '@/infrastructure/dataManager/DataManager';
 import { toastConfig } from '@/design-system/components/customToast/CustomToast';
+import { GoogleSignin } from '@react-native-google-signin/google-signin';
 
 const App = () => {
   const [fontsLoaded] = useFonts({
@@ -29,6 +30,13 @@ const App = () => {
     'Lexend Deca Regular': require('@/design-system/assets/fonts/LexendDeca-Regular.ttf'),
     'Lexend Deca SemiBold': require('@/design-system/assets/fonts/LexendDeca-SemiBold.ttf'),
   });
+
+  useEffect(() => {
+  GoogleSignin.configure({
+    webClientId: process.env.EXPO_PUBLIC_WEB_CLIENTID,
+    offlineAccess: true,
+  });
+}, []);
 
   useEffect(() => {
     SessionManager.getInstance().initialize();

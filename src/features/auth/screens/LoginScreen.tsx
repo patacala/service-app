@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Image, ImageSourcePropType, Platform, TouchableOpacity } from 'react-native';
 import auth from '@react-native-firebase/auth';
 import { useNavigation } from '@react-navigation/native';
@@ -41,12 +41,6 @@ export const LoginScreen = () => {
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
   const [msgError, setMsgError] = useState('');
-
-  useEffect(() => {
-    GoogleSignin.configure({
-      webClientId: '343824714542-csdtgbqf7ff8n4hi40a4mka4811b80nl.apps.googleusercontent.com',
-    });
-  }, []);
 
   const validateForm = () => {
     let isValid = true;
@@ -148,16 +142,32 @@ export const LoginScreen = () => {
 
       // Crear credenciales con ambos tokens
       const googleCredential = auth.GoogleAuthProvider.credential(idToken, accessToken);
-      await auth().signInWithCredential(googleCredential);
-      await sessionManager.setSession(idToken);
+
+      // Iniciar sesión en Firebase con las credenciales de Google
+      const userCredential = await auth().signInWithCredential(googleCredential);
+
+      // Obtener el token (Firebase ID Token)
+      const firebaseIdToken = await userCredential.user.getIdToken();
+
+      console.log(firebaseIdToken);
+
+      // Guardar el token en SessionManager
+      await sessionManager.setSession(firebaseIdToken);
+
+      const { user } = signInResult.data;
+
+      navigation.navigate('Register', {
+        name: user.name,
+        email: user.email,
+      });
       
-      Toast.show({
+      /* Toast.show({
         type: 'success',
         text1: '¡Éxito!',
         text2: 'Has iniciado sesión con Google.',
-      });
+      }); */
 
-      navigation.navigate('Main');
+      /* navigation.navigate('Main'); */
     } catch (error: any) {
       console.error('Google Sign-In Error:', error);
       

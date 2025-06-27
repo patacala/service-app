@@ -20,7 +20,7 @@ export type AuthStackParamList = {
   Intro: undefined;
   Login: undefined;
   ForgotPassword: { phonenumber: string, userId: number };
-  Register: undefined;
+  Register: { name: string; email: string, phonenumber: string };
   RegisterCompletion: undefined;
   Otp: undefined;
   Main: NavigatorScreenParams<MainStackParamList>;

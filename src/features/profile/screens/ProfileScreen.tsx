@@ -41,6 +41,7 @@ import { ProviderForm } from '@/features/provMode/components/ProviderForm';
 import { SessionManager } from '@/infrastructure/session';
 import { useNavigation } from 'expo-router';
 import { AuthStackNavigationProp } from '@/assembler/navigation/types';
+import { GoogleSignin } from '@react-native-google-signin/google-signin';
 
 // Interfaces
 interface ServiceData {
@@ -914,6 +915,9 @@ export const ProfileScreen = () => {
 
   const proceedLogout = async () => {
     try {
+      // Cerrar sesión de Google
+      await GoogleSignin.signOut();
+
       // Cerrar sesión de Firebase
       await auth().signOut();
 
