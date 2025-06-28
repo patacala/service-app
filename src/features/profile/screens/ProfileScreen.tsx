@@ -40,8 +40,9 @@ import { DetailService } from '@/features/provMode/components/DetailService';
 import { ProviderForm } from '@/features/provMode/components/ProviderForm';
 import { SessionManager } from '@/infrastructure/session';
 import { useNavigation } from 'expo-router';
-import { AuthStackNavigationProp } from '@/assembler/navigation/types';
 import { GoogleSignin } from '@react-native-google-signin/google-signin';
+import { RootStackNavigationProp } from '@/assembler/navigation/types';
+import { useAuth } from '@/infrastructure/auth/AuthContext';
 
 // Interfaces
 interface ServiceData {
@@ -105,8 +106,8 @@ export const ProfileScreen = () => {
   const dispatch = useDispatch();
   const { t } = useTranslation('auth');
   const theme = useTheme<Theme>();
-  const navigation = useNavigation<AuthStackNavigationProp>();
-  
+  const navigation = useNavigation<RootStackNavigationProp>();
+
   const { data: profile, isLoading } = useSelector(
     (state: RootState) => state.profile
   );
@@ -913,26 +914,20 @@ export const ProfileScreen = () => {
     );
   };
 
+  const { logout } = useAuth();
   const proceedLogout = async () => {
-    try {
-      // Cerrar sesión de Google
-      await GoogleSignin.signOut();
+  try {
+    await GoogleSignin.signOut();
+    await logout();
 
-      // Cerrar sesión de Firebase
-      await auth().signOut();
+    const sessionManager = SessionManager.getInstance();
+    await sessionManager.clearSession();
 
-      // Limpiar sesión local y storage
-      const sessionManager = SessionManager.getInstance();
-      await sessionManager.clearSession();
-
-      // Redirigir al AuthNavigator y limpiar la pila de navegación
-      navigation.navigate('Login');
-
-      console.log('Session successfully closed.');
-    } catch (error) {
-      console.error('Error while signing out:', error);
-    }
-  };
+    console.log('Session successfully closed.');
+  } catch (error) {
+    console.error('Error while signing out:', error);
+  }
+};
 
   return (
     <Box flex={1}>
