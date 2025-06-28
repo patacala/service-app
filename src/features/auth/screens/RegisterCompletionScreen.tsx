@@ -112,16 +112,21 @@ export const RegisterCompletionScreen = () => {
   };
 
   const handleRegisterCompletion = async () => {
-    if (!validateForm()) return;
+    /* if (!validateForm()) return; */
     setIsSubmitting(true);
 
     try {
-      const fullPhoneNumber = `+57${formData.phoneNumber}`;
+      /* const fullPhoneNumber = `+57${formData.phoneNumber}`; */
       await setData('registerCompletionForm', {
         ...formData,
-        phoneNumber: fullPhoneNumber
+        /* phoneNumber: fullPhoneNumber */
       });
-      navigation.navigate('Otp');
+      navigation.navigate('Main');
+      Toast.show({
+        type: 'success',
+        text1: 'Success!',
+        text2: 'You have successfully signed in with Google.',
+      });
     } catch (error: any) {
       Toast.show({
         type: 'error',
@@ -141,6 +146,7 @@ export const RegisterCompletionScreen = () => {
     <AuthenticationCard
       mainTitle={t('signup.title')}
       activeStepIndicator
+      totalSteps={2}
       currentStep={2}
       subtitle={t('signupCompletion.sub-title')}
       onPrimaryButtonPress={handleRegisterCompletion}
@@ -170,16 +176,20 @@ export const RegisterCompletionScreen = () => {
           error={errors.city}
         />
       </Box> */}
-
-      <GroupChipSelector
-        multiSelect
-        onChange={(selectedIds) => handleInputChange('selectedServices', selectedIds)}
-        options={tagOptions.map(tag => ({
-          id: tag.id.toString(),
-          label: tag.name
-        }))}
-        selectedIds={formData.selectedServices}
-      />
+      
+      <Box>
+        <Typography variant="bodyRegular" colorVariant="secondary">Services you're interested in:</Typography>
+        <GroupChipSelector
+          multiSelect
+          onChange={(selectedIds) => handleInputChange('selectedServices', selectedIds)}
+          options={tagOptions.map(tag => ({
+            id: tag.id.toString(),
+            label: tag.name
+          }))}
+          selectedIds={formData.selectedServices}
+        />
+      </Box>
+      
     </AuthenticationCard>
   );
 };

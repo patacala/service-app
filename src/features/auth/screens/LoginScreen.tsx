@@ -149,8 +149,6 @@ export const LoginScreen = () => {
       // Obtener el token (Firebase ID Token)
       const firebaseIdToken = await userCredential.user.getIdToken();
 
-      console.log(firebaseIdToken);
-
       // Guardar el token en SessionManager
       await sessionManager.setSession(firebaseIdToken);
 

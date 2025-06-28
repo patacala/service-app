@@ -1,6 +1,7 @@
-import {NavigatorScreenParams} from '@react-navigation/native';
-import {Post} from '../../features/wall/slices/wall.slice';
-import { CardPost } from '../../features/wall/slices/wall.slice'; // Agregar esta línea
+import { NavigatorScreenParams } from '@react-navigation/native';
+import { StackNavigationProp } from '@react-navigation/stack';
+import { Post } from '../../features/wall/slices/wall.slice';
+import { CardPost } from '../../features/wall/slices/wall.slice';
 import { ServiceData } from '@/features/services/slices/services.slice';
 
 export type MainTabParamList = {
@@ -19,8 +20,8 @@ export type MainStackParamList = {
 export type AuthStackParamList = {
   Intro: undefined;
   Login: undefined;
-  ForgotPassword: { phonenumber: string, userId: number };
-  Register: { name: string; email: string, phonenumber: string };
+  ForgotPassword: { phonenumber: string; userId: number };
+  Register: { name: string; email: string; phonenumber: string };
   RegisterCompletion: undefined;
   Otp: undefined;
   Main: NavigatorScreenParams<MainStackParamList>;
@@ -32,10 +33,12 @@ export type RootStackParamList = {
   Auth: NavigatorScreenParams<AuthStackParamList>;
   App: undefined;
   Main: NavigatorScreenParams<MainTabParamList>;
-  PostDetails: {postId: string};
+  PostDetails: { postId: string };
   CreatePost: undefined;
-  EditPost: {post: Post};
+  EditPost: { post: Post };
 };
+
+export type RootStackNavigationProp = StackNavigationProp<RootStackParamList>;
 
 declare module '@react-navigation/native' {
   export interface RootParamList extends RootStackParamList {}
