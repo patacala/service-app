@@ -19,7 +19,7 @@ import {
 } from 'react-native';
 import { DataManagerProvider } from '@/infrastructure/dataManager/DataManager';
 import { toastConfig } from '@/design-system/components/customToast/CustomToast';
-import { GoogleSignin } from '@react-native-google-signin/google-signin';
+import { AuthProvider } from '@/infrastructure/auth/AuthContext';
 
 const App = () => {
   const [fontsLoaded] = useFonts({
@@ -30,13 +30,6 @@ const App = () => {
     'Lexend Deca Regular': require('@/design-system/assets/fonts/LexendDeca-Regular.ttf'),
     'Lexend Deca SemiBold': require('@/design-system/assets/fonts/LexendDeca-SemiBold.ttf'),
   });
-
-  useEffect(() => {
-  GoogleSignin.configure({
-    webClientId: process.env.EXPO_PUBLIC_WEB_CLIENTID,
-    offlineAccess: true,
-  });
-}, []);
 
   useEffect(() => {
     SessionManager.getInstance().initialize();
@@ -58,20 +51,22 @@ const App = () => {
     <SafeAreaProvider>
       <Provider store={store}>
           <ThemeProvider>
-            <DataManagerProvider>
-              <KeyboardAvoidingView
-                behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-                style={styles.container}
-                keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 10}
-              >
-                <TouchableWithoutFeedback onPress={dismissKeyboard}>
-                  <View style={styles.container}>
-                    <AppNavigator />
-                    <Toast config={toastConfig} /> 
-                  </View>
-                </TouchableWithoutFeedback>
-              </KeyboardAvoidingView>
-            </DataManagerProvider>
+            <AuthProvider>
+                <DataManagerProvider>
+                  <KeyboardAvoidingView
+                    behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+                    style={styles.container}
+                    keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 10}
+                  >
+                    <TouchableWithoutFeedback onPress={dismissKeyboard}>
+                      <View style={styles.container}>
+                        <AppNavigator />
+                        <Toast config={toastConfig} /> 
+                      </View>
+                    </TouchableWithoutFeedback>
+                  </KeyboardAvoidingView>
+                </DataManagerProvider>
+            </AuthProvider>
           </ThemeProvider>
       </Provider>
     </SafeAreaProvider>

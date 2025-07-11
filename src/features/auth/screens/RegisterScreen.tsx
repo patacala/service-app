@@ -29,7 +29,7 @@ export const RegisterScreen = () => {
   const { t } = useTranslation('auth');
   const { getData, setData, removeData } = useDataManager();
   const route = useRoute<RouteProp<AuthStackParamList, 'Register'>>();
-  const { name, email } = route.params || {};
+  const { name, email, phonenumber } = route.params || {};
 
   const [formData, setFormData] = useState<FormData>({
     name: name || '',
