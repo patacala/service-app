@@ -7,18 +7,17 @@ import {
   LoginPayload,
 } from '../types/auth.types';
 
-// Mantienes estos tal como están
 export const register = (data: RegisterPayload) =>
   httpClient.post('/auth/register', data);
 
-export const requestOtp = (payload: { userId: number; phonenumber: string }) =>
+/* export const requestOtp = (payload: { userId: number; phonenumber: string }) =>
   httpClient.post('/auth/request-otp', payload);
 
 export const requestOtpRecovery = (payload: { phonenumber: string }) =>
   httpClient.post('/auth/request-otp-recovery', payload);
 
 export const verifyOtpInitial = (data: VerifyOtpInitialPayload) =>
-  httpClient.post('/auth/verify-otp-initial', data);
+  httpClient.post('/auth/verify-otp-initial', data); */
 
 export const verifyOtpSimple = (data: VerifyOtpSimplePayload) =>
   httpClient.post('/auth/verify-otp-simple', data);
