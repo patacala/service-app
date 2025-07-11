@@ -6,7 +6,6 @@ import {RegisterScreen} from '@/features/auth/screens/RegisterScreen';
 import {RegisterCompletionScreen} from '@/features/auth/screens/RegisterCompletionScreen';
 import {OtpScreen} from '@/features/auth/screens/OtpScreen';
 import {AuthStackParamList} from './types';
-import { MainNavigator } from './MainNavigator';
 
 const Stack = createNativeStackNavigator<AuthStackParamList>();
 
@@ -22,6 +21,5 @@ export const AuthNavigator = () => (
     <Stack.Screen name="Register" component={RegisterScreen} />
     <Stack.Screen name="RegisterCompletion" component={RegisterCompletionScreen} />
     <Stack.Screen name="Otp" component={OtpScreen} />
-    <Stack.Screen name="Main" component={MainNavigator} />
   </Stack.Navigator>
 );

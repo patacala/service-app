@@ -15,7 +15,6 @@ import { useDispatch, useSelector } from 'react-redux';
 import { useTranslation } from 'react-i18next';
 import { useTheme } from '@shopify/restyle';
 import * as ImagePicker from 'expo-image-picker';
-import auth from '@react-native-firebase/auth';
 
 // Design System
 import { Box, Button, Input, Typography, Theme, GroupChipSelector, PremiumCard, SubscriptionPlans, SubscriptionPlan, ChipOption } from '@/design-system';
@@ -40,7 +39,7 @@ import { DetailService } from '@/features/provMode/components/DetailService';
 import { ProviderForm } from '@/features/provMode/components/ProviderForm';
 import { SessionManager } from '@/infrastructure/session';
 import { useNavigation } from 'expo-router';
-import { GoogleSignin } from '@react-native-google-signin/google-signin';
+/* import { GoogleSignin } from '@react-native-google-signin/google-signin'; */
 import { RootStackNavigationProp } from '@/assembler/navigation/types';
 import { useAuth } from '@/infrastructure/auth/AuthContext';
 
@@ -917,7 +916,7 @@ export const ProfileScreen = () => {
   const { logout } = useAuth();
   const proceedLogout = async () => {
   try {
-    await GoogleSignin.signOut();
+    /* await GoogleSignin.signOut(); */
     await logout();
 
     const sessionManager = SessionManager.getInstance();

@@ -312,7 +312,7 @@ export const WallScreen: React.FC<WallScreenProps> = () => {
       ) : (
         <FlatList
           data={filteredPosts}
-          keyExtractor={(item: { id: any; }) => item.id}
+          keyExtractor={(item: CardPost) => item.id} 
           renderItem={renderItem}
           contentContainerStyle={[
             getWallStyles.listContainer,
