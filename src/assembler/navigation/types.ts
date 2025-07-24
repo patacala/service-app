@@ -4,6 +4,7 @@ import { Post } from '../../features/wall/slices/wall.slice';
 import { CardPost } from '../../features/wall/slices/wall.slice';
 import { ServiceData } from '@/features/services/slices/services.slice';
 
+// Tabs principales
 export type MainTabParamList = {
   ProviderMode: undefined;
   Wall: undefined;
@@ -11,12 +12,14 @@ export type MainTabParamList = {
   Profile: undefined;
 };
 
+// Stack principal (incluye Tabs y pantallas adicionales como Register)
 export type MainStackParamList = {
   Tabs: NavigatorScreenParams<MainTabParamList>;
   ServiceDetail: { post: CardPost };
-  Chat: undefined;
+  Chat: { service: ServiceData };
 };
 
+// Stack de autenticación
 export type AuthStackParamList = {
   Intro: undefined;
   Login: undefined;
@@ -24,20 +27,19 @@ export type AuthStackParamList = {
   Register: { name: string; email: string; phonenumber: string };
   RegisterCompletion: undefined;
   Otp: undefined;
-  Main: NavigatorScreenParams<MainStackParamList>;
-  Chat: { service: ServiceData };
-  ProvMode: undefined;
 };
 
+// Root Stack que controla si mostramos Auth o Main
 export type RootStackParamList = {
   Auth: NavigatorScreenParams<AuthStackParamList>;
+  Main: NavigatorScreenParams<MainStackParamList>;
   App: undefined;
-  Main: NavigatorScreenParams<MainTabParamList>;
   PostDetails: { postId: string };
   CreatePost: undefined;
   EditPost: { post: Post };
 };
 
+// Tipos auxiliares
 export type RootStackNavigationProp = StackNavigationProp<RootStackParamList>;
 
 declare module '@react-navigation/native' {
@@ -45,7 +47,6 @@ declare module '@react-navigation/native' {
 }
 
 export type IconName = 'search' | 'star' | 'user-circle' | 'plus-circle';
-
 export type UserRole = 'admin' | 'user' | 'guest';
 
 export type AuthStackNavigationProp = {

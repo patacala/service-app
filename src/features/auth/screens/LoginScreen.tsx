@@ -51,8 +51,6 @@ export const LoginScreen = () => {
       if (response?.type === 'success') {
         setLoading(true);
         const { id_token } = response.params;
-        
-        // CAMBIO: Usamos el método del SDK Web
         const googleCredential = GoogleAuthProvider.credential(id_token);
 
         try {
