@@ -14,6 +14,11 @@ export const AppNavigator = () => {
 
   return (
     <Stack.Navigator screenOptions={{ headerShown: false }}>
+      {/* {!user || user ? (
+        <Stack.Screen name="Auth" component={AuthNavigator} />
+      ) : (
+        <Stack.Screen name="Main" component={MainNavigator} />
+      )} */}
       {!user ? (
         <Stack.Screen name="Auth" component={AuthNavigator} />
       ) : (
