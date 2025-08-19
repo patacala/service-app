@@ -59,7 +59,7 @@ export const LoginScreen = () => {
           const sessionManager = SessionManager.getInstance();
           await sessionManager.initialize();
           const firebaseIdToken = await userCredential.user.getIdToken();
-          await sessionManager.setSession(firebaseIdToken);
+          await sessionManager.setSession(firebaseIdToken, null);
 
           navigation.navigate('Register', {
             name: userCredential.user.displayName,
@@ -131,7 +131,7 @@ export const LoginScreen = () => {
       subtitle={t('login.sub-title')}
       onPrimaryButtonPress={handleLoginWithPhone}
       onSecondaryButtonPress={handleGoBack}
-      primaryButtonDisabled={loading || !request}
+      primaryButtonDisabled={loading}
     >
       <FirebaseRecaptchaVerifierModal
         ref={recaptchaVerifier}
