@@ -1,17 +1,18 @@
 import React, { useEffect, useRef, useState } from 'react';
+import Constants from 'expo-constants';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { useTranslation } from 'react-i18next';
 import Toast from 'react-native-toast-message';
 import { ConfirmationResult, signInWithPhoneNumber } from 'firebase/auth';
 import { auth } from '@/infrastructure/config/firebase';
 import { FirebaseRecaptchaVerifierModal } from 'expo-firebase-recaptcha';
-import Constants from 'expo-constants';
 import { Box, SendCode, Otp } from '@/design-system';
 import { AuthenticationCard } from '../components/AuthenticationCard/AuthenticationCard';
 import { AuthStackNavigationProp } from '@/assembler/navigation/types';
 import { OtpRef } from '@/design-system/components/forms/Otp/types';
 import { SessionManager } from '@/infrastructure/session';
 import { getOtpConfirmationResult } from '@/infrastructure/auth/otpResultManager';
+import { firebaseLogin } from '@/infrastructure/services/api';
 
 interface OtpScreenRouteParams {
   confirmationResult: ConfirmationResult;
@@ -86,24 +87,39 @@ export const OtpScreen = () => {
     try {
       const credential = await confirmation.confirm(code);
       const token = await credential.user.getIdToken();
-      
+
       const session = SessionManager.getInstance();
-      await session.setSession(token);
+      await session.setSession(token, null);
 
-      Toast.show({
-        type: 'success',
-        text1: 'Verificación exitosa',
-        text2: '¡Bienvenido!'
-      });
+      const response = await firebaseLogin({firebaseToken: token});
+      const { token: tk, user } = response.data;
+      
+      if (user) {
+        await session.setSession(tk, user);
 
-      navigation.navigate('Register', {
-        name: "",
-        email: "",
-        phonenumber: phoneNumber
-      });      
+        if (user.isNewUser) {
+          navigation.navigate('Register', {
+            name: "",
+            email: "",
+            phonenumber: phoneNumber
+          });
+        } else {
+          Toast.show({
+            type: 'success',
+            text1: 'Verificación exitosa',
+            text2: '¡Bienvenido de nuevo!'
+          });
+        }
+      } else {
+        Toast.show({
+          type: 'error',
+          text1: 'Error de autenticación',
+          text2: 'No se pudo obtener la información del usuario.'
+        });
+        await session.clearSession();
+      }     
     } catch (error: any) {
       console.error('OTP verification error:', error);
-      
       let errorMessage = 'Ocurrió un error inesperado.';
       
       if (error.code === 'auth/invalid-verification-code') {
