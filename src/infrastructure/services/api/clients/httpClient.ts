@@ -10,6 +10,7 @@ const httpClient = axios.create({
 
 httpClient.interceptors.request.use(async (config) => {
   const session = SessionManager.getInstance();
+
   if (!session.token) {
     await session.initialize();
   }

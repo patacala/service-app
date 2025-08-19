@@ -1,70 +1,91 @@
-// Importamos React y los hooks necesarios
 import React, { createContext, useEffect, useState, ReactNode, useContext } from 'react';
-// Importamos funciones y tipos de Firebase Auth
-import { onAuthStateChanged, signOut, User } from 'firebase/auth';
-// Importamos la configuración de Firebase previamente inicializada
-import { auth } from '@/infrastructure/config/firebase';
+import { SessionManager } from '@/infrastructure/session';
 
-// Definimos el tipo del contexto, describiendo qué valores y funciones estarán disponibles
+// 1. Definimos el tipo del usuario que esperamos de tu backend
+interface BackendUser {
+  id: string;
+  displayName: string;
+  email: string;
+  role: string;
+  isNewUser: boolean;
+}
+
+// 2. Definimos el tipo del contexto, describiendo qué valores y funciones estarán disponibles
 type AuthContextType = {
-  user: User | null;           // Usuario autenticado o null si no hay sesión
-  loading: boolean;            // Indica si la app sigue verificando el estado de autenticación
-  token: string | null;        // Token JWT del usuario, útil para llamadas a backend
-  logout: () => Promise<void>; // Función que permite cerrar sesión
+  user: BackendUser | null;           // Usuario autenticado (datos de tu backend)
+  loading: boolean;                   // Indica si el contexto está cargando/inicializando la sesión
+  token: string | null;               // Token JWT del usuario (obtenido de tu backend)
+  login: (backendToken: string, userData: BackendUser | null) => Promise<void>;
+  logout: () => Promise<void>;        // Función que permite cerrar sesión
 };
 
-// Creamos el contexto con valores iniciales
+// 3. Creamos el contexto con valores iniciales
 export const AuthContext = createContext<AuthContextType>({
   user: null,
-  loading: true,
+  loading: true, // Inicialmente en true mientras SessionManager se inicializa
   token: null,
-  logout: async () => {}, // Función vacía por defecto para evitar errores
+  login: async () => {}, // Función vacía por defecto
+  logout: async () => {}, // Función vacía por defecto
 });
 
-// Componente proveedor que envolverá la aplicación y compartirá el contexto
+// 4. Componente proveedor que envolverá la aplicación y compartirá el contexto
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
-  const [user, setUser] = useState<User | null>(null);      // Estado del usuario
-  const [loading, setLoading] = useState(true);             // Estado para indicar carga inicial
-  const [token, setToken] = useState<string | null>(null);  // Estado para almacenar el token
+  // Ahora, el estado de AuthContext refleja el estado de SessionManager
+  const [loading, setLoading] = useState(true);
+  const [sessionUser, setSessionUser] = useState<BackendUser | null>(null);
+  const [sessionToken, setSessionToken] = useState<string | null>(null);
 
-  // Al montar el componente, nos suscribimos a los cambios de autenticación de Firebase
-  useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
-      setUser(firebaseUser);     // Actualizamos el usuario actual
-      setLoading(false);         // Dejamos de mostrar estado de carga
+  // Instancia del SessionManager
+  const sessionManager = SessionManager.getInstance();
 
-      if (firebaseUser) {
-        // Si hay un usuario, obtenemos su token de acceso
-        const idToken = await firebaseUser.getIdToken();
-        setToken(idToken);
-      } else {
-        // Si no hay usuario, limpiamos el token
-        setToken(null);
-      }
-    });
-
-    // Devuelve la función para desuscribirse al desmontar el componente
-    return unsubscribe;
-  }, []);
-
-  // Función para cerrar sesión del usuario
-  const logout = async () => {
-    try {
-      await signOut(auth);  // Llamamos a Firebase para cerrar la sesión
-      setUser(null);        // Limpiamos el estado del usuario
-      setToken(null);       // Limpiamos el token
-    } catch (error) {
-      console.error('Error signing out: ', error);
-    }
+  // Función para iniciar sesión (llama al SessionManager)
+  const login = async (backendToken: string, userData: BackendUser | null) => {
+    await sessionManager.setSession(backendToken, userData);
+    setSessionToken(sessionManager.token);
+    setSessionUser(sessionManager.user);
   };
+
+  // Función para cerrar sesión (llama al SessionManager)
+  const logout = async () => {
+    await sessionManager.clearSession();
+    setSessionToken(null);
+    setSessionUser(null);
+  };
+
+  // Efecto para inicializar el SessionManager al montar el componente
+  useEffect(() => {
+    const initializeSession = async () => {
+      setLoading(true); // Indica que estamos cargando la sesión
+
+      try {
+        await sessionManager.initialize(); // Inicializa SessionManager desde SecureStore
+        // Actualiza el estado del contexto con los valores del SessionManager
+        setSessionToken(sessionManager.token);
+        setSessionUser(sessionManager.user);
+      } catch (error) {
+        console.error('Error al inicializar SessionManager:', error);
+        await logout(); // Si hay un error, limpiar la sesión
+      } finally {
+        setLoading(false); // La inicialización ha terminado
+      }
+    };
+
+    initializeSession();
+  }, []); // Se ejecuta solo una vez al montar
 
   // Retornamos el proveedor con los valores del contexto
   return (
-    <AuthContext.Provider value={{ user, loading, token, logout }}>
+    <AuthContext.Provider value={{
+      user: sessionUser, // Se usa el estado local que refleja SessionManager
+      loading,
+      token: sessionToken, // Se usa el estado local que refleja SessionManager
+      login,
+      logout
+    }}>
       {children}
     </AuthContext.Provider>
   );
 };
 
-// Hook personalizado para consumir fácilmente el contexto en otros componentes
+// Hook personalizado para consumir fácilmente el contexto en cualquier componente
 export const useAuth = () => useContext(AuthContext);
