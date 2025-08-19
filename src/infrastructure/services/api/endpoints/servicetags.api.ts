@@ -1,4 +1,4 @@
-import { httpClient } from '../clients/httpClient';
+import httpClient from '../clients/httpClient';
 import { adaptService } from '../adapters/servicetags.adapter';
 
 export const getServiceTagsById = async (id: string) => {

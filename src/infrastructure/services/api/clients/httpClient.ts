@@ -1,7 +1,8 @@
 import axios, { AxiosInstance, AxiosRequestConfig } from 'axios';
+import { SessionManager } from '@/infrastructure/session';
 
 const httpClient: AxiosInstance = axios.create({
-  baseURL: process.env.EXPO_PUBLIC_API_URL, 
+  baseURL: process.env.EXPO_PUBLIC_API_URL,
   headers: {
     'Content-Type': 'application/json',
     'Accept': 'application/json',
@@ -11,10 +12,14 @@ const httpClient: AxiosInstance = axios.create({
 
 // Interceptor para agregar token si existe
 httpClient.interceptors.request.use(async (config) => {
-  // TODO: Reemplaza por tu lógica real de obtención de token
-  const token = null; // <-- aquí deberías obtener el token de redux, storage, etc
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`;
+  const session = SessionManager.getInstance();
+
+  if (!session.token) {
+    await session.initialize();
+  }
+
+  if (session.token) {
+    config.headers.Authorization = `Bearer ${session.token}`;
   }
   return config;
 });

@@ -1,4 +1,4 @@
-import { httpClient } from '../clients/httpClient';
+import httpClient from '../clients/httpClient';
 
 export const updateUserProfile = async (data: {
   phoneNumber: string;
