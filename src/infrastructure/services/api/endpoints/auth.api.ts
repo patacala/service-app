@@ -1,4 +1,4 @@
-import { httpClient } from '../clients/httpClient';
+import httpClient from '../clients/httpClient';
 import {
   RegisterPayload,
   LoginPayload,
