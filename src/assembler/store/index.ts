@@ -16,7 +16,7 @@ const persistConfig = {
   key: 'root',
   version: 1,
   storage: AsyncStorage,
-  whitelist: ['auth'], // Solo persistimos el estado de autenticación
+  whitelist: ['auth'], 
 };
 
 const rootReducer = combineReducers({
