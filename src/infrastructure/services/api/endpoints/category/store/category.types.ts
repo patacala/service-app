@@ -1,10 +1,8 @@
 // Interfaces para Category
 export interface Category {
   id: string;
-  name_es: string;
-  name_en: string;
-  slug_es: string;
-  slug_en: string;
+  name: string;
+  slug: string;
   parent_id?: string;
   parent?: Category;
   children?: Category[];
@@ -21,9 +19,14 @@ export interface UserCategory {
 // Response types
 export interface CategoriesResponse {
   categories: Category[];
-  total?: number;
-  page?: number;
-  limit?: number;
+  pagination: {
+    page: number;
+    limit: number;
+    total: number;
+    totalPages: number;
+    hasNext: boolean;
+    hasPrev: boolean;
+  };
 }
 
 export interface CategoryResponse {
