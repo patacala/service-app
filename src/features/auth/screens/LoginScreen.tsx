@@ -96,7 +96,7 @@ export const LoginScreen = () => {
     }
   };
 
-  // CAMBIO: Función de Login con Teléfono actualizada para el SDK Web
+  // Función de Login con Teléfono actualizada para el SDK Web
   const handleLoginWithPhone = async () => {
     if (!validateForm()) return;
     setLoading(true);

@@ -121,7 +121,8 @@ export const RegisterCompletionScreen = () => {
         ...formData,
         /* phoneNumber: fullPhoneNumber */
       });
-      navigation.navigate('Main');
+
+     /*  navigation.navigate('Main'); */
       Toast.show({
         type: 'success',
         text1: 'Success!',
@@ -153,30 +154,6 @@ export const RegisterCompletionScreen = () => {
       onSecondaryButtonPress={allowGoBack ? handleGoBack : undefined}
       primaryButtonDisabled={isSubmitting}
     >
-      {/* <Box gap='md' marginBottom='sm'>
-        <Row justify='space-between'>
-          <Box style={styles.prefix} padding="md">
-            <Typography variant="bodyRegular" colorVariant="secondary">+57</Typography>
-          </Box>
-          <Input
-            label={t('signupCompletion.number')}
-            placeholder={t('signupCompletion.text-input-number')}
-            keyboardType="numeric"
-            value={formData.phoneNumber}
-            onChangeText={(value) => handleInputChange('phoneNumber', value.replace(/[^0-9]/g, '').slice(0, 10))}
-            error={errors.phoneNumber}
-            style={{ width: 250 }}
-          />
-        </Row>
-        <Input
-          label={t('signupCompletion.city')}
-          placeholder={t('signupCompletion.text-input-city')}
-          value={formData.city}
-          onChangeText={(value) => handleInputChange('city', value)}
-          error={errors.city}
-        />
-      </Box> */}
-      
       <Box>
         <Typography variant="bodyRegular" colorVariant="secondary">Services you're interested in:</Typography>
         <GroupChipSelector

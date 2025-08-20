@@ -1,7 +1,6 @@
 // Request
 export interface LoginRequest {
-  email: string;
-  password: string;
+  firebaseToken: string;
 }
 
 export interface RegisterRequest {
@@ -13,9 +12,10 @@ export interface RegisterRequest {
 // Response
 export interface AuthUser {
   id: string;
+  displayName: string;
   email: string;
-  name: string;
-  role: 'PUBLISHER' | 'SEEKER';
+  role: string;
+  isNewUser: boolean;
 }
 
 export interface AuthResponse {
