@@ -1,8 +1,8 @@
 import React, { useEffect, useRef, useState } from 'react';
 import Constants from 'expo-constants';
+import Toast from 'react-native-toast-message';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { useTranslation } from 'react-i18next';
-import Toast from 'react-native-toast-message';
 import { ConfirmationResult, signInWithPhoneNumber } from 'firebase/auth';
 import { auth } from '@/infrastructure/config/firebase';
 import { FirebaseRecaptchaVerifierModal } from 'expo-firebase-recaptcha';
@@ -10,9 +10,9 @@ import { Box, SendCode, Otp } from '@/design-system';
 import { AuthenticationCard } from '../components/AuthenticationCard/AuthenticationCard';
 import { AuthStackNavigationProp } from '@/assembler/navigation/types';
 import { OtpRef } from '@/design-system/components/forms/Otp/types';
-import { SessionManager } from '@/infrastructure/session';
 import { getOtpConfirmationResult } from '@/infrastructure/auth/otpResultManager';
-import { firebaseLogin } from '@/infrastructure/services/api';
+import { useAuth } from '@/infrastructure/auth/AuthContext';
+import { useLoginMutation } from '../store';
 
 interface OtpScreenRouteParams {
   confirmationResult: ConfirmationResult;
@@ -31,6 +31,9 @@ export const OtpScreen = () => {
 
   const otpRef = useRef<OtpRef>(null);
   const recaptchaVerifier = useRef<FirebaseRecaptchaVerifierModal>(null);
+
+  const { login } = useAuth();
+  const [loginWithFirebase] = useLoginMutation();
 
   useEffect(() => {
     otpRef.current?.clear();
@@ -69,7 +72,6 @@ export const OtpScreen = () => {
         text1: 'Error de Sesión',
         text2: 'No se encontró la confirmación. Por favor, vuelve a intentarlo.',
       });
-      setIsSubmitting(false);
       return;
     }
 
@@ -77,7 +79,7 @@ export const OtpScreen = () => {
       Toast.show({
         type: 'error',
         text1: 'Código inválido',
-        text2: 'Por favor, ingresa el código completo.'
+        text2: 'Por favor, ingresa el código completo.',
       });
       return;
     }
@@ -86,54 +88,43 @@ export const OtpScreen = () => {
 
     try {
       const credential = await confirmation.confirm(code);
-      const token = await credential.user.getIdToken();
+      const firebaseToken = await credential.user.getIdToken();
 
-      const session = SessionManager.getInstance();
-      await session.setSession(token, null);
+      // Colocamos el token de firebase
+      await login(firebaseToken, null);
 
-      const response = await firebaseLogin({firebaseToken: token});
-      const { token: tk, user } = response.data;
-      
-      if (user) {
-        await session.setSession(tk, user);
+      const { user, token } = await loginWithFirebase({ firebaseToken }).unwrap();
 
-        if (user.isNewUser) {
-          navigation.navigate('Register', {
-            name: "",
-            email: "",
-            phonenumber: phoneNumber
-          });
-        } else {
-          Toast.show({
-            type: 'success',
-            text1: 'Verificación exitosa',
-            text2: '¡Bienvenido de nuevo!'
-          });
-        }
+      // Colocamos el token del backend
+      await login(token, user);
+
+      if (user.isNewUser) {
+        navigation.navigate('Register', {
+          name: "",
+          email: "",
+          phonenumber: phoneNumber,
+        });
+
+        Toast.show({
+          type: 'success',
+          text1: 'Verificación exitosa',
+          text2: 'Empecemos',
+        });
       } else {
         Toast.show({
-          type: 'error',
-          text1: 'Error de autenticación',
-          text2: 'No se pudo obtener la información del usuario.'
+          type: 'success',
+          text1: 'Verificación exitosa',
+          text2: '¡Bienvenido de nuevo!',
         });
-        await session.clearSession();
-      }     
-    } catch (error: any) {
-      console.error('OTP verification error:', error);
-      let errorMessage = 'Ocurrió un error inesperado.';
-      
-      if (error.code === 'auth/invalid-verification-code') {
-        errorMessage = 'El código de verificación es incorrecto.';
-      } else if (error.code === 'auth/code-expired') {
-        errorMessage = 'El código ha expirado. Por favor, solicita uno nuevo.';
-      } else if (error.code === 'auth/session-expired') {
-        errorMessage = 'La sesión ha expirado. Por favor, inténtalo de nuevo.';
       }
+
+    } catch (error: any) {
+      console.error('OTP verification error:', error.data.message);
 
       Toast.show({
         type: 'error',
         text1: 'Error al verificar',
-        text2: errorMessage,
+        text2: error.data.message ?? 'Ocurrió un error inesperado.',
       });
     } finally {
       setIsSubmitting(false);
