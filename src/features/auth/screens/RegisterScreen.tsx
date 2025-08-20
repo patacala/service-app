@@ -1,15 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { Box, Input, theme, Typography } from '@/design-system';
 import { RouteProp, useNavigation, useRoute } from '@react-navigation/native';
-import { AuthStackNavigationProp, AuthStackParamList, MainStackParamList } from '@/assembler/navigation/types';
+import { AuthStackNavigationProp, AuthStackParamList } from '@/assembler/navigation/types';
 import { useTranslation } from 'react-i18next';
 import { AuthenticationCard } from '../components/AuthenticationCard/AuthenticationCard';
 import { useDataManager } from '@/infrastructure/dataManager/DataManager';
-import { register } from '@/infrastructure/services/api/endpoints/auth.api';
 import { RegisterPayload } from '@/infrastructure/services/api/types/auth.types';
-import Toast from 'react-native-toast-message';
 import { Row } from '@/design-system/components/layout/Row/Row';
 import { getLoginStyles } from './login/login.style';
+import Toast from 'react-native-toast-message';
 
 interface RegisterFormData extends RegisterPayload {
   name: string;

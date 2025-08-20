@@ -1,8 +1,4 @@
 // Request
-export interface LoginRequest {
-  firebaseToken: string;
-}
-
 export interface RegisterRequest {
   email: string;
   password: string;

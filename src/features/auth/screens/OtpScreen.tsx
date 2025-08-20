@@ -93,7 +93,7 @@ export const OtpScreen = () => {
       // Colocamos el token de firebase
       await login(firebaseToken, null);
 
-      const { user, token } = await loginWithFirebase({ firebaseToken }).unwrap();
+      const { user, token } = await loginWithFirebase().unwrap();
 
       // Colocamos el token del backend
       await login(token, user);

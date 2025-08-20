@@ -1,49 +1,41 @@
 import React, { useState, useEffect } from 'react';
-import { Box, Typography, Input, GroupChipSelector, theme } from '@/design-system';
+import { Box, Typography, GroupChipSelector } from '@/design-system';
 import { useNavigation } from '@react-navigation/native';
 import { AuthStackNavigationProp } from '@/assembler/navigation/types';
 import { useTranslation } from 'react-i18next';
 import { AuthenticationCard } from '../components/AuthenticationCard/AuthenticationCard';
-import { Row } from '@/design-system/components/layout/Row/Row';
-import { getRegisterCompletionStyles } from './registerCompetion/registerCompletion.style';
 import { useDataManager } from '@/infrastructure/dataManager/DataManager';
-import { getAllServiceTags } from '@/infrastructure/services/api/endpoints/servicetags.api';
 import Toast from 'react-native-toast-message';
+import { useGetCategoriesQuery } from '@/infrastructure/services/api/endpoints/category/store';
 
 interface CompletionFormData {
   phoneNumber: string;
   city: string;
-  selectedServices: string[];
+  email: string;
+  phone: string;
+  selectedCategories: string[];
 }
 
-interface FormErrors {
-  phoneNumber: string;
-  city: string;
-}
-
-interface ServicetagOption {
-  id: number;
+interface CategoryTagOption {
+  id: string;
   name: string;
 }
 
 export const RegisterCompletionScreen = () => {
   const navigation = useNavigation<AuthStackNavigationProp>();
-  const styles = getRegisterCompletionStyles(theme);
   const { t } = useTranslation('auth');
   const { getData, setData, removeData } = useDataManager();
+  const { data: categoriesData, isLoading: isCategoriesLoading, error: categoriesError } = useGetCategoriesQuery();
 
   const [formData, setFormData] = useState<CompletionFormData>({
     phoneNumber: '',
     city: '',
-    selectedServices: []
+    email: '',
+    phone: '',
+    selectedCategories: []
   });
 
-  const [errors, setErrors] = useState<FormErrors>({
-    phoneNumber: '',
-    city: ''
-  });
-
-  const [tagOptions, setTagOptions] = useState<ServicetagOption[]>([]);
+  const [tagOptions, setTagOptions] = useState<CategoryTagOption[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [allowGoBack, setAllowGoBack] = useState(false);
 
@@ -55,45 +47,34 @@ export const RegisterCompletionScreen = () => {
 
         if (savedFormData) setFormData(savedFormData);
         if (!basicRegisterData) setAllowGoBack(true);
-
-        const data = await getAllServiceTags();
-        setTagOptions(data.map((tag: any) => ({
-          id: tag.id,
-          name: tag.name
-        })));
       } catch (error) {
-        console.error('Error cargando datos del formulario o servicetags:', error);
+        console.error('Error cargando datos del formulario:', error);
       }
     };
 
     loadData();
   }, []);
 
-  const validateForm = () => {
-    let isValid = true;
-    const newErrors: FormErrors = { ...errors };
-
-    const phoneRegex = /^\d{10}$/;
-    if (!formData.phoneNumber.trim()) {
-      newErrors.phoneNumber = t('signupCompletion.number-required');
-      isValid = false;
-    } else if (!phoneRegex.test(formData.phoneNumber)) {
-      newErrors.phoneNumber = t('signupCompletion.number-invalid');
-      isValid = false;
-    } else {
-      newErrors.phoneNumber = '';
+  // Procesar categorías cuando lleguen del API
+  useEffect(() => {
+    if (categoriesData?.categories) {
+      setTagOptions(categoriesData.categories.map((category) => ({
+        id: category.id,
+        name: category.name_es
+      })));
     }
+  }, [categoriesData]);
 
-    if (!formData.city.trim()) {
-      newErrors.city = t('signupCompletion.city-required');
-      isValid = false;
-    } else {
-      newErrors.city = '';
+  useEffect(() => {
+    if (categoriesError) {
+      console.error('Error cargando categorías:', categoriesError);
+      Toast.show({
+        type: 'error',
+        text1: 'Error',
+        text2: 'No se pudieron cargar las categorías.',
+      });
     }
-
-    setErrors(newErrors);
-    return isValid;
-  };
+  }, [categoriesError]);
 
   const handleInputChange = (field: keyof CompletionFormData, value: string | string[]) => {
     const updatedFormData = {
@@ -102,31 +83,21 @@ export const RegisterCompletionScreen = () => {
     };
     setFormData(updatedFormData);
     setData('registerCompletionForm', updatedFormData);
-
-    if (errors[field as keyof FormErrors]) {
-      setErrors(prevErrors => ({
-        ...prevErrors,
-        [field]: ''
-      }));
-    }
   };
 
   const handleRegisterCompletion = async () => {
-    /* if (!validateForm()) return; */
     setIsSubmitting(true);
 
     try {
-      /* const fullPhoneNumber = `+57${formData.phoneNumber}`; */
       await setData('registerCompletionForm', {
         ...formData,
-        /* phoneNumber: fullPhoneNumber */
       });
 
      /*  navigation.navigate('Main'); */
       Toast.show({
         type: 'success',
         text1: 'Success!',
-        text2: 'You have successfully signed in with Google.',
+        text2: 'You have successfully',
       });
     } catch (error: any) {
       Toast.show({
@@ -155,16 +126,25 @@ export const RegisterCompletionScreen = () => {
       primaryButtonDisabled={isSubmitting}
     >
       <Box>
-        <Typography variant="bodyRegular" colorVariant="secondary">Services you're interested in:</Typography>
-        <GroupChipSelector
-          multiSelect
-          onChange={(selectedIds) => handleInputChange('selectedServices', selectedIds)}
-          options={tagOptions.map(tag => ({
-            id: tag.id.toString(),
-            label: tag.name
-          }))}
-          selectedIds={formData.selectedServices}
-        />
+        <Typography variant="bodyRegular" colorVariant="secondary">
+          Services you're interested in:
+        </Typography>
+        
+        {isCategoriesLoading ? (
+          <Typography variant="bodyRegular" colorVariant="secondary">
+            {t('common.loading', 'Cargando...')}
+          </Typography>
+        ) : (
+          <GroupChipSelector
+            multiSelect
+            onChange={(selectedIds) => handleInputChange('selectedCategories', selectedIds)}
+            options={tagOptions.map(tag => ({
+              id: tag.id,
+              label: tag.name
+            }))}
+            selectedIds={formData.selectedCategories}
+          />
+        )}
       </Box>
       
     </AuthenticationCard>
