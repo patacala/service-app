@@ -1,9 +1,9 @@
 import { apiSlice } from '@/store/api/apiSlice';
-import type { LoginRequest, RegisterRequest, AuthResponse, AuthUser } from './auth.types';
+import type { RegisterRequest, AuthResponse, AuthUser } from './auth.types';
 
 export const authApi = apiSlice.injectEndpoints({
   endpoints: (builder) => ({
-    login: builder.mutation<AuthResponse, LoginRequest>({
+    login: builder.mutation<AuthResponse, void>({
       query: (credentials) => ({
         url: '/auth/login',
         method: 'POST',
