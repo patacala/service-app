@@ -25,9 +25,9 @@ export const RegisterCompletionScreen = () => {
   const navigation = useNavigation<AuthStackNavigationProp>();
   const { t } = useTranslation('auth');
   const { getData, setData, removeData } = useDataManager();
-  const { data: categoriesData, isLoading: isCategoriesLoading, error: categoriesError } = useGetCategoriesQuery();
+  const { data: categoriesData, isLoading: isCategoriesLoading, error: categoriesError } = useGetCategoriesQuery({language: 'en'});
 
-  const [formData, setFormData] = useState<CompletionFormData>({
+  const [completionFormData, setCompletionFormData] = useState<CompletionFormData>({
     phoneNumber: '',
     city: '',
     email: '',
@@ -40,27 +40,37 @@ export const RegisterCompletionScreen = () => {
   const [allowGoBack, setAllowGoBack] = useState(false);
 
   useEffect(() => {
-    const loadData = async () => {
+    const loadAndMergeData = async () => {
       try {
         const savedFormData = await getData('registerCompletionForm');
         const basicRegisterData = await getData('registerForm');
 
-        if (savedFormData) setFormData(savedFormData);
+        let mergedData = { ...savedFormData, ...basicRegisterData };
+
+        if (mergedData) {
+          setCompletionFormData({
+            ...mergedData,
+            selectedCategories: Array.isArray(mergedData.selectedCategories)
+              ? mergedData.selectedCategories
+              : [],
+          });
+        }
         if (!basicRegisterData) setAllowGoBack(true);
+
       } catch (error) {
-        console.error('Error cargando datos del formulario:', error);
+        console.error('Error cargando y combinando datos del formulario:', error);
       }
     };
 
-    loadData();
+    loadAndMergeData();
   }, []);
 
   // Procesar categorías cuando lleguen del API
   useEffect(() => {
-    if (categoriesData?.categories) {
+    if (categoriesData?.categories && Array.isArray(categoriesData.categories)) {
       setTagOptions(categoriesData.categories.map((category) => ({
         id: category.id,
-        name: category.name_es
+        name: category.name
       })));
     }
   }, [categoriesData]);
@@ -78,10 +88,10 @@ export const RegisterCompletionScreen = () => {
 
   const handleInputChange = (field: keyof CompletionFormData, value: string | string[]) => {
     const updatedFormData = {
-      ...formData,
-      [field]: value
+      ...completionFormData,
+      [field]: field === 'selectedCategories' && Array.isArray(value) ? value : value
     };
-    setFormData(updatedFormData);
+    setCompletionFormData(updatedFormData);
     setData('registerCompletionForm', updatedFormData);
   };
 
@@ -90,8 +100,11 @@ export const RegisterCompletionScreen = () => {
 
     try {
       await setData('registerCompletionForm', {
-        ...formData,
+        ...completionFormData,
       });
+
+      const savedFormData = await getData('registerCompletionForm');
+      console.log(savedFormData);
 
      /*  navigation.navigate('Main'); */
       Toast.show({
@@ -137,12 +150,12 @@ export const RegisterCompletionScreen = () => {
         ) : (
           <GroupChipSelector
             multiSelect
-            onChange={(selectedIds) => handleInputChange('selectedCategories', selectedIds)}
+            onChange={(selectedIds) => handleInputChange('selectedCategories', selectedIds || [])}
             options={tagOptions.map(tag => ({
               id: tag.id,
               label: tag.name
             }))}
-            selectedIds={formData.selectedCategories}
+            selectedIds={completionFormData.selectedCategories || []}
           />
         )}
       </Box>
