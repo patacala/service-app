@@ -27,7 +27,7 @@ export const RegisterCompletionScreen = () => {
   const { t } = useTranslation('auth');
   const { getData, setData, removeData } = useDataManager();
   const { data: categoriesData, isLoading: isCategoriesLoading, error: categoriesError } = useGetCategoriesQuery({language: 'en'});
-  const { user: userData, updateUser } = useAuth();
+  const { user: userData, userUpdate, userProfile } = useAuth();
 
   const [completionFormData, setCompletionFormData] = useState<CompletionFormData>({
     city: '',
@@ -109,16 +109,15 @@ export const RegisterCompletionScreen = () => {
       };
 
       const {message, profile, user} = await registerProfile(registerRequest).unwrap();
-      await updateUser(user);
-
+      await userUpdate(user);
+      await userProfile(profile);
+      
       Toast.show({
         type: 'success',
         text1: 'Success!',
         text2: message ?? 'You have successfully',
       });
     } catch (error: any) {
-      console.log(error);
-
       Toast.show({
         type: 'error',
         text1: 'Error saving data.',

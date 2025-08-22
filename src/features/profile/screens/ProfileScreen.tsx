@@ -38,9 +38,7 @@ import { DetailInfo } from '@/features/provMode/components/DetailInfo';
 import { DetailService } from '@/features/provMode/components/DetailService';
 import { ProviderForm } from '@/features/provMode/components/ProviderForm';
 import { SessionManager } from '@/infrastructure/session';
-import { useNavigation } from 'expo-router';
 /* import { GoogleSignin } from '@react-native-google-signin/google-signin'; */
-import { RootStackNavigationProp } from '@/assembler/navigation/types';
 import { useAuth } from '@/infrastructure/auth/AuthContext';
 
 // Interfaces
@@ -105,7 +103,7 @@ export const ProfileScreen = () => {
   const dispatch = useDispatch();
   const { t } = useTranslation('auth');
   const theme = useTheme<Theme>();
-  const navigation = useNavigation<RootStackNavigationProp>();
+  const { profile: userProfile } = useAuth();
 
   const { data: profile, isLoading } = useSelector(
     (state: RootState) => state.profile
@@ -161,28 +159,30 @@ export const ProfileScreen = () => {
     resolver: zodResolver(profileSchema),
     mode: 'onChange',
     defaultValues: {
-      name: '',
-      email: '',
-      phone: '',
-      city: '',
-      address: '',
+      name: userProfile?.name,
+      email: userProfile?.email,
+      phone: userProfile?.phone,
+      city: userProfile?.location_city,
+      address: userProfile?.address,
     }
   });
 
-  useEffect(() => {
+  /* useEffect(() => {
     dispatch(fetchProfileStart());
-  }, [dispatch]);
+  }, [dispatch]); */
 
   useEffect(() => {
-    if (profile) {
+    console.log(userProfile);
+    
+    if (userProfile) {
       reset({
-        name: profile.name || '',
-        email: profile.contactInfo?.email || '',
-        phone: profile.contactInfo?.phone || '',
-        city: profile.city || '',
-        address: profile.address || '',
+        name: userProfile?.name,
+        email: userProfile?.email,
+        phone: userProfile?.phone,
+        city: userProfile?.location_city,
+        address: userProfile?.address,
       });
-      setProfileImage(profile.avatar || null);
+      /* setProfileImage(profile.avatar || null); */
     }
   }, [profile, reset]);
 
