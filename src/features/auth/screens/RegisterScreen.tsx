@@ -11,7 +11,6 @@ import { getLoginStyles } from './login/login.style';
 import Toast from 'react-native-toast-message';
 
 interface RegisterFormData extends RegisterPayload {
-  userId: string;
   name: string;
   city: string;
   email: string;
@@ -30,11 +29,10 @@ export const RegisterScreen = () => {
   const { t } = useTranslation('auth');
   const { getData, setData, removeData } = useDataManager();
   const route = useRoute<RouteProp<AuthStackParamList, 'Register'>>();
-  const { userId, name, email, phonenumber } = route.params || {};
+  const { name, email, phonenumber } = route.params || {};
   const styles = getLoginStyles(theme);
 
   const [RegisterFormData, setRegisterFormData] = useState<RegisterFormData>({
-    userId: userId,
     name: name || '',
     city: '',
     email: email || '',
@@ -127,7 +125,6 @@ export const RegisterScreen = () => {
 
     try {
       const payload: RegisterPayload = {
-        userId: RegisterFormData.userId,
         name: RegisterFormData.name,
         city: RegisterFormData.city,
         email: RegisterFormData.email,

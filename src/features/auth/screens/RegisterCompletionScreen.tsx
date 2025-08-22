@@ -11,7 +11,6 @@ import { useRegisterMutation } from '../store';
 import { useAuth } from '@/infrastructure/auth/AuthContext';
 
 interface CompletionFormData {
-  userId: string;
   city: string;
   email: string;
   phone: string;
@@ -28,10 +27,9 @@ export const RegisterCompletionScreen = () => {
   const { t } = useTranslation('auth');
   const { getData, setData, removeData } = useDataManager();
   const { data: categoriesData, isLoading: isCategoriesLoading, error: categoriesError } = useGetCategoriesQuery({language: 'en'});
-  const { updateUser } = useAuth();
+  const { user: userData, updateUser } = useAuth();
 
   const [completionFormData, setCompletionFormData] = useState<CompletionFormData>({
-    userId: '',
     city: '',
     email: '',
     phone: '',
@@ -104,9 +102,16 @@ export const RegisterCompletionScreen = () => {
         ...completionFormData,
       });
 
-      const savedFormData = await getData('registerCompletionForm');
+      console.log(userData);
 
-      const {message, profile, user} = await registerProfile(savedFormData).unwrap();
+      const savedFormData = await getData('registerCompletionForm');
+      const registerRequest = {
+        ...savedFormData,
+        userId: userData?.id
+      };
+      console.log(registerRequest);
+
+      const {message, profile, user} = await registerProfile(registerRequest).unwrap();
       console.log(user);
       await updateUser(user);
 
@@ -117,7 +122,7 @@ export const RegisterCompletionScreen = () => {
       });
     } catch (error: any) {
       console.log(error);
-      
+
       Toast.show({
         type: 'error',
         text1: 'Error saving data.',
