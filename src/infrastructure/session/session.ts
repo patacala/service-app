@@ -57,4 +57,13 @@ export class SessionManager {
   isAuthenticated(): boolean {
     return !!this._token;
   }
+
+  async updateUser(user: BackendUser | null): Promise<void> {
+    this._user = user;
+    if (user) {
+      await setUserData(user);
+    } else {
+      await removeUserData(); 
+    }
+  }
 }

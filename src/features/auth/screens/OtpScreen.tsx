@@ -34,7 +34,7 @@ export const OtpScreen = () => {
 
   const { login } = useAuth();
   const [loginWithFirebase] = useLoginMutation();
-
+  
   useEffect(() => {
     otpRef.current?.clear();
     otpRef.current?.focusFirst();
@@ -97,9 +97,10 @@ export const OtpScreen = () => {
 
       // Colocamos el token del backend
       await login(token, user);
-
+      
       if (user.isNewUser) {
         navigation.navigate('Register', {
+          userId: user.id,
           name: "",
           email: "",
           phonenumber: phoneNumber,
@@ -119,7 +120,8 @@ export const OtpScreen = () => {
       }
 
     } catch (error: any) {
-      console.error('OTP verification error:', error.data.message);
+      console.log(error);
+      console.error('OTP verification error:', error.data.message ?? error.data);
 
       Toast.show({
         type: 'error',

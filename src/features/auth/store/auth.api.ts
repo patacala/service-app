@@ -1,5 +1,5 @@
 import { apiSlice } from '@/store/api/apiSlice';
-import type { RegisterRequest, AuthResponse, AuthUser } from './auth.types';
+import type { RegisterRequest, AuthResponse, AuthUser, RegisterResponse } from './auth.types';
 
 export const authApi = apiSlice.injectEndpoints({
   endpoints: (builder) => ({
@@ -10,7 +10,7 @@ export const authApi = apiSlice.injectEndpoints({
         data: credentials,
       }),
     }),
-    register: builder.mutation<AuthResponse, RegisterRequest>({
+    register: builder.mutation<RegisterResponse, RegisterRequest>({
       query: (userData) => ({
         url: '/auth/register',
         method: 'POST',
