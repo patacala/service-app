@@ -100,7 +100,6 @@ export const OtpScreen = () => {
       
       if (user.isNewUser) {
         navigation.navigate('Register', {
-          userId: user.id,
           name: "",
           email: "",
           phonenumber: phoneNumber,
