@@ -23,6 +23,13 @@ export const authApi = apiSlice.injectEndpoints({
         method: 'GET',
       }),
     }),
+    updateProfile: builder.mutation<AuthUser, Partial<AuthUser>>({
+      query: (userData) => ({
+        url: '/auth/profile',
+        method: 'PATCH',
+        data: userData,
+      }),
+    }),
   }),
 });
 

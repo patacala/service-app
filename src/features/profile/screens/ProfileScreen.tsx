@@ -150,10 +150,26 @@ export const ProfileScreen = () => {
     pricePerHour: 62
   });
 
+  const getPhoneDetail = (phoneNumber: string) => {
+      if (typeof phoneNumber !== 'string' || phoneNumber.trim() === '') {
+          return null;
+      }
+
+      const cleanNumber = phoneNumber.replace(/\s+/g, '');
+      const regex = /^\+1(\d{10})$/;
+      const match = cleanNumber.match(regex);
+
+      if (match) {
+          const number = match[1];
+          return { prefix: '+1', number };
+      }
+
+      return null;
+  };
+
   const {
     control,
     handleSubmit,
-    reset,
     formState: { errors, isValid, isDirty }
   } = useForm<ProfileFormData>({
     resolver: zodResolver(profileSchema),
@@ -161,7 +177,7 @@ export const ProfileScreen = () => {
     defaultValues: {
       name: userProfile?.name,
       email: userProfile?.email,
-      phone: userProfile?.phone,
+      phone: getPhoneDetail(userProfile?.phone ?? '')?.number,
       city: userProfile?.location_city,
       address: userProfile?.address,
     }
