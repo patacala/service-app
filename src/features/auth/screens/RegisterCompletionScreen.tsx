@@ -102,17 +102,13 @@ export const RegisterCompletionScreen = () => {
         ...completionFormData,
       });
 
-      console.log(userData);
-
       const savedFormData = await getData('registerCompletionForm');
       const registerRequest = {
         ...savedFormData,
         userId: userData?.id
       };
-      console.log(registerRequest);
 
       const {message, profile, user} = await registerProfile(registerRequest).unwrap();
-      console.log(user);
       await updateUser(user);
 
       Toast.show({
