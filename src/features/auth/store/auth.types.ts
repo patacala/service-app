@@ -11,8 +11,16 @@ export interface RegisterRequest {
 // Response
 export interface RegisterResponse {
   message: string;
-  profile: string;
+  profile: Profile;
   user: AuthUser;
+}
+
+interface Profile {
+  name: string;
+  email: string;
+  phone: string;
+  location_city: string;
+  address: string;
 }
 
 // Response

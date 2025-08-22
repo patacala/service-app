@@ -1,7 +1,6 @@
 import React, { createContext, useEffect, useState, ReactNode, useContext } from 'react';
 import { SessionManager } from '@/infrastructure/session';
 
-// 1. Definimos el tipo del usuario que esperamos de tu backend
 interface BackendUser {
   id: string;
   displayName: string;
@@ -10,13 +9,23 @@ interface BackendUser {
   isNewUser: boolean;
 }
 
+interface Profile {
+  name: string;
+  email: string;
+  phone: string;
+  location_city: string;
+  address: string;
+}
+
 // 2. Definimos el tipo del contexto, describiendo qué valores y funciones estarán disponibles
 type AuthContextType = {
-  user: BackendUser | null;           // Usuario autenticado (datos de tu backend)
+  user: BackendUser | null;           // Usuario autenticado (datos del backend)
   loading: boolean;                   // Indica si el contexto está cargando/inicializando la sesión
-  token: string | null;               // Token JWT del usuario (obtenido de tu backend)
+  token: string | null;               // Token JWT del usuario (obtenido del backend)
+  profile: Profile | null;           // Perfil del usuario (obtenido del backend)
   login: (backendToken: string, userData: BackendUser | null) => Promise<void>;
-  updateUser: (userData: BackendUser | null) => Promise<void>;
+  userProfile: (profile: Profile | null) => Promise<void>;
+  userUpdate: (userData: BackendUser | null) => Promise<void>;
   logout: () => Promise<void>;        // Función que permite cerrar sesión
 };
 
@@ -25,8 +34,10 @@ export const AuthContext = createContext<AuthContextType>({
   user: null,
   loading: true, // Inicialmente en true mientras SessionManager se inicializa
   token: null,
+  profile: null,
   login: async () => {},
-  updateUser: async () => {},
+  userProfile: async () => {},
+  userUpdate: async () => {},
   logout: async () => {},
 });
 
@@ -34,8 +45,9 @@ export const AuthContext = createContext<AuthContextType>({
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   // Ahora, el estado de AuthContext refleja el estado de SessionManager
   const [loading, setLoading] = useState(true);
-  const [sessionUser, setSessionUser] = useState<BackendUser | null>(null);
   const [sessionToken, setSessionToken] = useState<string | null>(null);
+  const [sessionUser, setSessionUser] = useState<BackendUser | null>(null);
+  const [sessionProfile, setSessionProfile] = useState<Profile | null>(null);
 
   // Instancia del SessionManager
   const sessionManager = SessionManager.getInstance();
@@ -47,7 +59,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     setSessionUser(sessionManager.user);
   };
 
-  const updateUser = async (userData: BackendUser | null) => {
+  const userProfile = async (profile: Profile | null) => {
+    await sessionManager.updateUserProfile(profile);
+    setSessionProfile(sessionManager.profile);
+  };
+
+  const userUpdate = async (userData: BackendUser | null) => {
     await sessionManager.updateUser(userData);
     setSessionUser(sessionManager.user);
   };
@@ -57,6 +74,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     await sessionManager.clearSession();
     setSessionToken(null);
     setSessionUser(null);
+    setSessionProfile(null);
   };
 
   // Efecto para inicializar el SessionManager al montar el componente
@@ -69,6 +87,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         // Actualiza el estado del contexto con los valores del SessionManager
         setSessionToken(sessionManager.token);
         setSessionUser(sessionManager.user);
+        setSessionProfile(sessionManager.profile);
       } catch (error) {
         console.error('Error al inicializar SessionManager:', error);
         await logout();
@@ -86,8 +105,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       user: sessionUser,
       loading,
       token: sessionToken,
+      profile: sessionProfile,
       login,
-      updateUser,
+      userProfile,
+      userUpdate,
       logout
     }}>
       {children}

@@ -3,6 +3,7 @@ import * as SecureStore from 'expo-secure-store';
 export const StorageKeys = {
   AUTH_TOKEN: 'appauthtoken', 
   USER_DATA: 'appuserdata',
+  USER_PROFILE: 'appuserprofile'
 } as const;
 
 export const setAuthToken = async (token: string): Promise<void> => {
@@ -28,3 +29,17 @@ export const getUserData = async (): Promise<any | null> => {
 export const removeUserData = async (): Promise<void> => {
   await SecureStore.deleteItemAsync(StorageKeys.USER_DATA);
 };
+
+export const getUserProfile = async (): Promise<any | null> => {
+  const data = await SecureStore.getItemAsync(StorageKeys.USER_PROFILE);
+  return data ? JSON.parse(data) : null;
+};
+
+export const setUserProfile = async (profile: any): Promise<void> => {
+  await SecureStore.setItemAsync(StorageKeys.USER_PROFILE, JSON.stringify(profile));
+};
+
+export const removeUserProfile = async (): Promise<void> => {
+  await SecureStore.deleteItemAsync(StorageKeys.USER_PROFILE);
+};
+
