@@ -7,9 +7,11 @@ import { AuthenticationCard } from '../components/AuthenticationCard/Authenticat
 import { useDataManager } from '@/infrastructure/dataManager/DataManager';
 import Toast from 'react-native-toast-message';
 import { useGetCategoriesQuery } from '@/infrastructure/services/api/endpoints/category/store';
+import { useRegisterMutation } from '../store';
+import { useAuth } from '@/infrastructure/auth/AuthContext';
 
 interface CompletionFormData {
-  phoneNumber: string;
+  userId: string;
   city: string;
   email: string;
   phone: string;
@@ -26,9 +28,10 @@ export const RegisterCompletionScreen = () => {
   const { t } = useTranslation('auth');
   const { getData, setData, removeData } = useDataManager();
   const { data: categoriesData, isLoading: isCategoriesLoading, error: categoriesError } = useGetCategoriesQuery({language: 'en'});
+  const { updateUser } = useAuth();
 
   const [completionFormData, setCompletionFormData] = useState<CompletionFormData>({
-    phoneNumber: '',
+    userId: '',
     city: '',
     email: '',
     phone: '',
@@ -37,7 +40,7 @@ export const RegisterCompletionScreen = () => {
 
   const [tagOptions, setTagOptions] = useState<CategoryTagOption[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [allowGoBack, setAllowGoBack] = useState(false);
+  const [registerProfile] = useRegisterMutation();
 
   useEffect(() => {
     const loadAndMergeData = async () => {
@@ -55,8 +58,6 @@ export const RegisterCompletionScreen = () => {
               : [],
           });
         }
-        if (!basicRegisterData) setAllowGoBack(true);
-
       } catch (error) {
         console.error('Error cargando y combinando datos del formulario:', error);
       }
@@ -104,15 +105,19 @@ export const RegisterCompletionScreen = () => {
       });
 
       const savedFormData = await getData('registerCompletionForm');
-      console.log(savedFormData);
 
-     /*  navigation.navigate('Main'); */
+      const {message, profile, user} = await registerProfile(savedFormData).unwrap();
+      console.log(user);
+      await updateUser(user);
+
       Toast.show({
         type: 'success',
         text1: 'Success!',
-        text2: 'You have successfully',
+        text2: message ?? 'You have successfully',
       });
     } catch (error: any) {
+      console.log(error);
+      
       Toast.show({
         type: 'error',
         text1: 'Error saving data.',
@@ -135,7 +140,7 @@ export const RegisterCompletionScreen = () => {
       currentStep={2}
       subtitle={t('signupCompletion.sub-title')}
       onPrimaryButtonPress={handleRegisterCompletion}
-      onSecondaryButtonPress={allowGoBack ? handleGoBack : undefined}
+      onSecondaryButtonPress={handleGoBack}
       primaryButtonDisabled={isSubmitting}
     >
       <Box>

@@ -16,6 +16,7 @@ type AuthContextType = {
   loading: boolean;                   // Indica si el contexto está cargando/inicializando la sesión
   token: string | null;               // Token JWT del usuario (obtenido de tu backend)
   login: (backendToken: string, userData: BackendUser | null) => Promise<void>;
+  updateUser: (userData: BackendUser | null) => Promise<void>;
   logout: () => Promise<void>;        // Función que permite cerrar sesión
 };
 
@@ -24,8 +25,9 @@ export const AuthContext = createContext<AuthContextType>({
   user: null,
   loading: true, // Inicialmente en true mientras SessionManager se inicializa
   token: null,
-  login: async () => {}, // Función vacía por defecto
-  logout: async () => {}, // Función vacía por defecto
+  login: async () => {},
+  updateUser: async () => {},
+  logout: async () => {},
 });
 
 // 4. Componente proveedor que envolverá la aplicación y compartirá el contexto
@@ -42,6 +44,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const login = async (backendToken: string, userData: BackendUser | null) => {
     await sessionManager.setSession(backendToken, userData);
     setSessionToken(sessionManager.token);
+    setSessionUser(sessionManager.user);
+  };
+
+  const updateUser = async (userData: BackendUser | null) => {
+    await sessionManager.updateUser(userData);
     setSessionUser(sessionManager.user);
   };
 
@@ -64,9 +71,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         setSessionUser(sessionManager.user);
       } catch (error) {
         console.error('Error al inicializar SessionManager:', error);
-        await logout(); // Si hay un error, limpiar la sesión
+        await logout();
       } finally {
-        setLoading(false); // La inicialización ha terminado
+        setLoading(false);
       }
     };
 
@@ -76,10 +83,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   // Retornamos el proveedor con los valores del contexto
   return (
     <AuthContext.Provider value={{
-      user: sessionUser, // Se usa el estado local que refleja SessionManager
+      user: sessionUser,
       loading,
-      token: sessionToken, // Se usa el estado local que refleja SessionManager
+      token: sessionToken,
       login,
+      updateUser,
       logout
     }}>
       {children}
