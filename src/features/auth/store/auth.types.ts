@@ -1,8 +1,18 @@
 // Request
 export interface RegisterRequest {
-  email: string;
-  password: string;
+  userId: string;
   name: string;
+  email: string;
+  phone: string;
+  city: string;
+  selectedCategories?: string[];
+}
+
+// Response
+export interface RegisterResponse {
+  message: string;
+  profile: string;
+  user: AuthUser;
 }
 
 // Response

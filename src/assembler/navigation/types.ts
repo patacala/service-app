@@ -23,8 +23,7 @@ export type MainStackParamList = {
 export type AuthStackParamList = {
   Intro: undefined;
   Login: undefined;
-  ForgotPassword: { phonenumber: string; userId: number };
-  Register: { name: string; email: string; phonenumber: string };
+  Register: { userId: string; name: string; email: string; phonenumber: string };
   RegisterCompletion: undefined;
   Otp: undefined;
 };
