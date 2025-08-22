@@ -171,9 +171,7 @@ export const ProfileScreen = () => {
     dispatch(fetchProfileStart());
   }, [dispatch]); */
 
-  useEffect(() => {
-    console.log(userProfile);
-    
+  /* useEffect(() => {
     if (userProfile) {
       reset({
         name: userProfile?.name,
@@ -182,9 +180,9 @@ export const ProfileScreen = () => {
         city: userProfile?.location_city,
         address: userProfile?.address,
       });
-      /* setProfileImage(profile.avatar || null); */
+      setProfileImage(profile.avatar || null);
     }
-  }, [profile, reset]);
+  }, [profile, reset]); */
 
   // Función para seleccionar imagen directamente de la galería
   const pickImage = async () => {
