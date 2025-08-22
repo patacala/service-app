@@ -1,4 +1,4 @@
-import { getAuthToken, removeAuthToken, setAuthToken, getUserData, removeUserData, setUserData } from './storage';
+import { getAuthToken, removeAuthToken, setAuthToken, getUserData, removeUserData, setUserData, getUserProfile, setUserProfile, removeUserProfile } from './storage';
 
 interface BackendUser {
   id: string;
@@ -8,10 +8,19 @@ interface BackendUser {
   isNewUser: boolean;
 }
 
+interface Profile {
+  name: string;
+  email: string;
+  phone: string;
+  location_city: string;
+  address: string;
+}
+
 export class SessionManager {
   private static instance: SessionManager;
   private _token: string | null = null;
   private _user: BackendUser | null = null;
+  private _profile: Profile | null = null;
 
   private constructor() {}
 
@@ -26,14 +35,20 @@ export class SessionManager {
     return this._token;
   }
 
-  get user(): BackendUser | null { // Getter para el objeto de usuario
+  get user(): BackendUser | null {
     return this._user;
+  }
+
+  get profile(): Profile | null { 
+    return this._profile;
   }
 
   async initialize(): Promise<void> {
     this._token = await getAuthToken();
-    const userData = await getUserData(); // Cargar los datos del usuario
+    const userData = await getUserData();
     this._user = userData;
+    const userProfile = await getUserProfile();
+    this._profile = userProfile;
   }
 
   async setSession(token: string, user: BackendUser | null): Promise<void> {
@@ -64,6 +79,15 @@ export class SessionManager {
       await setUserData(user);
     } else {
       await removeUserData(); 
+    }
+  }
+
+  async updateUserProfile(profile: Profile | null): Promise<void> {
+    this._profile = profile;
+    if (profile) {
+      await setUserProfile(profile);
+    } else {
+      await removeUserProfile(); 
     }
   }
 }
