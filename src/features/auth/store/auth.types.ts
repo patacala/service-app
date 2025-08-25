@@ -15,12 +15,22 @@ export interface RegisterResponse {
   user: AuthUser;
 }
 
-interface Profile {
+// Response
+export interface Profile {
+  profile_id: string;
   name: string;
   email: string;
   phone: string;
-  location_city: string;
+  city: string;
   address: string;
+}
+
+// Request
+export interface ProfilePartial {
+  name: string;
+  city: string;
+  address: string;
+  avatar: string;
 }
 
 // Response
@@ -32,6 +42,7 @@ export interface AuthUser {
   isNewUser: boolean;
 }
 
+// Response
 export interface AuthResponse {
   user: AuthUser;
   token: string;
