@@ -327,7 +327,7 @@ export const ProfileScreen = () => {
       ));
     } else {
       // Agregar nuevo servicio
-      
+
       /* const newService: ServiceData = {
         id: Date.now().toString(),
         phone: data.phone,
@@ -341,10 +341,11 @@ export const ProfileScreen = () => {
         photos: data.photos
       };
       setServices(prev => [...prev, newService]); */
+      console.log(data);
     }
 
     // Resetear formulario y cerrar modal
-    setServiceFormData({
+    /* setServiceFormData({
       phone: '',
       city: '',
       address: '',
@@ -356,7 +357,7 @@ export const ProfileScreen = () => {
       pricePerHour: 62
     });
     setServiceFormVisible(false);
-    setEditingServiceId(null);
+    setEditingServiceId(null); */
   };
 
   // Handlers para el formulario de servicios
