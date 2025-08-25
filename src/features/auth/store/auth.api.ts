@@ -26,7 +26,7 @@ export const authApi = apiSlice.injectEndpoints({
     updateProfile: builder.mutation<{ message: string }, Partial<ProfilePartial>>({
       query: (profileData) => ({
         url: '/auth/profile',
-        method: 'PATCH',
+        method: 'PUT',
         data: profileData,
       }),
     }),
