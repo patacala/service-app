@@ -11,10 +11,10 @@ import {
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { useDispatch, useSelector } from 'react-redux';
 import { useTranslation } from 'react-i18next';
 import { useTheme } from '@shopify/restyle';
 import * as ImagePicker from 'expo-image-picker';
+import Toast from 'react-native-toast-message';
 
 // Design System
 import { Box, Button, Input, Typography, Theme, GroupChipSelector, PremiumCard, SubscriptionPlans, SubscriptionPlan, ChipOption } from '@/design-system';
@@ -23,14 +23,6 @@ import { Row } from '@/design-system/components/layout/Row/Row';
 // Assets & Styles
 import images from '@/assets/images/images';
 import { getProfileStyles } from './profile/profile.styles';
-
-// Redux
-import { RootState } from '../../../store';
-import {
-  Profile,
-  fetchProfileStart,
-  updateProfileStart,
-} from '../slices/profile.slice';
 import { Icon } from '@/design-system/components/layout/Icon';
 import { RatingReview } from '@/features/detail/components/RatingReview';
 import { InfoMain } from '@/features/provMode/components/InfoMain';
@@ -38,8 +30,10 @@ import { DetailInfo } from '@/features/provMode/components/DetailInfo';
 import { DetailService } from '@/features/provMode/components/DetailService';
 import { ProviderForm } from '@/features/provMode/components/ProviderForm';
 import { SessionManager } from '@/infrastructure/session';
+
 /* import { GoogleSignin } from '@react-native-google-signin/google-signin'; */
 import { useAuth } from '@/infrastructure/auth/AuthContext';
+import { ProfilePartial, useGetCurrentUserQuery, useUpdateProfileMutation } from '@/features/auth/store';
 
 // Interfaces
 interface ServiceData {
@@ -100,17 +94,13 @@ const profileSchema = z.object({
 type ProfileFormData = z.infer<typeof profileSchema>;
 
 export const ProfileScreen = () => {
-  const dispatch = useDispatch();
   const { t } = useTranslation('auth');
   const theme = useTheme<Theme>();
-  const { profile: userProfile } = useAuth();
-
-  const { data: profile, isLoading } = useSelector(
-    (state: RootState) => state.profile
-  );
+  const { data: profile } = useGetCurrentUserQuery();
+  const [updateProfile] = useUpdateProfileMutation();
 
   // Estado para la imagen de perfil
-  const [profileImage, setProfileImage] = useState<string | null>(null);
+  const [profileImage, setProfileImage] = useState<string>('');
 
   // Estados para el formulario de servicios
   const [serviceFormVisible, setServiceFormVisible] = useState(false);
@@ -170,35 +160,31 @@ export const ProfileScreen = () => {
   const {
     control,
     handleSubmit,
-    formState: { errors, isValid, isDirty }
+    formState: { errors, isValid, isDirty },
+    reset
   } = useForm<ProfileFormData>({
     resolver: zodResolver(profileSchema),
     mode: 'onChange',
     defaultValues: {
-      name: userProfile?.name,
-      email: userProfile?.email,
-      phone: getPhoneDetail(userProfile?.phone ?? '')?.number,
-      city: userProfile?.location_city,
-      address: userProfile?.address,
+      name: '',
+      email: '',
+      phone: '',
+      city: '',
+      address: '',
     }
   });
 
-  /* useEffect(() => {
-    dispatch(fetchProfileStart());
-  }, [dispatch]); */
-
-  /* useEffect(() => {
-    if (userProfile) {
+  useEffect(() => {
+    if (profile) {
       reset({
-        name: userProfile?.name,
-        email: userProfile?.email,
-        phone: userProfile?.phone,
-        city: userProfile?.location_city,
-        address: userProfile?.address,
+        name: profile.name ?? '',
+        email: profile.email ?? '',
+        phone: getPhoneDetail(profile.phone ?? '')?.number ?? '',
+        city: profile.city ?? '',
+        address: profile.address ?? '',
       });
-      setProfileImage(profile.avatar || null);
     }
-  }, [profile, reset]); */
+  }, [profile, reset]);
 
   // Función para seleccionar imagen directamente de la galería
   const pickImage = async () => {
@@ -219,28 +205,33 @@ export const ProfileScreen = () => {
     }
   };
 
-  const onSubmit = (data: ProfileFormData) => {
-    if (!profile) return;
+  const onSubmit = async (data: ProfileFormData) => {
+    try {
+      if (!profile) return;
 
-    const updatedProfile: Profile = {
-      ...profile,
-      name: data.name,
-      city: data.city,
-      address: data.address,
-      avatar: profileImage,
-      contactInfo: {
-        email: data.email,
-        phone: data.phone,
-      },
-    };
-    
-    dispatch(updateProfileStart(updatedProfile));
-    
-    Alert.alert(
-      'Success',
-      'Profile updated successfully!',
-      [{ text: 'OK' }]
-    );
+      const updatedProfileData: ProfilePartial = {
+        name: data.name,
+        city: data.city,
+        address: data.address,
+        avatar: profileImage,
+      };
+
+      const response = await updateProfile(updatedProfileData).unwrap();
+
+      Toast.show({
+        type: 'success',
+        text1: 'Success!',
+        text2: response?.message ?? 'Profile successfully updated.',
+      });
+    } catch (error: any) {
+      console.log(error);
+
+      Toast.show({
+        type: 'error',
+        text1: 'Error saving data.',
+        text2: error?.data?.error || 'Unexpected error occurred.',
+      });
+    }
   };
 
   const onError = (errors: any) => {
@@ -275,7 +266,7 @@ export const ProfileScreen = () => {
   const handleAddNewService = () => {
     setEditingServiceId(null);
     setServiceFormData({
-      phone: profile?.contactInfo?.phone || '',
+      phone: profile?.phone || '',
       city: profile?.city || '',
       address: profile?.address || '',
       selectedServices: [],
@@ -478,7 +469,6 @@ export const ProfileScreen = () => {
 
         {/* Form */}
         <Box marginBottom="xl" gap="md">
-          
           {/* Name */}
           <Controller
             control={control}
@@ -517,6 +507,7 @@ export const ProfileScreen = () => {
                   placeholder="Enter your email"
                   keyboardType="email-address"
                   autoCapitalize="none"
+                  editable={false}
                 />
                 {errors.email && (
                   <Box marginTop="xs">
@@ -554,6 +545,7 @@ export const ProfileScreen = () => {
                       keyboardType="phone-pad"
                       maxLength={12}
                       style={{ width: '100%' }}
+                      editable={false}
                     />
                   </Box>
                 </Row>

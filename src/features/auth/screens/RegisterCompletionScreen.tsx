@@ -27,7 +27,7 @@ export const RegisterCompletionScreen = () => {
   const { t } = useTranslation('auth');
   const { getData, setData, removeData } = useDataManager();
   const { data: categoriesData, isLoading: isCategoriesLoading, error: categoriesError } = useGetCategoriesQuery({language: 'en'});
-  const { user: userData, userUpdate, userProfile } = useAuth();
+  const { user: userData, userUpdate } = useAuth();
 
   const [completionFormData, setCompletionFormData] = useState<CompletionFormData>({
     city: '',
@@ -108,9 +108,8 @@ export const RegisterCompletionScreen = () => {
         userId: userData?.id
       };
 
-      const {message, profile, user} = await registerProfile(registerRequest).unwrap();
+      const {message, user} = await registerProfile(registerRequest).unwrap();
       await userUpdate(user);
-      await userProfile(profile);
       
       Toast.show({
         type: 'success',
@@ -121,6 +120,7 @@ export const RegisterCompletionScreen = () => {
       Toast.show({
         type: 'error',
         text1: 'Error saving data.',
+        text2: error?.data?.error || 'Unexpected error occurred.',
       });
     } finally {
       setIsSubmitting(false);
