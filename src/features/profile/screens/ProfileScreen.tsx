@@ -327,7 +327,8 @@ export const ProfileScreen = () => {
       ));
     } else {
       // Agregar nuevo servicio
-      const newService: ServiceData = {
+      
+      /* const newService: ServiceData = {
         id: Date.now().toString(),
         phone: data.phone,
         city: data.city,
@@ -339,7 +340,7 @@ export const ProfileScreen = () => {
         description: data.description,
         photos: data.photos
       };
-      setServices(prev => [...prev, newService]);
+      setServices(prev => [...prev, newService]); */
     }
 
     // Resetear formulario y cerrar modal
