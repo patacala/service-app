@@ -97,7 +97,7 @@ export const ProfileScreen = () => {
   const { t } = useTranslation('auth');
   const theme = useTheme<Theme>();
   const { data: profile } = useGetCurrentUserQuery();
-  const [updateProfile] = useUpdateProfileMutation();
+  const [updateProfile, { isLoading }] = useUpdateProfileMutation();
 
   // Estado para la imagen de perfil
   const [profileImage, setProfileImage] = useState<string>('');
@@ -217,6 +217,13 @@ export const ProfileScreen = () => {
       };
 
       const response = await updateProfile(updatedProfileData).unwrap();
+      reset({
+        name: data.name,
+        email: data.email,
+        phone: data.phone,
+        city: data.city,
+        address: data.address,
+      });
 
       Toast.show({
         type: 'success',
@@ -619,7 +626,7 @@ export const ProfileScreen = () => {
               variant="secondary"
               label="Save"
               onPress={handleSubmit(onSubmit, onError)}
-              disabled={!isValid || !isDirty}
+              disabled={!isValid || !isDirty || isLoading}
             />
           </Box>
           
