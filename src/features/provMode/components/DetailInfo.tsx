@@ -110,23 +110,15 @@ export const DetailInfo: React.FC<DetailInfoProps> = ({
   // Función para seleccionar imagen de la galería con Expo
   const selectImageFromLibrary = async (): Promise<string | null> => {
     try {
-      // Pedir permisos
-      const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
-      
-      if (permissionResult.granted === false) {
-        Alert.alert('Permission Required', 'Permission to access gallery is required!');
-        return null;
-      }
-
       // Abrir selector de imagen
       const result = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        mediaTypes: ['images'],
         allowsEditing: true,
         aspect: [1, 1],
         quality: 0.8,
       });
 
-      if (!result.canceled && result.assets && result.assets[0]) {
+      if (!result.canceled && result.assets && result.assets.length > 0) {
         return result.assets[0].uri;
       }
       
