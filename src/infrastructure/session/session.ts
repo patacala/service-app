@@ -20,7 +20,6 @@ export class SessionManager {
   private static instance: SessionManager;
   private _token: string | null = null;
   private _user: BackendUser | null = null;
-  private _profile: Profile | null = null;
 
   private constructor() {}
 
@@ -39,16 +38,10 @@ export class SessionManager {
     return this._user;
   }
 
-  get profile(): Profile | null { 
-    return this._profile;
-  }
-
   async initialize(): Promise<void> {
     this._token = await getAuthToken();
     const userData = await getUserData();
     this._user = userData;
-    const userProfile = await getUserProfile();
-    this._profile = userProfile;
   }
 
   async setSession(token: string, user: BackendUser | null): Promise<void> {
@@ -56,9 +49,9 @@ export class SessionManager {
     this._user = user;
     await setAuthToken(token);
     if (user) {
-      await setUserData(user); // Guardar los datos del usuario
+      await setUserData(user);
     } else {
-      await removeUserData(); // Si el usuario es null, eliminar datos antiguos
+      await removeUserData();
     }
   }
 
@@ -66,7 +59,7 @@ export class SessionManager {
     this._token = null;
     this._user = null;
     await removeAuthToken();
-    await removeUserData(); 
+    await removeUserData();
   }
 
   isAuthenticated(): boolean {
@@ -78,16 +71,8 @@ export class SessionManager {
     if (user) {
       await setUserData(user);
     } else {
-      await removeUserData(); 
-    }
-  }
-
-  async updateUserProfile(profile: Profile | null): Promise<void> {
-    this._profile = profile;
-    if (profile) {
-      await setUserProfile(profile);
-    } else {
-      await removeUserProfile(); 
+      await removeUserData();
     }
   }
 }
+

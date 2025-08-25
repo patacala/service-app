@@ -1,5 +1,5 @@
 import { apiSlice } from '@/store/api/apiSlice';
-import type { RegisterRequest, AuthResponse, AuthUser, RegisterResponse } from './auth.types';
+import type { AuthResponse, RegisterRequest, AuthUser, RegisterResponse, Profile, ProfilePartial } from './auth.types';
 
 export const authApi = apiSlice.injectEndpoints({
   endpoints: (builder) => ({
@@ -17,20 +17,20 @@ export const authApi = apiSlice.injectEndpoints({
         data: userData,
       }),
     }),
-    getCurrentUser: builder.query<AuthUser, void>({
+    getCurrentUser: builder.query<Profile, void>({
       query: () => ({
         url: '/auth/me',
         method: 'GET',
       }),
     }),
-    updateProfile: builder.mutation<AuthUser, Partial<AuthUser>>({
-      query: (userData) => ({
+    updateProfile: builder.mutation<{ message: string }, Partial<ProfilePartial>>({
+      query: (profileData) => ({
         url: '/auth/profile',
         method: 'PATCH',
-        data: userData,
+        data: profileData,
       }),
     }),
   }),
 });
 
-export const { useLoginMutation, useRegisterMutation, useGetCurrentUserQuery } = authApi;
+export const { useLoginMutation, useRegisterMutation, useGetCurrentUserQuery, useUpdateProfileMutation } = authApi;
