@@ -30,6 +30,7 @@ export const ProvModeScreen = () => {
 
   // Estado para manejar los datos del formulario
   const [formData, setFormData] = useState<ProviderFormData>({
+    title: '',
     phone: '',
     city: '',
     address: '',
@@ -57,6 +58,7 @@ export const ProvModeScreen = () => {
     console.log('Datos del formulario completo:', data);
 
     setFormData({
+      title: '',
       phone: '',
       city: '',
       address: '',
@@ -129,7 +131,7 @@ export const ProvModeScreen = () => {
     {
       title: "Provider Account",
       topText: "Almost done!",
-      height: "95%",
+      height: "99%",
       component: (
         <InfoMain 
           onPhoneChange={handlePhoneChange}
@@ -138,6 +140,7 @@ export const ProvModeScreen = () => {
           onSelectedServicesChange={handleSelectedServicesChange}
           onValidationChange={handleStep1Validation}
           initialValues={{
+            title: formData.title,
             phone: formData.phone,
             city: formData.city,
             address: formData.address,
