@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import {
   Image,
   ImageSourcePropType,
@@ -34,7 +34,8 @@ import { SessionManager } from '@/infrastructure/session';
 /* import { GoogleSignin } from '@react-native-google-signin/google-signin'; */
 import { useAuth } from '@/infrastructure/auth/AuthContext';
 import { ProfilePartial, useGetCurrentUserQuery, useUpdateProfileMutation } from '@/features/auth/store';
-import { useCreateServiceMutation } from '@/features/services/store';
+import { useCreateServiceMutation, useGetMyServicesQuery } from '@/features/services/store';
+import { useCategoryContext } from '@/infrastructure/category/CategoryContext';
 
 // Interfaces
 interface ServiceData {
@@ -100,6 +101,10 @@ export const ProfileScreen = () => {
   const { data: profile } = useGetCurrentUserQuery();
   const [updateProfile, { isLoading }] = useUpdateProfileMutation();
   const [createService, { isLoading: isLoadingCreateService, isError, error }] = useCreateServiceMutation();
+  const { data: services, isLoading: isLoadingServices } = useGetMyServicesQuery();
+  
+  // Usar el contexto de categorías
+  const { categories, isLoading: isCategoriesLoading, error: categoriesError } = useCategoryContext();
 
   // Estado para la imagen de perfil
   const [profileImage, setProfileImage] = useState<string>('');
@@ -113,22 +118,6 @@ export const ProfileScreen = () => {
   const [step2Valid, setStep2Valid] = useState(false);
   const [step3Valid, setStep3Valid] = useState(false);
 
-  // Estado para servicios guardados
-  const [services, setServices] = useState<ServiceData[]>([
-    {
-      id: '1',
-      title: 'Titulo servicio',
-      city: 'Miami',
-      address: '1234 S Miami Ave, Miami, FL 33129',
-      serviceOptions: [{ id: '3', label: 'Electricity' }],
-      selectedServices: ['3'],
-      pricePerHour: 62,
-      addressService: 'S Miami Ave Miami, FL 33129',
-      description: 'Residential Painting, Commercial Painting, Furniture Painting, Decorative Painting, Paint Restoration, Drywall Repair and Painting, Paint Consultation.',
-      photos: []
-    }
-  ]);
-
   // Estado para los datos del formulario de servicios
   const [serviceFormData, setServiceFormData] = useState<ServiceFormData>({
     title: '',
@@ -141,6 +130,34 @@ export const ProfileScreen = () => {
     addressService: '',
     pricePerHour: 62
   });
+
+  // Función para convertir IDs de categorías a ChipOptions
+  const getCategoryOptions = useMemo(() => {
+  return (categoryIds: string[]): ChipOption[] => {
+    if (!categories || categories.length === 0) {
+      return [];
+    }
+    
+    return categoryIds
+      .map(id => {
+        const category = categories.find((cat: ChipOption) => cat.id === id);
+        return category ? { id: category.id, label: category.label } : null;
+      })
+      .filter(Boolean) as ChipOption[];
+  };
+  }, [categories]);
+
+  // Función para obtener el nombre de una categoría por su ID
+  const getCategoryName = useMemo(() => {
+  return (id: string): string => {
+    if (!categories || categories.length === 0) {
+      return id;
+    }
+    
+    const category = categories.find((cat: ChipOption) => cat.id === id);
+    return category?.label || id;
+  };
+  }, [categories]);
 
   const getPhoneDetail = (phoneNumber: string) => {
       if (typeof phoneNumber !== 'string' || phoneNumber.trim() === '') {
@@ -289,20 +306,24 @@ export const ProfileScreen = () => {
   };
 
   const handleEditService = (serviceId: string) => {
-    const service = services.find(s => s.id === serviceId);
+    const service = services?.find(s => s.id === serviceId);
 
     if (service) {
       setEditingServiceId(serviceId);
+      
+      // Convertir los IDs de categorías a ChipOptions
+      const serviceOptions = getCategoryOptions(service.categories || []);
+      
       setServiceFormData({
         title: service.title,
-        city: service.city,
-        address: service?.address,
-        selectedServices: service.selectedServices,
-        selectedServiceOptions: service.serviceOptions,
+        city: service.city || '',
+        address: service.city || '',
+        selectedServices: service.categories || [],
+        selectedServiceOptions: serviceOptions,
         description: service.description,
-        photos: service.photos,
-        addressService: service.addressService,
-        pricePerHour: service.pricePerHour
+        photos: service.images || [],
+        addressService: service.city || '',
+        pricePerHour: service.price || 0
       });
       setServiceFormVisible(true);
     }
@@ -311,24 +332,9 @@ export const ProfileScreen = () => {
   const handleServiceSubmit = async (data: ServiceFormData) => {
     try {
       if (editingServiceId) {
-        // Editar servicio existente en el estado local
-        setServices(prev =>
-          prev.map(service =>
-            service.id === editingServiceId
-              ? {
-                  ...service,
-                  title: data.title,
-                  address: data.address,
-                  serviceOptions: data.selectedServiceOptions,
-                  selectedServices: data.selectedServices,
-                  pricePerHour: data.pricePerHour,
-                  addressService: data.addressService,
-                  description: data.description,
-                  photos: data.photos,
-                }
-              : service,
-          ),
-        );
+        // Editar servicio existente
+        // Aquí podrías implementar la lógica de actualización
+        console.log('Editing service:', editingServiceId, data);
       } else {
         // Crear servicio en backend
         const response = await createService({
@@ -343,20 +349,6 @@ export const ProfileScreen = () => {
           lon: undefined,
           coverMediaId: undefined
         }).unwrap();
-
-        const newService: ServiceData = {
-          id: response.id, 
-          title: response.title,
-          city: response.city ?? '',
-          address: data.address,
-          serviceOptions: data.selectedServiceOptions,
-          selectedServices: data.selectedServices,
-          pricePerHour: data.pricePerHour,
-          addressService: data.addressService,
-          description: data.description,
-          photos: data.photos,
-        };
-        setServices(prev => [...prev, newService]);
       }
 
       // Resetear formulario
@@ -696,73 +688,107 @@ export const ProfileScreen = () => {
           <Typography variant="bodyLarge" color="white">Services to offer</Typography>
         </Row>
 
-        {/* Renderizar servicios existentes */}
-        {services.map((service) => (
-          <Box 
-            key={service.id}
-            marginTop="lg" 
-            paddingHorizontal="md"
-            paddingTop="sm"
-            paddingBottom="md" 
-            backgroundColor="colorGrey600"
-            borderRadius={16}
-            gap="sm"
-          >
-            <Row justifyContent="space-between">
-              <Row spacing='none' gap="lg">
-                <Box maxWidth={180}>
-                  <GroupChipSelector
-                    onChange={() => {}}
-                    options={service.serviceOptions}
-                    selectedIds={service.selectedServices}
-                    variant="horizontal"
-                    multiSelect={false}
-                    textVariant="bodyMedium"
+        {/* Loading de categorías */}
+        {isCategoriesLoading && (
+          <Typography variant="bodyMedium" color={theme.colors.colorBaseWhite}>
+            Loading categories...
+          </Typography>
+        )}
+
+        {/* Error de categorías */}
+        {categoriesError && (
+          <Typography variant="bodyMedium" color={theme.colors.colorFeedbackError}>
+            Error loading categories
+          </Typography>
+        )}
+
+        {/* Loading de servicios */}
+        {isLoadingServices && (
+          <Typography variant="bodyMedium" color={theme.colors.colorBaseWhite}>
+            Loading services...
+          </Typography>
+        )}
+
+        {/* Lista de servicios */}
+        {services?.map((service: any) => {
+          const serviceOptions = getCategoryOptions(service.categories || []);
+          
+          return (
+            <Box 
+              key={service.id}
+              marginTop="lg" 
+              paddingHorizontal="md"
+              paddingTop="sm"
+              paddingBottom="md" 
+              backgroundColor="colorGrey600"
+              borderRadius={16}
+              gap="sm"
+            >
+              <Row justifyContent="space-between">
+                <Row spacing='none' gap="lg">
+                  <Box maxWidth={180}>
+                    <GroupChipSelector
+                      onChange={() => {}}
+                      options={serviceOptions}
+                      selectedIds={service.categories || []}
+                      variant="horizontal"
+                      multiSelect={false}
+                      textVariant="bodyMedium"
+                    />
+                  </Box>
+                  <Typography variant="bodyMedium" color={theme.colors.colorBaseWhite}>
+                    ${service.price}/Hr
+                  </Typography>
+                </Row>
+                <Box>
+                  <Button 
+                    variant="transparent" 
+                    label="Edit" 
+                    iconWidth={20} 
+                    iconHeight={20} 
+                    leftIcon={images.iconEdit as ImageSourcePropType} 
+                    onPress={() => handleEditService(service.id)} 
                   />
                 </Box>
-                <Typography variant="bodyMedium" color={theme.colors.colorBaseWhite}>
-                  ${service.pricePerHour}/Hr
-                </Typography>
-              </Row>
-              <Box>
-                <Button 
-                  variant="transparent" 
-                  label="Edit" 
-                  iconWidth={20} 
-                  iconHeight={20} 
-                  leftIcon={images.iconEdit as ImageSourcePropType} 
-                  onPress={() => handleEditService(service.id)} 
-                />
-              </Box>
-            </Row>
-
-            <Box gap="sm">
-              <Row spacing="sm">
-                <Icon name="location" color="colorBaseWhite" />
-                <Typography variant="bodySmall" color={theme.colors.colorBaseWhite}>
-                  {service.addressService}
-                </Typography>
               </Row>
 
-              <Box paddingVertical='sm'>
-                <Typography variant="bodyLarge" color={theme.colors.colorBaseWhite}>
-                  {service.title}
-                </Typography>
-              </Box>
+              <Box gap="sm">
+                <Row spacing="sm">
+                  <Icon name="location" color="colorBaseWhite" />
+                  <Typography variant="bodySmall" color={theme.colors.colorBaseWhite}>
+                    {service.city}
+                  </Typography>
+                </Row>
 
-              <Typography variant="bodyRegular" color={theme.colors.colorGrey100}>
-                {service.description}
-              </Typography>
+                <Box paddingVertical='sm'>
+                  <Typography variant="bodyLarge" color={theme.colors.colorBaseWhite}>
+                    {service.title}
+                  </Typography>
+                </Box>
+
+                <Typography variant="bodyRegular" color={theme.colors.colorGrey100}>
+                  {service.description}
+                </Typography>
+
+                {/* Mostrar categorías como texto */}
+                {service.categories && service.categories.length > 0 && (
+                  <Typography variant="bodySmall" color={theme.colors.colorGrey300}>
+                    Categories: {service.categories.map(getCategoryName).join(', ')}
+                  </Typography>
+                )}
+              </Box>
             </Box>
-          </Box>
-        ))}
+          );
+        })}
+
       </Box>
 
       <Box marginTop="xl">
         <Button 
           variant="secondary" 
           label="Add New Service"
-          onPress={handleAddNewService} 
+          onPress={handleAddNewService}
+          disabled={isCategoriesLoading}
         />
       </Box>
     </>
@@ -895,6 +921,8 @@ export const ProfileScreen = () => {
           onAddressChange={handleAddressChange}
           onSelectedServicesChange={handleSelectedServicesChange}
           onValidationChange={handleStep1Validation}
+          categories={categories}
+          isCategoriesLoading={isCategoriesLoading}
           initialValues={{
             title: serviceFormData.title,
             selectedServices: serviceFormData.selectedServices,
@@ -964,18 +992,18 @@ export const ProfileScreen = () => {
 
   const { logout } = useAuth();
   const proceedLogout = async () => {
-  try {
-    /* await GoogleSignin.signOut(); */
-    await logout();
+    try {
+      /* await GoogleSignin.signOut(); */
+      await logout();
 
-    const sessionManager = SessionManager.getInstance();
-    await sessionManager.clearSession();
+      const sessionManager = SessionManager.getInstance();
+      await sessionManager.clearSession();
 
-    console.log('Session successfully closed.');
-  } catch (error) {
-    console.error('Error while signing out:', error);
-  }
-};
+      console.log('Session successfully closed.');
+    } catch (error) {
+      console.error('Error while signing out:', error);
+    }
+  };
 
   return (
     <Box flex={1}>
