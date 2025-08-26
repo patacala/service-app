@@ -41,6 +41,7 @@ const createDynamicSchema = (initialValues: InitialValues) => {
 };
 
 interface InitialValues {
+  title?: string;
   phone?: string;
   city?: string;
   address?: string;
@@ -49,6 +50,7 @@ interface InitialValues {
 }
 
 interface InfoMainProps {
+  onTitleChange?: (title: string) => void;
   onPhoneChange?: (phone: string) => void;
   onCityChange?: (city: string) => void;
   onAddressChange?: (address: string) => void;
@@ -63,6 +65,7 @@ interface CategoryTagOption {
 }
 
 export const InfoMain: React.FC<InfoMainProps> = ({
+  onTitleChange,
   onPhoneChange,
   onCityChange,
   onAddressChange,
@@ -104,6 +107,7 @@ export const InfoMain: React.FC<InfoMainProps> = ({
   }, [categoriesError]);
 
   const dynamicSchema = useMemo(() => createDynamicSchema(initialValues), [
+    initialValues.title,
     initialValues.phone,
     initialValues.city,
     initialValues.address,
@@ -117,6 +121,7 @@ export const InfoMain: React.FC<InfoMainProps> = ({
     resolver: zodResolver(dynamicSchema),
     mode: 'onChange',
     defaultValues: {
+      title: initialValues.title || '',
       phone: initialValues.phone || '',
       city: initialValues.city || '',
       address: initialValues.address || '',
@@ -149,6 +154,12 @@ export const InfoMain: React.FC<InfoMainProps> = ({
   }, [isValid, secondGroupOptions.length]);
 
   useEffect(() => {
+    if (onTitleChange && watchedValues.title !== initialValues.title) {
+      onTitleChange(watchedValues.title);
+    }
+  }, [watchedValues.title]);
+
+  useEffect(() => {
     if (onPhoneChange && watchedValues.phone !== initialValues.phone) {
       onPhoneChange(watchedValues.phone);
     }
@@ -178,6 +189,37 @@ export const InfoMain: React.FC<InfoMainProps> = ({
 
   return (
     <>
+      {initialValues.title !== undefined && (
+        <Box marginBottom="sm">
+            {initialValues.title !== undefined && (
+            <Controller
+              control={control}
+              name="title"
+              render={({ field: { onChange, onBlur, value } }) => (
+                <Box>
+                  <Input
+                    label="Title"
+                    value={value}
+                    onChangeValue={onChange}
+                    onBlur={onBlur}
+                  />
+                  {errors.title && (
+                    <Box marginTop="xs">
+                      <Typography
+                        variant="bodySmall"
+                        color={theme.colors.colorFeedbackError}
+                      >
+                        {errors.title?.message as string}
+                      </Typography>
+                    </Box>
+                  )}
+                </Box>
+              )}
+            />
+          )}
+        </Box>
+      )}
+
       {initialValues.phone !== undefined && (
         <Box gap="md" marginBottom="md">
           <Row spacing="none" gap="sm" justify="space-between">
@@ -288,7 +330,7 @@ export const InfoMain: React.FC<InfoMainProps> = ({
           <Box>
             <Input
               variant="search"
-              placeholder="Search service"
+              placeholder="Search category"
               value={searchTerm}
               onChangeValue={setSearchTerm}
             />

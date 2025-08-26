@@ -129,7 +129,7 @@ export const ProvModeScreen = () => {
     {
       title: "Provider Account",
       topText: "Almost done!",
-      height: "100%",
+      height: "95%",
       component: (
         <InfoMain 
           onPhoneChange={handlePhoneChange}

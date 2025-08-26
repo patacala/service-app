@@ -38,8 +38,7 @@ import { ProfilePartial, useGetCurrentUserQuery, useUpdateProfileMutation } from
 // Interfaces
 interface ServiceData {
   id: string;
-  phone: string;
-  city: string;
+  title: string;
   address: string;
   serviceOptions: ChipOption[];
   selectedServices: string[];
@@ -50,8 +49,7 @@ interface ServiceData {
 }
 
 interface ServiceFormData {
-  phone: string;
-  city: string;
+  title: string;
   address: string;
   selectedServices: string[];
   selectedServiceOptions: ChipOption[];
@@ -115,8 +113,7 @@ export const ProfileScreen = () => {
   const [services, setServices] = useState<ServiceData[]>([
     {
       id: '1',
-      phone: '305-555-0123',
-      city: 'Miami',
+      title: 'Titulo servicio',
       address: '1234 S Miami Ave, Miami, FL 33129',
       serviceOptions: [{ id: 'painter', label: 'Painter', icon: 'painter' }],
       selectedServices: ['painter'],
@@ -129,8 +126,7 @@ export const ProfileScreen = () => {
 
   // Estado para los datos del formulario de servicios
   const [serviceFormData, setServiceFormData] = useState<ServiceFormData>({
-    phone: '',
-    city: '',
+    title: '',
     address: '',
     selectedServices: [],
     selectedServiceOptions: [],
@@ -273,9 +269,8 @@ export const ProfileScreen = () => {
   const handleAddNewService = () => {
     setEditingServiceId(null);
     setServiceFormData({
-      phone: profile?.phone || '',
-      city: profile?.city || '',
-      address: profile?.address || '',
+      title: '',
+      address: '',
       selectedServices: [],
       selectedServiceOptions: [],
       description: '',
@@ -292,8 +287,7 @@ export const ProfileScreen = () => {
     if (service) {
       setEditingServiceId(serviceId);
       setServiceFormData({
-        phone: service?.phone,
-        city: service?.city,
+        title: service.title,
         address: service?.address,
         selectedServices: service.selectedServices,
         selectedServiceOptions: service.serviceOptions,
@@ -313,8 +307,6 @@ export const ProfileScreen = () => {
         service.id === editingServiceId 
           ? {
               ...service,
-              phone: data.phone,
-              city: data.city,
               address: data.address,
               serviceOptions: data.selectedServiceOptions,
               selectedServices: data.selectedServices,
@@ -346,6 +338,7 @@ export const ProfileScreen = () => {
 
     // Resetear formulario y cerrar modal
     /* setServiceFormData({
+      title: '',
       phone: '',
       city: '',
       address: '',
@@ -361,6 +354,10 @@ export const ProfileScreen = () => {
   };
 
   // Handlers para el formulario de servicios
+  const handleTitleChange = (title: string) => {
+    setServiceFormData(prev => ({ ...prev, title }));
+  };
+
   const handlePhoneChange = (phone: string) => {
     setServiceFormData(prev => ({ ...prev, phone }));
   };
@@ -844,18 +841,20 @@ export const ProfileScreen = () => {
 
   // Configuración de pasos del formulario de servicios
   const serviceSteps = [
-    {
-      title: editingServiceId ? "Edit Service" : "New Services",
+    { 
       topText: "Build your portfolio",
-      height: "77%",
+      title: editingServiceId ? "Edit Service" : "New Services",
+      height: "78%",
       component: (
         <InfoMain 
+          onTitleChange={handleTitleChange}
           onPhoneChange={handlePhoneChange}
           onCityChange={handleCityChange}
           onAddressChange={handleAddressChange}
           onSelectedServicesChange={handleSelectedServicesChange}
           onValidationChange={handleStep1Validation}
           initialValues={{
+            title: serviceFormData.title,
             selectedServices: serviceFormData.selectedServices,
             selectedServiceOptions: serviceFormData.selectedServiceOptions
           }}
@@ -864,9 +863,9 @@ export const ProfileScreen = () => {
       validation: () => step1Valid
     },
     {
-      title: "Detail Information", 
       topText: "Build your portfolio",
-      height: "94%",
+      title: "Detail Information", 
+      height: "97%",
       component: (
         <DetailInfo 
           onDescriptionChange={handleDescriptionChange}
