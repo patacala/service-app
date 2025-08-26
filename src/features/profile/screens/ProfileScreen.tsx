@@ -34,11 +34,13 @@ import { SessionManager } from '@/infrastructure/session';
 /* import { GoogleSignin } from '@react-native-google-signin/google-signin'; */
 import { useAuth } from '@/infrastructure/auth/AuthContext';
 import { ProfilePartial, useGetCurrentUserQuery, useUpdateProfileMutation } from '@/features/auth/store';
+import { useCreateServiceMutation } from '@/features/services/store';
 
 // Interfaces
 interface ServiceData {
   id: string;
   title: string;
+  city: string;
   address: string;
   serviceOptions: ChipOption[];
   selectedServices: string[];
@@ -50,6 +52,7 @@ interface ServiceData {
 
 interface ServiceFormData {
   title: string;
+  city: string;
   address: string;
   selectedServices: string[];
   selectedServiceOptions: ChipOption[];
@@ -96,6 +99,7 @@ export const ProfileScreen = () => {
   const theme = useTheme<Theme>();
   const { data: profile } = useGetCurrentUserQuery();
   const [updateProfile, { isLoading }] = useUpdateProfileMutation();
+  const [createService, { isLoading: isLoadingCreateService, isError, error }] = useCreateServiceMutation();
 
   // Estado para la imagen de perfil
   const [profileImage, setProfileImage] = useState<string>('');
@@ -114,9 +118,10 @@ export const ProfileScreen = () => {
     {
       id: '1',
       title: 'Titulo servicio',
+      city: 'Miami',
       address: '1234 S Miami Ave, Miami, FL 33129',
-      serviceOptions: [{ id: 'painter', label: 'Painter', icon: 'painter' }],
-      selectedServices: ['painter'],
+      serviceOptions: [{ id: '3', label: 'Electricity' }],
+      selectedServices: ['3'],
       pricePerHour: 62,
       addressService: 'S Miami Ave Miami, FL 33129',
       description: 'Residential Painting, Commercial Painting, Furniture Painting, Decorative Painting, Paint Restoration, Drywall Repair and Painting, Paint Consultation.',
@@ -127,6 +132,7 @@ export const ProfileScreen = () => {
   // Estado para los datos del formulario de servicios
   const [serviceFormData, setServiceFormData] = useState<ServiceFormData>({
     title: '',
+    city: '',
     address: '',
     selectedServices: [],
     selectedServiceOptions: [],
@@ -270,6 +276,7 @@ export const ProfileScreen = () => {
     setEditingServiceId(null);
     setServiceFormData({
       title: '',
+      city: '',
       address: '',
       selectedServices: [],
       selectedServiceOptions: [],
@@ -288,6 +295,7 @@ export const ProfileScreen = () => {
       setEditingServiceId(serviceId);
       setServiceFormData({
         title: service.title,
+        city: service.city,
         address: service?.address,
         selectedServices: service.selectedServices,
         selectedServiceOptions: service.serviceOptions,
@@ -300,58 +308,84 @@ export const ProfileScreen = () => {
     }
   };
 
-  const handleServiceSubmit = (data: ServiceFormData) => {
-    if (editingServiceId) {
-      // Editar servicio existente
-      setServices(prev => prev.map(service => 
-        service.id === editingServiceId 
-          ? {
-              ...service,
-              address: data.address,
-              serviceOptions: data.selectedServiceOptions,
-              selectedServices: data.selectedServices,
-              pricePerHour: data.pricePerHour,
-              addressService: data.addressService,
-              description: data.description,
-              photos: data.photos
-            }
-          : service
-      ));
-    } else {
-      // Agregar nuevo servicio
+  const handleServiceSubmit = async (data: ServiceFormData) => {
+    try {
+      if (editingServiceId) {
+        // Editar servicio existente en el estado local
+        setServices(prev =>
+          prev.map(service =>
+            service.id === editingServiceId
+              ? {
+                  ...service,
+                  title: data.title,
+                  address: data.address,
+                  serviceOptions: data.selectedServiceOptions,
+                  selectedServices: data.selectedServices,
+                  pricePerHour: data.pricePerHour,
+                  addressService: data.addressService,
+                  description: data.description,
+                  photos: data.photos,
+                }
+              : service,
+          ),
+        );
+      } else {
+        // Crear servicio en backend
+        const response = await createService({
+          title: data.title,
+          description: data.description,
+          price: data.pricePerHour,   
+          categoryIds: data.selectedServices,
+          images: data.photos,
+          currency: 'USD',
+          city: profile?.city ?? '',
+          lat: undefined,
+          lon: undefined,
+          coverMediaId: undefined
+        }).unwrap();
 
-      /* const newService: ServiceData = {
-        id: Date.now().toString(),
-        phone: data.phone,
-        city: data.city,
-        address: data.address,
-        serviceOptions: data.selectedServiceOptions,
-        selectedServices: data.selectedServices,
-        pricePerHour: data.pricePerHour,
-        addressService: data.addressService,
-        description: data.description,
-        photos: data.photos
-      };
-      setServices(prev => [...prev, newService]); */
-      console.log(data);
+        const newService: ServiceData = {
+          id: response.id, 
+          title: response.title,
+          city: response.city ?? '',
+          address: data.address,
+          serviceOptions: data.selectedServiceOptions,
+          selectedServices: data.selectedServices,
+          pricePerHour: data.pricePerHour,
+          addressService: data.addressService,
+          description: data.description,
+          photos: data.photos,
+        };
+        setServices(prev => [...prev, newService]);
+      }
+
+      // Resetear formulario
+      setServiceFormData({
+        title: '',
+        city: '',
+        address: '',
+        selectedServices: [],
+        selectedServiceOptions: [],
+        description: '',
+        photos: [],
+        addressService: '',
+        pricePerHour: 62,
+      });
+      setEditingServiceId(null);
+      return true;
+    } catch (error: any) {
+      console.error(error);
+
+      Toast.show({
+        type: 'error',
+        text1: 'Error',
+        text2: error?.data?.message || 'Failed to create service',
+      });
+
+      return false;
     }
+};
 
-    // Resetear formulario y cerrar modal
-    /* setServiceFormData({
-      title: '',
-      phone: '',
-      city: '',
-      address: '',
-      selectedServices: [],
-      selectedServiceOptions: [],
-      description: '',
-      photos: [],
-      addressService: '',
-      pricePerHour: 62
-    });
-    setServiceFormVisible(false);
-    setEditingServiceId(null); */
-  };
 
   // Handlers para el formulario de servicios
   const handleTitleChange = (title: string) => {
@@ -710,7 +744,14 @@ export const ProfileScreen = () => {
                   {service.addressService}
                 </Typography>
               </Row>
-              <Typography variant="bodyRegular" color={theme.colors.colorBaseWhite}>
+
+              <Box paddingVertical='sm'>
+                <Typography variant="bodyLarge" color={theme.colors.colorBaseWhite}>
+                  {service.title}
+                </Typography>
+              </Box>
+
+              <Typography variant="bodyRegular" color={theme.colors.colorGrey100}>
                 {service.description}
               </Typography>
             </Box>
@@ -842,11 +883,13 @@ export const ProfileScreen = () => {
   // Configuración de pasos del formulario de servicios
   const serviceSteps = [
     { 
+      key: editingServiceId ?? 'new',
       topText: "Build your portfolio",
       title: editingServiceId ? "Edit Service" : "New Services",
       height: "78%",
       component: (
         <InfoMain 
+          key={editingServiceId ?? 'new-info'}
           onTitleChange={handleTitleChange}
           onPhoneChange={handlePhoneChange}
           onCityChange={handleCityChange}
@@ -884,7 +927,7 @@ export const ProfileScreen = () => {
     {
       title: "Detail Service",
       topText: "Build your portfolio", 
-      height: "76%",
+      height: "78%",
       component: (
         <DetailService 
           onAddressServiceChange={handleAddressServiceChange}
