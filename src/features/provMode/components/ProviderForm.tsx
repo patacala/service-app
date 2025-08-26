@@ -24,7 +24,7 @@ interface ProviderFormProps {
   onClose: () => void;
   steps: StepConfig[];
   confirmationStep?: ConfirmationConfig;
-  onSubmit?: (data: any) => void;
+  onSubmit?: (data: any) => boolean | Promise<boolean>;
   onStepChange?: (step: number, data: any) => void;
   draggable?: boolean;
   enableScroll?: boolean;
@@ -99,16 +99,34 @@ export const ProviderForm: React.FC<ProviderFormProps> = ({
     if (currentStep < totalSteps) {
       setCurrentStep(currentStep + 1);
     } else if (currentStep === totalSteps) {
-      if (hasConfirmation) {
-        setCurrentStep(totalSteps + 1);
-      }
-      
       if (onSubmit) {
-        onSubmit(currentFormData);
-      }
+        const result = onSubmit(currentFormData);
 
-      if (!hasConfirmation) {
-        onClose();
+        if (result instanceof Promise) {
+          result.then((success) => {
+            if (success) {
+              if (hasConfirmation) {
+                setCurrentStep(totalSteps + 1);
+              } else {
+                onClose();
+              }
+            }
+          });
+        } else {
+          if (result) {
+            if (hasConfirmation) {
+              setCurrentStep(totalSteps + 1);
+            } else {
+              onClose();
+            }
+          }
+        }
+      } else {
+        if (hasConfirmation) {
+          setCurrentStep(totalSteps + 1);
+        } else {
+          onClose();
+        }
       }
     } else if (hasConfirmation && currentStep === totalSteps + 1) {
       onClose();
