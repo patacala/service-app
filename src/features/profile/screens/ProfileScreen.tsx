@@ -384,8 +384,7 @@ export const ProfileScreen = () => {
 
       return false;
     }
-};
-
+  };
 
   // Handlers para el formulario de servicios
   const handleTitleChange = (title: string) => {
