@@ -2,9 +2,14 @@
 export interface CreateServiceRequest {
   title: string;
   description: string;
-  price: number;
-  category: string;
-  images?: string[];
+  price: number;            
+  categoryIds: string[];    
+  images?: string[];        
+  currency?: string;      
+  city?: string;
+  lat?: number;
+  lon?: number;
+  coverMediaId?: string;
 }
 
 export interface UpdateServiceRequest {
@@ -18,14 +23,20 @@ export interface Service {
   title: string;
   description: string;
   price: number;
-  category: string;
-  images: string[];
+  currency: string;
+  categories: string[];      
+  images: string[];  
   provider: {
     id: string;
     name: string;
   };
   rating: number;
   reviewsCount: number;
+  city?: string;
+  lat?: number;
+  lon?: number;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export interface ServicesResponse {

@@ -178,7 +178,10 @@ export const InfoMain: React.FC<InfoMainProps> = ({
   }, [watchedValues.address]);
 
   useEffect(() => {
-    if (initialValues.selectedServices && initialValues.selectedServices.length > 0 && tagOptions.length > 0) {
+    if (initialValues.selectedServices && 
+      initialValues.selectedServices.length > 0 && 
+      tagOptions.length > 0
+    ) {
       const newSelectedOptions = tagOptions
         .filter((option) => initialValues.selectedServices!.includes(option.id))
         .map((opt) => ({ id: opt.id, label: opt.name }));
@@ -186,7 +189,7 @@ export const InfoMain: React.FC<InfoMainProps> = ({
       setSecondGroupSelected(initialValues.selectedServices);
       setSecondGroupOptions(newSelectedOptions);
     }
-  }, [initialValues.selectedServices, tagOptions]);
+  }, [initialValues.selectedServices, tagOptions, notifySelectedServicesChange]);
 
 
   const handleCategoryChange = (selectedIds: string[]) => {
