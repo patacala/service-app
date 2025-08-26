@@ -295,7 +295,7 @@ export const DetailInfo: React.FC<DetailInfoProps> = ({
         <Box marginBottom="lg">
             <Row marginBottom="sm" gap="sm">
                 <Icon name="tag" color="colorBaseWhite"/>
-                <Typography variant="bodyLarge" color="white">Services</Typography>
+                <Typography variant="bodyLarge" color="white">Categories</Typography>
             </Row>
             
             {selectedServiceOptions.length > 0 ? (
