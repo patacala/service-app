@@ -906,7 +906,7 @@ export const ProfileScreen = () => {
     image: images.withoutResult as ImageSourcePropType,
     title: editingServiceId ? "Service Updated!" : "Services Successfully Created",
     description: "",
-    height: "62%"
+    height: "66%"
   };
 
   const handleLogout = () => {
