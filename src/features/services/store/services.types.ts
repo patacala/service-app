@@ -22,21 +22,21 @@ export interface Service {
   id: string;
   title: string;
   description: string;
-  price: number;
+  price: number;              
   currency: string;
-  categories: string[];      
-  images: string[];  
+  categories: string[];        
+  images: string[];            
   provider: {
     id: string;
     name: string;
   };
-  rating: number;
-  reviewsCount: number;
-  city?: string;
+  rating: number;             
+  reviewsCount: number;        
+  city?: string;               
   lat?: number;
   lon?: number;
-  createdAt: string;
-  updatedAt: string;
+  createdAt: string;         
+  updatedAt: string;           
 }
 
 export interface ServicesResponse {

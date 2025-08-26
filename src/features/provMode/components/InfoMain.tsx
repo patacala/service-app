@@ -9,7 +9,6 @@ import { Box, ChipOption, GroupChipSelector, Input, Theme, Typography } from '@/
 import { Row } from '@/design-system/components/layout/Row/Row';
 import { useTranslation } from 'react-i18next';
 import { Icon } from '@/design-system/components/layout/Icon';
-import { useGetCategoriesQuery } from '@/infrastructure/services/api';
 
 // Validation Schema dinámico
 const createDynamicSchema = (initialValues: InitialValues) => {
@@ -56,6 +55,8 @@ interface InfoMainProps {
   onAddressChange?: (address: string) => void;
   onSelectedServicesChange?: (services: string[], serviceOptions: ChipOption[]) => void;
   onValidationChange?: (isValid: boolean) => void;
+  categories?: ChipOption[]; 
+  isCategoriesLoading?: boolean;
   initialValues?: InitialValues;
 }
 
@@ -71,41 +72,17 @@ export const InfoMain: React.FC<InfoMainProps> = ({
   onAddressChange,
   onSelectedServicesChange,
   onValidationChange,
+  categories = [],
+  isCategoriesLoading = false,
   initialValues = {},
 }) => {
   const theme = useTheme<Theme>();
   const styles = createStyles(theme);
   const { t } = useTranslation('auth');
-
-  // 🔹 Traer categorías de la API
-  const { data: categoriesData, isLoading: isCategoriesLoading, error: categoriesError } = useGetCategoriesQuery({ language: 'en' });
   const [tagOptions, setTagOptions] = useState<CategoryTagOption[]>([]);
   const [secondGroupOptions, setSecondGroupOptions] = useState<ChipOption[]>([]);
   const [secondGroupSelected, setSecondGroupSelected] = useState<string[]>([]);
   const [searchTerm, setSearchTerm] = useState<string>('');
-
-  useEffect(() => {
-    if (categoriesData?.categories && Array.isArray(categoriesData.categories)) {
-      setTagOptions(
-        categoriesData.categories.map((category) => ({
-          id: category.id,
-          name: category.name,
-        }))
-      );
-    }
-  }, [categoriesData]);
-
-  useEffect(() => {
-    if (categoriesError) {
-      console.error('Error cargando categorías:', categoriesError);
-      Toast.show({
-        type: 'error',
-        text1: 'Error',
-        text2: 'No se pudieron cargar las categorías.',
-      });
-    }
-  }, [categoriesError]);
-
   const dynamicSchema = useMemo(() => createDynamicSchema(initialValues), [
     initialValues.title,
     initialValues.phone,
@@ -147,6 +124,17 @@ export const InfoMain: React.FC<InfoMainProps> = ({
     },
     [onSelectedServicesChange]
   );
+
+  useEffect(() => {
+    if (categories && Array.isArray(categories)) {
+      setTagOptions(
+        categories.map((category) => ({
+          id: category.id,
+          name: category.label,
+        }))
+      );
+    }
+  }, [categories]);
 
   useEffect(() => {
     const formIsValid = isValid && secondGroupOptions.length > 0;

@@ -21,6 +21,12 @@ export const servicesApi = apiSlice.injectEndpoints({
         method: 'GET',
       }),
     }),
+    getMyServices: builder.query<Service[], void>({ 
+      query: () => ({
+        url: '/services/me',
+        method: 'GET',
+      }),
+    }),
     createService: builder.mutation<Service, CreateServiceRequest>({
       query: (serviceData) => ({
         url: '/services',
@@ -47,6 +53,7 @@ export const servicesApi = apiSlice.injectEndpoints({
 export const {
   useGetServicesQuery,
   useGetServiceByIdQuery,
+  useGetMyServicesQuery,
   useCreateServiceMutation,
   useUpdateServiceMutation,
   useDeleteServiceMutation,
