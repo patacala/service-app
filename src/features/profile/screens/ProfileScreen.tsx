@@ -748,70 +748,72 @@ export const ProfileScreen = () => {
         renderItem={({ item: service, index }) => {
           const serviceOptions = getCategoryOptions(service.categories || []);
           return (
-            <Box
-              key={service.id}
-              marginTop="lg"
-              paddingHorizontal="md"
-              paddingTop="sm"
-              paddingBottom="md"
-              backgroundColor="colorGrey600"
-              borderRadius={16}
-              gap="sm"
-            >
-              <Row justifyContent="space-between">
-                <Row spacing="none" gap="lg">
-                  <Box maxWidth={180}>
-                    <GroupChipSelector
-                      onChange={() => {}}
-                      options={serviceOptions}
-                      selectedIds={service.categories || []}
-                      variant="horizontal"
-                      multiSelect={false}
-                      textVariant="bodyMedium"
+            <TouchableWithoutFeedback onPress={() => {}}>
+              <Box
+                key={service.id}
+                marginTop="lg"
+                paddingHorizontal="md"
+                paddingTop="sm"
+                paddingBottom="md"
+                backgroundColor="colorGrey600"
+                borderRadius={16}
+                gap="sm"
+              >
+                <Row justifyContent="space-between">
+                  <Row spacing="none" gap="lg">
+                    <Box maxWidth={180}>
+                      <GroupChipSelector
+                        onChange={() => {}}
+                        options={serviceOptions}
+                        selectedIds={service.categories || []}
+                        variant="horizontal"
+                        multiSelect={false}
+                        textVariant="bodyMedium"
+                      />
+                    </Box>
+                    <Typography variant="bodyMedium" color={theme.colors.colorBaseWhite}>
+                      ${service.price}/Hr
+                    </Typography>
+                  </Row>
+                  <Box>
+                    <Button
+                      variant="transparent"
+                      label="Edit"
+                      iconWidth={20}
+                      iconHeight={20}
+                      leftIcon={images.iconEdit as ImageSourcePropType}
+                      onPress={() => handleEditService(service.id)}
                     />
                   </Box>
-                  <Typography variant="bodyMedium" color={theme.colors.colorBaseWhite}>
-                    ${service.price}/Hr
-                  </Typography>
-                </Row>
-                <Box>
-                  <Button
-                    variant="transparent"
-                    label="Edit"
-                    iconWidth={20}
-                    iconHeight={20}
-                    leftIcon={images.iconEdit as ImageSourcePropType}
-                    onPress={() => handleEditService(service.id)}
-                  />
-                </Box>
-              </Row>
-
-              <Box gap="sm">
-                <Row spacing="sm">
-                  <Icon name="location" color="colorBaseWhite" />
-                  <Typography variant="bodySmall" color={theme.colors.colorBaseWhite}>
-                    {service.city}
-                  </Typography>
                 </Row>
 
-                <Box paddingVertical="sm">
-                  <Typography variant="bodyLarge" color={theme.colors.colorBaseWhite}>
-                    {service.title}
+                <Box gap="sm">
+                  <Row spacing="sm">
+                    <Icon name="location" color="colorBaseWhite" />
+                    <Typography variant="bodySmall" color={theme.colors.colorBaseWhite}>
+                      {service.city}
+                    </Typography>
+                  </Row>
+
+                  <Box paddingVertical="sm">
+                    <Typography variant="bodyLarge" color={theme.colors.colorBaseWhite}>
+                      {service.title}
+                    </Typography>
+                  </Box>
+
+                  <Typography variant="bodyRegular" color={theme.colors.colorGrey100}>
+                    {service.description}
                   </Typography>
+
+                  {/* Mostrar categorías como texto */}
+                  {service.categories && service.categories.length > 0 && (
+                    <Typography variant="bodySmall" color={theme.colors.colorGrey300}>
+                      Categories: {service.categories.map(getCategoryName).join(', ')}
+                    </Typography>
+                  )}
                 </Box>
-
-                <Typography variant="bodyRegular" color={theme.colors.colorGrey100}>
-                  {service.description}
-                </Typography>
-
-                {/* Mostrar categorías como texto */}
-                {service.categories && service.categories.length > 0 && (
-                  <Typography variant="bodySmall" color={theme.colors.colorGrey300}>
-                    Categories: {service.categories.map(getCategoryName).join(', ')}
-                  </Typography>
-                )}
               </Box>
-            </Box>
+            </TouchableWithoutFeedback>
           );
         }}
         ListFooterComponent={
@@ -873,26 +875,30 @@ export const ProfileScreen = () => {
       data={reviews}
       keyExtractor={(review, index) => review.username + '-' + index}
       renderItem={({ item: review, index }) => (
-        <Box
-          key={review.username + '-' + index}
-          marginBottom={index < reviews.length - 1 ? 'md' : 'none'}
-        >
-          <RatingReview
-            rating={review.rating}
-            reviewDate={review.reviewDate}
-            username={review.username}
-            reviewText={review.reviewText}
-            reviewImages={review.reviewImages}
-            reviewTitle={review.reviewTitle}
-          />
-        </Box>
+        <TouchableWithoutFeedback onPress={() => {}}>
+          <Box
+            key={review.username + '-' + index}
+            marginBottom={index < reviews.length - 1 ? 'md' : 'none'}
+          >
+            <RatingReview
+              rating={review.rating}
+              reviewDate={review.reviewDate}
+              username={review.username}
+              reviewText={review.reviewText}
+              reviewImages={review.reviewImages}
+              reviewTitle={review.reviewTitle}
+            />
+          </Box>
+        </TouchableWithoutFeedback>
       )}
+      style={{ flex: 1 }}
       contentContainerStyle={{
         paddingHorizontal: 16,
         paddingTop: 16,
         paddingBottom: 70,
       }}
       showsVerticalScrollIndicator={false}
+      keyboardShouldPersistTaps="handled"
     />
   );
 
@@ -926,37 +932,40 @@ export const ProfileScreen = () => {
         contentContainerStyle={{
           paddingHorizontal: 16,
           paddingVertical: 20,
-          paddingBottom: 70,
-          minHeight: '100%'
+          paddingBottom: 70, // ✅ solo paddings
         }}
-        scrollEnabled={true}
+        keyboardShouldPersistTaps="handled"
       >
-        <PremiumCard 
-          title="Get Premium" 
-          features={premiumFeatures} 
-        />
+        <TouchableWithoutFeedback onPress={() => {}}>
+          <View>
+            <PremiumCard 
+              title="Get Premium" 
+              features={premiumFeatures} 
+            />
 
-        <SubscriptionPlans 
-          plans={subscriptionPlans}
-          onPlanSelect={(index) => console.log(`Selected plan ${index}`)}
-        />
+            <SubscriptionPlans 
+              plans={subscriptionPlans}
+              onPlanSelect={(index) => console.log(`Selected plan ${index}`)}
+            />
 
-        <Box width="100%" marginTop="md" marginBottom="lg" gap="sm">
-          <Button
-            variant="slide"
-            label="Cancel Subscription"
-            leftIcon="clear"
-            onPress={() => {}}
-          />
-        </Box>
+            <Box width="100%" marginTop="md" marginBottom="lg" gap="sm">
+              <Button
+                variant="slide"
+                label="Cancel Subscription"
+                leftIcon="clear"
+                onPress={() => {}}
+              />
+            </Box>
 
-        <Box maxWidth={400}>
-          <Typography variant="bodyRegular" color={theme.colors.colorBaseWhite}>
-            By placing this order, you agree to the Terms of Service and Privacy Policy. 
-            Subscription automatically renews unless auto-renew is turned off at least 24-hours 
-            before the end of the current period.
-          </Typography>
-        </Box>
+            <Box maxWidth={400}>
+              <Typography variant="bodyRegular" color={theme.colors.colorBaseWhite}>
+                By placing this order, you agree to the Terms of Service and Privacy Policy. 
+                Subscription automatically renews unless auto-renew is turned off at least 24-hours 
+                before the end of the current period.
+              </Typography>
+            </Box>
+          </View>
+        </TouchableWithoutFeedback>
       </ScrollView>
     </View>
   );
