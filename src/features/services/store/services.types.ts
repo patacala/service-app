@@ -1,3 +1,5 @@
+import { CardPost } from "@/features/wall";
+
 // Request
 export interface CreateServiceRequest {
   title: string;
@@ -40,8 +42,22 @@ export interface Service {
 }
 
 export interface ServicesResponse {
-  services: Service[];
-  total: number;
-  page: number;
-  limit: number;
+  data: CardPost[];
+  meta: {
+    total: number;
+    page: number;
+    limit: number;
+    totalPages: number;
+  };
+}
+
+export interface GetServicesParams {
+  query?: string;
+  tag?: string;
+  cat?: string;
+  city?: string;
+  near?: string;
+  radius?: string;
+  page?: number;
+  limit?: number;
 }
