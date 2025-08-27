@@ -6,18 +6,30 @@ import { IconName } from '@/design-system/components/layout/Icon';
 
 export interface CardPost {
   id: string;
+  title: string;
+  description: string;
   price: number;
+  currency: string;
+  categories: string[];
+  images: string[];
   name: string;
+  provider: {
+    id: string;
+    name: string;
+  };
+  city?: string | null;
+  lat?: number | null;
+  lon?: number | null;
+  createdAt: string;
+  updatedAt: string;
   type: string;
   category: string;
-  rating: Float;
-  distance: Float;
+  rating: number;
+  distance: number;
   location: string;
   miniImage: ImageSourcePropType;
   image: ImageSourcePropType;
   isFavorite: boolean;
-  createdAt: string;
-  updatedAt: string;
 }
 
 export interface Post {
@@ -68,7 +80,7 @@ const initialState: WallState = {
 };
 
 // Datos de muestra que simulan respuesta del servidor
-const samplePosts: CardPost[] = [
+const samplePosts: CardPost[] = [/* 
   {
     id: '1',
     price: 15,
@@ -143,7 +155,7 @@ const samplePosts: CardPost[] = [
     isFavorite: false,
     createdAt: '2023-05-14T14:30:00Z',
     updatedAt: '2023-05-14T14:30:00Z',
-  }
+  } */
 ];
 
 const sampleCategories = [
