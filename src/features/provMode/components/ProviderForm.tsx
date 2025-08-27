@@ -162,8 +162,8 @@ export const ProviderForm: React.FC<ProviderFormProps> = ({
             resizeMode="contain"
           />
         )}
-        <Box justifyContent="center" alignItems="center" gap="xl" marginVertical="xl" maxWidth={291}>
-          <Typography variant="headingPrimary" color="white">
+        <Box justifyContent="center" alignItems="center" marginVertical="xl" maxWidth={291}>
+          <Typography variant="headingPrimary" color="white" style={styles.centerText}>
             {confirmationStep.title}
           </Typography>
           <Typography variant="bodyMedium" color="white" style={styles.centerText}>
