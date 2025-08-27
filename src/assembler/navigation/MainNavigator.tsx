@@ -20,7 +20,6 @@ import { LocationPanel } from '@/features/wall/components/LocationPanel';
 import { RootState } from '@/store';
 import { setLocation } from '@/features/location/slices/location.slice';
 import { ChatScreen } from '@/features/chat';
-import { RegisterScreen } from '@/features/auth/screens/RegisterScreen';
 
 const Tab = createBottomTabNavigator<MainTabParamList>();
 const MainStack = createNativeStackNavigator();
