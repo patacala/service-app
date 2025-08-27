@@ -7,6 +7,8 @@ import {
   TouchableWithoutFeedback,
   Alert,
   Keyboard,
+  FlatList,
+  View,
 } from 'react-native';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -484,266 +486,280 @@ export const ProfileScreen = () => {
 
   // Contenido de My Profile
   const renderMyProfileContent = () => (
-    <TouchableWithoutFeedback onPress={() => Keyboard.dismiss()}>
-      <Box marginTop="lg" paddingHorizontal="md" paddingBottom="xl">
-        
-        {/* Profile Header */}
-        <Box width="100%" justifyContent="center" alignItems="center" marginBottom="lg" gap="sm">
-          <TouchableOpacity onPress={pickImage} activeOpacity={0.8}>
-            <Box style={getProfileStyles.profileImage} position="relative">
-              <Image
-                source={
-                  profileImage 
-                    ? { uri: profileImage } 
-                    : images.profileLarge1 as ImageSourcePropType
-                }
-                resizeMode="contain"
-                style={getProfileStyles.image}
-              />
-              <Box 
-                position="absolute"
-                bottom={0}
-                left={0}
-                right={0}
-                backgroundColor="colorBaseBlack"
-              >
-                <Icon name="picture" color="colorBaseWhite" size={16} />
-              </Box>
-            </Box>
-          </TouchableOpacity>
-          <Typography variant="bodyMedium" color={theme.colors.colorBaseWhite}>
-            ID 92347451
-          </Typography>
-        </Box>
-
-        {/* Form */}
-        <Box marginBottom="xl" gap="md">
-          {/* Name */}
-          <Controller
-            control={control}
-            name="name"
-            render={({ field: { onChange, onBlur, value } }) => (
-              <Box>
-                <Input
-                  label="Name"
-                  value={value}
-                  onChangeValue={onChange}
-                  onBlur={onBlur}
-                  placeholder="Enter your full name"
-                />
-                {errors.name && (
-                  <Box marginTop="xs">
-                    <Typography variant="bodySmall" color={theme.colors.colorFeedbackError}>
-                      {errors.name.message}
-                    </Typography>
-                  </Box>
-                )}
-              </Box>
-            )}
-          />
-
-          {/* Email */}
-          <Controller
-            control={control}
-            name="email"
-            render={({ field: { onChange, onBlur, value } }) => (
-              <Box>
-                <Input
-                  label="Email"
-                  value={value}
-                  onChangeValue={onChange}
-                  onBlur={onBlur}
-                  placeholder="Enter your email"
-                  keyboardType="email-address"
-                  autoCapitalize="none"
-                  editable={false}
-                />
-                {errors.email && (
-                  <Box marginTop="xs">
-                    <Typography variant="bodySmall" color={theme.colors.colorFeedbackError}>
-                      {errors.email.message}
-                    </Typography>
-                  </Box>
-                )}
-              </Box>
-            )}
-          />
-
-          {/* Phone */}
-          <Controller
-            control={control}
-            name="phone"
-            render={({ field: { onChange, onBlur, value } }) => (
-              <Box>
-                <Row spacing="none" gap="sm" justify="space-between">
-                  <Box style={getProfileStyles.prefix} padding="md">
-                    <Typography variant="bodyRegular" colorVariant="secondary">
-                      +1
-                    </Typography>
-                  </Box>
-                  <Box flex={1}>
-                    <Input
-                      label={t('signupCompletion.number')}
-                      variant="numeric"
-                      value={value}
-                      onChangeValue={(text) => {
-                        const formatted = formatPhoneNumber(text);
-                        onChange(formatted);
-                      }}
-                      onBlur={onBlur}
-                      keyboardType="phone-pad"
-                      maxLength={12}
-                      style={{ width: '100%' }}
-                      editable={false}
-                    />
-                  </Box>
-                </Row>
-                {errors.phone && (
-                  <Box marginTop="xs">
-                    <Typography variant="bodySmall" color={theme.colors.colorFeedbackError}>
-                      {errors.phone.message}
-                    </Typography>
-                  </Box>
-                )}
-              </Box>
-            )}
-          />
-
-          {/* City */}
-          <Controller
-            control={control}
-            name="city"
-            render={({ field: { onChange, onBlur, value } }) => (
-              <Box>
-                <Input
-                  label="City"
-                  icon="transfer"
-                  value={value}
-                  onChangeValue={onChange}
-                  onBlur={onBlur}
-                  placeholder="Enter your city"
-                />
-                {errors.city && (
-                  <Box marginTop="xs">
-                    <Typography variant="bodySmall" color={theme.colors.colorFeedbackError}>
-                      {errors.city.message}
-                    </Typography>
-                  </Box>
-                )}
-              </Box>
-            )}
-          />
-
-          {/* Address */}
-          <Controller
-            control={control}
-            name="address"
-            render={({ field: { onChange, onBlur, value } }) => (
-              <Box>
-                <Input
-                  label="Address"
-                  icon="transfer"
-                  value={value}
-                  onChangeValue={onChange}
-                  onBlur={onBlur}
-                  placeholder="Enter your full address"
-                />
-                {errors.address && (
-                  <Box marginTop="xs">
-                    <Typography variant="bodySmall" color={theme.colors.colorFeedbackError}>
-                      {errors.address.message}
-                    </Typography>
-                  </Box>
-                )}
-              </Box>
-            )}
-          />
-
-        </Box>
-
-        {/* Actions */}
-        <Box width="100%" justifyContent="center" alignItems="center" gap="xl">
-          <Box width="100%">
-            <Button
-              variant="secondary"
-              label="Save"
-              onPress={handleSubmit(onSubmit, onError)}
-              disabled={!isValid || !isDirty || isLoading}
-            />
-          </Box>
+    <ScrollView
+      showsVerticalScrollIndicator={false}
+      keyboardShouldPersistTaps="handled"
+      contentContainerStyle={{
+        flexGrow: 1,
+        paddingBottom: 70,
+      }}
+    >
+      <TouchableWithoutFeedback onPress={() => Keyboard.dismiss()}>
+        <Box marginTop="lg" paddingHorizontal="md" paddingBottom="xl">
           
-          <TouchableOpacity onPress={handleHelpPress} activeOpacity={0.7}>
-            <Row spacing="sm" alignItems="center">
-              <Icon name="sound" color="colorBaseWhite" />
-              <Typography variant="bodyMedium" color={theme.colors.colorBaseWhite}>
-                Help
-              </Typography>
-            </Row>
-          </TouchableOpacity>
+          {/* Profile Header */}
+          <Box width="100%" justifyContent="center" alignItems="center" marginBottom="lg" gap="sm">
+            <TouchableOpacity onPress={pickImage} activeOpacity={0.8}>
+              <Box style={getProfileStyles.profileImage} position="relative">
+                <Image
+                  source={
+                    profileImage 
+                      ? { uri: profileImage } 
+                      : images.profileLarge1 as ImageSourcePropType
+                  }
+                  resizeMode="contain"
+                  style={getProfileStyles.image}
+                />
+                <Box 
+                  position="absolute"
+                  bottom={0}
+                  left={0}
+                  right={0}
+                  backgroundColor="colorBaseBlack"
+                >
+                  <Icon name="picture" color="colorBaseWhite" size={16} />
+                </Box>
+              </Box>
+            </TouchableOpacity>
+            <Typography variant="bodyMedium" color={theme.colors.colorBaseWhite}>
+              ID 92347451
+            </Typography>
+          </Box>
 
-          <Box marginTop="lg" marginBottom="xl">
-            <TouchableOpacity onPress={handleLogout} activeOpacity={0.7}>
+          {/* Form */}
+          <Box marginBottom="xl" gap="md">
+            {/* Name */}
+            <Controller
+              control={control}
+              name="name"
+              render={({ field: { onChange, onBlur, value } }) => (
+                <Box>
+                  <Input
+                    label="Name"
+                    value={value}
+                    onChangeValue={onChange}
+                    onBlur={onBlur}
+                    placeholder="Enter your full name"
+                  />
+                  {errors.name && (
+                    <Box marginTop="xs">
+                      <Typography variant="bodySmall" color={theme.colors.colorFeedbackError}>
+                        {errors.name.message}
+                      </Typography>
+                    </Box>
+                  )}
+                </Box>
+              )}
+            />
+
+            {/* Email */}
+            <Controller
+              control={control}
+              name="email"
+              render={({ field: { onChange, onBlur, value } }) => (
+                <Box>
+                  <Input
+                    label="Email"
+                    value={value}
+                    onChangeValue={onChange}
+                    onBlur={onBlur}
+                    placeholder="Enter your email"
+                    keyboardType="email-address"
+                    autoCapitalize="none"
+                    editable={false}
+                  />
+                  {errors.email && (
+                    <Box marginTop="xs">
+                      <Typography variant="bodySmall" color={theme.colors.colorFeedbackError}>
+                        {errors.email.message}
+                      </Typography>
+                    </Box>
+                  )}
+                </Box>
+              )}
+            />
+
+            {/* Phone */}
+            <Controller
+              control={control}
+              name="phone"
+              render={({ field: { onChange, onBlur, value } }) => (
+                <Box>
+                  <Row spacing="none" gap="sm" justify="space-between">
+                    <Box style={getProfileStyles.prefix} padding="md">
+                      <Typography variant="bodyRegular" colorVariant="secondary">
+                        +1
+                      </Typography>
+                    </Box>
+                    <Box flex={1}>
+                      <Input
+                        label={t('signupCompletion.number')}
+                        variant="numeric"
+                        value={value}
+                        onChangeValue={(text) => {
+                          const formatted = formatPhoneNumber(text);
+                          onChange(formatted);
+                        }}
+                        onBlur={onBlur}
+                        keyboardType="phone-pad"
+                        maxLength={12}
+                        style={{ width: '100%' }}
+                        editable={false}
+                      />
+                    </Box>
+                  </Row>
+                  {errors.phone && (
+                    <Box marginTop="xs">
+                      <Typography variant="bodySmall" color={theme.colors.colorFeedbackError}>
+                        {errors.phone.message}
+                      </Typography>
+                    </Box>
+                  )}
+                </Box>
+              )}
+            />
+
+            {/* City */}
+            <Controller
+              control={control}
+              name="city"
+              render={({ field: { onChange, onBlur, value } }) => (
+                <Box>
+                  <Input
+                    label="City"
+                    icon="transfer"
+                    value={value}
+                    onChangeValue={onChange}
+                    onBlur={onBlur}
+                    placeholder="Enter your city"
+                  />
+                  {errors.city && (
+                    <Box marginTop="xs">
+                      <Typography variant="bodySmall" color={theme.colors.colorFeedbackError}>
+                        {errors.city.message}
+                      </Typography>
+                    </Box>
+                  )}
+                </Box>
+              )}
+            />
+
+            {/* Address */}
+            <Controller
+              control={control}
+              name="address"
+              render={({ field: { onChange, onBlur, value } }) => (
+                <Box>
+                  <Input
+                    label="Address"
+                    icon="transfer"
+                    value={value}
+                    onChangeValue={onChange}
+                    onBlur={onBlur}
+                    placeholder="Enter your full address"
+                  />
+                  {errors.address && (
+                    <Box marginTop="xs">
+                      <Typography variant="bodySmall" color={theme.colors.colorFeedbackError}>
+                        {errors.address.message}
+                      </Typography>
+                    </Box>
+                  )}
+                </Box>
+              )}
+            />
+
+          </Box>
+
+          {/* Actions */}
+          <Box width="100%" justifyContent="center" alignItems="center" gap="xl">
+            <Box width="100%">
+              <Button
+                variant="secondary"
+                label="Save"
+                onPress={handleSubmit(onSubmit, onError)}
+                disabled={!isValid || !isDirty || isLoading}
+              />
+            </Box>
+            
+            <TouchableOpacity onPress={handleHelpPress} activeOpacity={0.7}>
               <Row spacing="sm" alignItems="center">
-                <Icon name="left-arrow" color="colorFeedbackError" />
-                <Typography variant="bodyMedium" color={theme.colors.colorFeedbackError}>
-                  Logout
+                <Icon name="sound" color="colorBaseWhite" />
+                <Typography variant="bodyMedium" color={theme.colors.colorBaseWhite}>
+                  Help
                 </Typography>
               </Row>
             </TouchableOpacity>
-          </Box>
 
+            <Box marginTop="lg" marginBottom="xl">
+              <TouchableOpacity onPress={handleLogout} activeOpacity={0.7}>
+                <Row spacing="sm" alignItems="center">
+                  <Icon name="left-arrow" color="colorFeedbackError" />
+                  <Typography variant="bodyMedium" color={theme.colors.colorFeedbackError}>
+                    Logout
+                  </Typography>
+                </Row>
+              </TouchableOpacity>
+            </Box>
+
+          </Box>
         </Box>
-      </Box>
-    </TouchableWithoutFeedback>
+      </TouchableWithoutFeedback>
+    </ScrollView>
   );
 
   // Contenido de Portfolio
   const renderPortfolioContent = () => (
-    <>
-      <Box>
-        <Row marginTop="md" gap="sm">
-          <Icon name="tag" color="colorBaseWhite"/>
-          <Typography variant="bodyLarge" color="white">Services to offer</Typography>
-        </Row>
+    <Box flex={1}>
+      <FlatList
+        data={services ?? []}
+        keyExtractor={(item: any) => item.id}
+        style={{ flex: 1 }}
+        contentContainerStyle={{ paddingBottom: 70 }}
+        ListHeaderComponent={
+          <Box>
+            <Row marginTop="md" gap="sm">
+              <Icon name="tag" color="colorBaseWhite" />
+              <Typography variant="bodyLarge" color="white">Services to offer</Typography>
+            </Row>
 
-        {/* Loading de categorías */}
-        {isCategoriesLoading && (
-          <Typography variant="bodyMedium" color={theme.colors.colorBaseWhite}>
-            Loading categories...
-          </Typography>
-        )}
+            {/* Loading de categorías */}
+            {isCategoriesLoading && (
+              <Typography variant="bodyMedium" color={theme.colors.colorBaseWhite}>
+                Loading categories...
+              </Typography>
+            )}
 
-        {/* Error de categorías */}
-        {categoriesError && (
-          <Typography variant="bodyMedium" color={theme.colors.colorFeedbackError}>
-            Error loading categories
-          </Typography>
-        )}
+            {/* Error de categorías */}
+            {categoriesError && (
+              <Typography variant="bodyMedium" color={theme.colors.colorFeedbackError}>
+                Error loading categories
+              </Typography>
+            )}
 
-        {/* Loading de servicios */}
-        {isLoadingServices && (
-          <Typography variant="bodyMedium" color={theme.colors.colorBaseWhite}>
-            Loading services...
-          </Typography>
-        )}
-
-        {/* Lista de servicios */}
-        {services?.map((service: any) => {
+            {/* Loading de servicios */}
+            {isLoadingServices && (
+              <Typography variant="bodyMedium" color={theme.colors.colorBaseWhite}>
+                Loading services...
+              </Typography>
+            )}
+          </Box>
+        }
+        renderItem={({ item: service, index }) => {
           const serviceOptions = getCategoryOptions(service.categories || []);
-          
           return (
-            <Box 
+            <Box
               key={service.id}
-              marginTop="lg" 
+              marginTop="lg"
               paddingHorizontal="md"
               paddingTop="sm"
-              paddingBottom="md" 
+              paddingBottom="md"
               backgroundColor="colorGrey600"
               borderRadius={16}
               gap="sm"
             >
               <Row justifyContent="space-between">
-                <Row spacing='none' gap="lg">
+                <Row spacing="none" gap="lg">
                   <Box maxWidth={180}>
                     <GroupChipSelector
                       onChange={() => {}}
@@ -759,13 +775,13 @@ export const ProfileScreen = () => {
                   </Typography>
                 </Row>
                 <Box>
-                  <Button 
-                    variant="transparent" 
-                    label="Edit" 
-                    iconWidth={20} 
-                    iconHeight={20} 
-                    leftIcon={images.iconEdit as ImageSourcePropType} 
-                    onPress={() => handleEditService(service.id)} 
+                  <Button
+                    variant="transparent"
+                    label="Edit"
+                    iconWidth={20}
+                    iconHeight={20}
+                    leftIcon={images.iconEdit as ImageSourcePropType}
+                    onPress={() => handleEditService(service.id)}
                   />
                 </Box>
               </Row>
@@ -778,7 +794,7 @@ export const ProfileScreen = () => {
                   </Typography>
                 </Row>
 
-                <Box paddingVertical='sm'>
+                <Box paddingVertical="sm">
                   <Typography variant="bodyLarge" color={theme.colors.colorBaseWhite}>
                     {service.title}
                   </Typography>
@@ -797,19 +813,22 @@ export const ProfileScreen = () => {
               </Box>
             </Box>
           );
-        })}
-
-      </Box>
-
-      <Box marginTop="xl">
-        <Button 
-          variant="secondary" 
-          label="Add New Service"
-          onPress={handleAddNewService}
-          disabled={isCategoriesLoading}
-        />
-      </Box>
-    </>
+        }}
+        ListFooterComponent={
+          <Box marginTop="xl">
+            <Button
+              variant="secondary"
+              label="Add New Service"
+              onPress={handleAddNewService}
+              disabled={isCategoriesLoading}
+            />
+          </Box>
+        }
+        showsVerticalScrollIndicator={false}
+        nestedScrollEnabled
+        keyboardShouldPersistTaps="handled"
+      />
+    </Box>
   );
 
   // Contenido de User Reviews
@@ -849,10 +868,16 @@ export const ProfileScreen = () => {
     },
   ];
 
-  const renderReviews = () => {
-      return reviews.map((review, index) => (
-        <Box key={review.username + '-' + index} marginBottom={index < reviews.length - 1 ? "md" : "none"}>
-          <RatingReview 
+  const renderUserReviewsContent = () => (
+    <FlatList
+      data={reviews}
+      keyExtractor={(review, index) => review.username + '-' + index}
+      renderItem={({ item: review, index }) => (
+        <Box
+          key={review.username + '-' + index}
+          marginBottom={index < reviews.length - 1 ? 'md' : 'none'}
+        >
+          <RatingReview
             rating={review.rating}
             reviewDate={review.reviewDate}
             username={review.username}
@@ -861,13 +886,14 @@ export const ProfileScreen = () => {
             reviewTitle={review.reviewTitle}
           />
         </Box>
-      ));
-  };
-
-  const renderUserReviewsContent = () => (
-    <Box marginTop="lg" paddingHorizontal="md" paddingBottom="xl">
-      {renderReviews()}
-    </Box>
+      )}
+      contentContainerStyle={{
+        paddingHorizontal: 16,
+        paddingTop: 16,
+        paddingBottom: 70,
+      }}
+      showsVerticalScrollIndicator={false}
+    />
   );
 
   // Contenido de Subscriptions
@@ -893,34 +919,46 @@ export const ProfileScreen = () => {
   ];
 
   const renderSubscriptionsContent = () => (
-    <>
-      <PremiumCard 
-        title="Get Premium" 
-        features={premiumFeatures} 
-      />
+    <View style={{ flex: 1 }}>
+      <ScrollView
+        style={{ flex: 1 }}
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={{
+          paddingHorizontal: 16,
+          paddingVertical: 20,
+          paddingBottom: 70,
+          minHeight: '100%'
+        }}
+        scrollEnabled={true}
+      >
+        <PremiumCard 
+          title="Get Premium" 
+          features={premiumFeatures} 
+        />
 
-      <SubscriptionPlans 
-        plans={subscriptionPlans}
-        onPlanSelect={(index) => console.log(`Selected plan ${index}`)}
-      />
+        <SubscriptionPlans 
+          plans={subscriptionPlans}
+          onPlanSelect={(index) => console.log(`Selected plan ${index}`)}
+        />
 
-      <Box width="100%" marginTop="md" marginBottom="lg" gap="sm">
+        <Box width="100%" marginTop="md" marginBottom="lg" gap="sm">
           <Button
             variant="slide"
             label="Cancel Subscription"
             leftIcon="clear"
             onPress={() => {}}
           />
-      </Box>
+        </Box>
 
-      <Box maxWidth={400}>
-        <Typography variant="bodyRegular" color={theme.colors.colorBaseWhite}>
-          By placing this order, you agree to the Terms of Service and Privacy Policy. 
-          Subscription automatically renews unless auto-renew is turned off at least 24-hours 
-          before the end of the current period.
-        </Typography>
-      </Box>
-    </>
+        <Box maxWidth={400}>
+          <Typography variant="bodyRegular" color={theme.colors.colorBaseWhite}>
+            By placing this order, you agree to the Terms of Service and Privacy Policy. 
+            Subscription automatically renews unless auto-renew is turned off at least 24-hours 
+            before the end of the current period.
+          </Typography>
+        </Box>
+      </ScrollView>
+    </View>
   );
 
   // Configuración de pasos del formulario de servicios
@@ -1024,7 +1062,7 @@ export const ProfileScreen = () => {
   };
 
   return (
-    <Box flex={1}>
+    <View style={{ flex: 1 }}>
       <Box marginTop="sm">
         <GroupChipSelector
           onChange={handleSectionChange}
@@ -1036,17 +1074,8 @@ export const ProfileScreen = () => {
         />
       </Box>
 
-      <ScrollView 
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={{ 
-          flexGrow: 1,
-          paddingBottom: 70 
-        }}
-        keyboardShouldPersistTaps="handled"
-      >
-        {renderContent()}
-      </ScrollView>
-
+      {renderContent()}
+    
       {/* Modal del formulario de servicios */}
       <ProviderForm
         visible={serviceFormVisible}
@@ -1060,6 +1089,6 @@ export const ProfileScreen = () => {
         formData={serviceFormData}
         setFormData={setServiceFormData}
       />
-    </Box>
+    </View>
   );
 };
