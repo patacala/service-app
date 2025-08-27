@@ -55,7 +55,7 @@ export const Post = ({
                     </Box>
                 </Box>
                 <Box>
-                    <Typography variant="bodyMedium" color="white">{post.name}</Typography>
+                    <Typography variant="bodyMedium" color="white">{post.provider.name}</Typography>
                     <Typography variant="bodyXSmall" color="white">{post.type}</Typography>
                     <Typography variant="bodyMedium" color="white">{post.category}</Typography>
                 </Box>
