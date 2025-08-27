@@ -5,7 +5,7 @@ import { Typography } from '../../../design-system/components/foundation/Typogra
 import { useSelector } from 'react-redux';
 import { RootState } from '../../../store';
 import { CardPost, setFilters } from '../slices/wall.slice';
-import { addToFavorites } from '../../favorites/slices/favorites.slice';
+/* import { addToFavorites } from '../../favorites/slices/favorites.slice'; */
 import { Button, GroupChipSelector, Input, theme } from '@/design-system';
 import { Row } from '@/design-system/components/layout/Row/Row';
 import images from '@/assets/images/images';
