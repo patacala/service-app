@@ -34,7 +34,7 @@ import { SessionManager } from '@/infrastructure/session';
 /* import { GoogleSignin } from '@react-native-google-signin/google-signin'; */
 import { useAuth } from '@/infrastructure/auth/AuthContext';
 import { ProfilePartial, useGetCurrentUserQuery, useUpdateProfileMutation } from '@/features/auth/store';
-import { useCreateServiceMutation, useGetMyServicesQuery } from '@/features/services/store';
+import { useCreateServiceMutation, useUpdateServiceMutation, useGetMyServicesQuery } from '@/features/services/store';
 import { useCategoryContext } from '@/infrastructure/category/CategoryContext';
 
 // Interfaces
@@ -52,6 +52,7 @@ interface ServiceData {
 }
 
 interface ServiceFormData {
+  id: string;
   title: string;
   city: string;
   address: string;
@@ -100,7 +101,8 @@ export const ProfileScreen = () => {
   const theme = useTheme<Theme>();
   const { data: profile } = useGetCurrentUserQuery();
   const [updateProfile, { isLoading }] = useUpdateProfileMutation();
-  const [createService, { isLoading: isLoadingCreateService, isError, error }] = useCreateServiceMutation();
+  const [createService, { isLoading: isLoadingCreateService, isError: isErrorCreateService, error: errorCreateService }] = useCreateServiceMutation();
+  const [updateService, { isLoading: isLoadingUpdateService, isError: isErrorUpdateService, error: errorUpdateService }] = useUpdateServiceMutation();
   const { data: services, isLoading: isLoadingServices } = useGetMyServicesQuery();
   
   // Usar el contexto de categorías
@@ -120,6 +122,7 @@ export const ProfileScreen = () => {
 
   // Estado para los datos del formulario de servicios
   const [serviceFormData, setServiceFormData] = useState<ServiceFormData>({
+    id: '',
     title: '',
     city: '',
     address: '',
@@ -292,6 +295,7 @@ export const ProfileScreen = () => {
   const handleAddNewService = () => {
     setEditingServiceId(null);
     setServiceFormData({
+      id: '',
       title: '',
       city: '',
       address: '',
@@ -315,6 +319,7 @@ export const ProfileScreen = () => {
       const serviceOptions = getCategoryOptions(service.categories || []);
       
       setServiceFormData({
+        id: service.id,
         title: service.title,
         city: service.city || '',
         address: service.city || '',
@@ -332,12 +337,25 @@ export const ProfileScreen = () => {
   const handleServiceSubmit = async (data: ServiceFormData) => {
     try {
       if (editingServiceId) {
-        // Editar servicio existente
-        // Aquí podrías implementar la lógica de actualización
-        console.log('Editing service:', editingServiceId, data);
+        console.log('Editing service:', editingServiceId);
+        await updateService({
+          id: data.id,
+          data: {
+            title: data.title,
+            description: data.description,
+            price: data.pricePerHour,
+            categoryIds: data.selectedServices,
+            images: data.photos,
+            currency: 'USD',
+            city: profile?.city ?? '',
+            lat: undefined,
+            lon: undefined,
+            coverMediaId: undefined,
+          },
+      }).unwrap();
       } else {
         // Crear servicio en backend
-        const response = await createService({
+        await createService({
           title: data.title,
           description: data.description,
           price: data.pricePerHour,   
@@ -353,6 +371,7 @@ export const ProfileScreen = () => {
 
       // Resetear formulario
       setServiceFormData({
+        id: '',
         title: '',
         city: '',
         address: '',
@@ -363,7 +382,6 @@ export const ProfileScreen = () => {
         addressService: '',
         pricePerHour: 62,
       });
-      setEditingServiceId(null);
       return true;
     } catch (error: any) {
       console.error(error);
@@ -954,7 +972,7 @@ export const ProfileScreen = () => {
     {
       title: "Detail Service",
       topText: "Build your portfolio", 
-      height: "78%",
+      height: "81%",
       component: (
         <DetailService 
           onAddressServiceChange={handleAddressServiceChange}
@@ -974,7 +992,7 @@ export const ProfileScreen = () => {
 
   const serviceConfirmationStep = {
     image: images.withoutResult as ImageSourcePropType,
-    title: editingServiceId ? "Service Updated!" : "Services Successfully Created",
+    title: editingServiceId ? "Service Successfully Updated!" : "Services Successfully Created",
     description: "",
     height: "66%"
   };
