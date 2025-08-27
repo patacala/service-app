@@ -40,9 +40,10 @@ export const servicesApi = apiSlice.injectEndpoints({
     updateService: builder.mutation<Service, UpdateServiceRequest>({
       query: ({ id, data }) => ({
         url: `/services/${id}`,
-        method: 'PUT',
+        method: 'PATCH',
         data,
       }),
+      invalidatesTags: ['MyServices'],
     }),
     deleteService: builder.mutation<void, string>({
       query: (id) => ({
