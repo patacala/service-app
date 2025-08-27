@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Image, ImageSourcePropType, TouchableOpacity, ScrollView } from "react-native";
+import { Image, ImageSourcePropType, TouchableOpacity, ScrollView, TouchableWithoutFeedback, View } from "react-native";
 import { Box, SafeContainer, Typography, theme } from "@/design-system";
 import { Row } from "@/design-system/components/layout/Row/Row";
 import { getWallStyles } from '@/features/wall/screens/wall/wall.style';
@@ -138,71 +138,76 @@ export const ServicesScreen = () => {
     return (
         <>
             <Box height="100%">
-                <ScrollView 
-                    style={getServicesStyles.scrollView}
-                    showsVerticalScrollIndicator={false}
-                    contentContainerStyle={getServicesStyles.scrollContent}
-                >
+            <ScrollView
+                style={getServicesStyles.scrollView}
+                showsVerticalScrollIndicator={false}
+                contentContainerStyle={getServicesStyles.scrollContent}
+                keyboardShouldPersistTaps="handled"
+            >
+                <TouchableWithoutFeedback onPress={() => {}}>
+                <View>
                     <Box gap="md">
-                        {/* Servicios pendientes */}
-                        {pendingServices.length > 0 && (
-                            <Box gap="md">
-                                {renderSectionHeader('Pending Services')}
-                                {pendingServices.map(service => (
-                                    <Box key={service.id}>
-                                        <ServicePost 
-                                            servicePost={service}
-                                            onCancel={handleCancelServicePress}
-                                            onDetail={() => navigateToChat(service)}
-                                        />
-                                    </Box>
-                                ))}
+                    {/* Servicios pendientes */}
+                    {pendingServices.length > 0 && (
+                        <Box gap="md">
+                        {renderSectionHeader('Pending Services')}
+                        {pendingServices.map(service => (
+                            <Box key={service.id}>
+                            <ServicePost
+                                servicePost={service}
+                                onCancel={handleCancelServicePress}
+                                onDetail={() => navigateToChat(service)}
+                            />
                             </Box>
-                        )}
-                        
-                        {/* Servicios completados */}
-                        {completedServices.length > 0 && (
-                            <Box gap="md">
-                                {renderSectionHeader('Services Completed')}
-                                {completedServices.map(service => (
-                                    <Box key={service.id}>
-                                        <ServicePost 
-                                            servicePost={service}
-                                            onRate={handleRateServicePress}
-                                        />
-                                    </Box>
-                                ))}
-                            </Box>
-                        )}
+                        ))}
+                        </Box>
+                    )}
 
-                        {/* Mensaje si no hay servicios */}
-                        {services.length === 0 && (
-                            <Box alignItems="center" justifyContent="center" padding="xl">
-                                <Typography variant="bodyLarge" color={theme.colors.colorGrey200}>
-                                    No tienes servicios disponibles
-                                </Typography>
+                    {/* Servicios completados */}
+                    {completedServices.length > 0 && (
+                        <Box gap="md">
+                        {renderSectionHeader('Services Completed')}
+                        {completedServices.map(service => (
+                            <Box key={service.id}>
+                            <ServicePost
+                                servicePost={service}
+                                onRate={handleRateServicePress}
+                            />
                             </Box>
-                        )}
+                        ))}
+                        </Box>
+                    )}
+
+                    {/* Mensaje si no hay servicios */}
+                    {services.length === 0 && (
+                        <Box alignItems="center" justifyContent="center" padding="xl">
+                        <Typography variant="bodyLarge" color={theme.colors.colorGrey200}>
+                            No tienes servicios disponibles
+                        </Typography>
+                        </Box>
+                    )}
                     </Box>
-                </ScrollView>
+                </View>
+                </TouchableWithoutFeedback>
+            </ScrollView>
             </Box>
-    
+
             <LocationPanel
-                visible={locationPanelVisible}
-                onClose={() => setLocationPanelVisible(false)}
-                onSelectLocation={handleSelectLocation}
-                currentLocation={currentLocation}
+            visible={locationPanelVisible}
+            onClose={() => setLocationPanelVisible(false)}
+            onSelectLocation={handleSelectLocation}
+            currentLocation={currentLocation}
             />
 
             <CancelService
-                visible={cancelServiceVisible}
-                onClose={() => setCancelServiceVisible(false)}
+            visible={cancelServiceVisible}
+            onClose={() => setCancelServiceVisible(false)}
             />
 
-            <RateService 
-                visible={rateServiceVisible}
-                onClose={() => setRateServiceVisible(false)}
+            <RateService
+            visible={rateServiceVisible}
+            onClose={() => setRateServiceVisible(false)}
             />
         </>
-    );
+        );
 };

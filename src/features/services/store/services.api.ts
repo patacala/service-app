@@ -4,11 +4,20 @@ import type {
   UpdateServiceRequest,
   Service,
   ServicesResponse,
+  GetServicesParams,
 } from './services.types';
 
 export const servicesApi = apiSlice.injectEndpoints({
   endpoints: (builder) => ({
-    getServices: builder.query<ServicesResponse, { page?: number; limit?: number; category?: string }>({
+    /* getServices: builder.query<ServicesResponse, { page?: number; limit?: number; category?: string }>({
+      query: (params) => ({
+        url: '/services',
+        method: 'GET',
+        params,
+      }),
+      providesTags: ['Service'],
+    }), */
+    getServices: builder.query<ServicesResponse, GetServicesParams>({
       query: (params) => ({
         url: '/services',
         method: 'GET',
