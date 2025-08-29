@@ -43,7 +43,7 @@ export const Post = ({
         <Row style={styles.footerCard} justifyContent="space-between">
             <Row>
                 <Box>
-                    <Image source={post.miniImage} />
+                    <Image source={images.profile1 as ImageSourcePropType} />
                     <Box paddingLeft="sm" flexDirection="row" justifyContent="center" alignItems="center" style={styles.rating}>
                       <Box paddingRight="xs">
                         <Icon name="star" size={13} color="colorBaseWhite" />
@@ -56,12 +56,14 @@ export const Post = ({
                 </Box>
                 <Box>
                     <Typography variant="bodyMedium" color="white">{post.provider.name}</Typography>
-                    <Typography variant="bodyXSmall" color="white">{post.type}</Typography>
+                    {/* <Typography variant="bodyXSmall" color="white">{post.type}</Typography> */}
+                    <Typography variant="bodyXSmall" color="white">Service</Typography>
                     <Typography variant="bodyMedium" color="white">{post.category}</Typography>
                 </Box>
             </Row>
             <Box alignItems="flex-end">
-                <Typography variant="bodyMedium" color="white">{post.distance} Km</Typography>
+                {/* <Typography variant="bodyMedium" color="white">{post.distance} Km</Typography> */}
+                <Typography variant="bodyMedium" color="white">1.5 Km</Typography>
                 <Box paddingTop="sm">
                     <Image 
                       source={isFavorite ? images.bookmarkSiBg as ImageSourcePropType : images.bookmarkNoBg as ImageSourcePropType} 

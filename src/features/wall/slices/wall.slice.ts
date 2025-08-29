@@ -1,7 +1,6 @@
 import {createSlice, PayloadAction, createAsyncThunk} from '@reduxjs/toolkit';
 import { ImageSourcePropType } from 'react-native';
 import { Float } from 'react-native/Libraries/Types/CodegenTypes';
-import images from '@/assets/images/images';
 import { IconName } from '@/design-system/components/layout/Icon';
 
 export interface CardPost {
@@ -11,6 +10,7 @@ export interface CardPost {
   price: number;
   currency: string;
   categories: string[];
+  category: string;
   images: string[];
   name: string;
   provider: {
@@ -23,7 +23,6 @@ export interface CardPost {
   createdAt: string;
   updatedAt: string;
   type: string;
-  category: string;
   rating: number;
   distance: number;
   location: string;
