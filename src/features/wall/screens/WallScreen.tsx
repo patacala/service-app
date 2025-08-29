@@ -50,11 +50,11 @@ export const WallScreen: React.FC<WallScreenProps> = () => {
 
   const { data, isLoading } = useGetServicesQuery({
     query: searchQuery,
-    cat: selectedCategories.includes('all') ? undefined : selectedCategories[0],
-    tag: activeFilters.tags?.join(','),
+    cat: selectedCategories.includes('all') ? undefined : selectedCategories.join(','),
+    tag: '',
     city: currentLocation?.name,
   });
-  
+
   const posts = data?.data || [];
   const isLoadingPosts = isLoading || isCategoriesLoading;
 

@@ -1,11 +1,9 @@
 import { useState } from "react";
-import { Image, ImageSourcePropType, TouchableOpacity, ScrollView, TouchableWithoutFeedback, View } from "react-native";
-import { Box, SafeContainer, Typography, theme } from "@/design-system";
-import { Row } from "@/design-system/components/layout/Row/Row";
-import { getWallStyles } from '@/features/wall/screens/wall/wall.style';
+import { ImageSourcePropType, ScrollView, TouchableWithoutFeedback, View } from "react-native";
+import { Box, Typography, theme } from "@/design-system";
 import { getServicesStyles } from './services/services.styles';
 import images from "@/assets/images/images";
-import { Icon, IconName } from "@/design-system/components/layout/Icon";
+import { IconName } from "@/design-system/components/layout/Icon";
 import { LocationPanel } from "@/features/wall/components/LocationPanel";
 import { ServicePost } from "../components/ServicePost";
 import { ServiceData } from "../slices/services.slice";

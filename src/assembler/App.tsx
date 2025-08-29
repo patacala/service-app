@@ -21,6 +21,7 @@ import { DataManagerProvider } from '@/infrastructure/dataManager/DataManager';
 import { toastConfig } from '@/design-system/components/customToast/CustomToast';
 import { AuthProvider } from '@/infrastructure/auth/AuthContext';
 import { CategoryProvider } from '@/infrastructure/category/CategoryContext';
+import { ProfileProvider } from '@/infrastructure/profile/ProfileContext';
 
 const App = () => {
   const [fontsLoaded] = useFonts({
@@ -54,20 +55,22 @@ const App = () => {
           <ThemeProvider>
             <AuthProvider>
                 <DataManagerProvider>
-                  <CategoryProvider>
-                      <KeyboardAvoidingView
-                        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-                        style={styles.container}
-                        keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 10}
-                      >
-                        <TouchableWithoutFeedback onPress={dismissKeyboard}>
-                          <View style={styles.container}>
-                            <AppNavigator />
-                            <Toast config={toastConfig} /> 
-                          </View>
-                        </TouchableWithoutFeedback>
-                      </KeyboardAvoidingView>
-                  </CategoryProvider>
+                  <ProfileProvider>
+                      <CategoryProvider>
+                        <KeyboardAvoidingView
+                          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+                          style={styles.container}
+                          keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 10}
+                        >
+                          <TouchableWithoutFeedback onPress={dismissKeyboard}>
+                            <View style={styles.container}>
+                              <AppNavigator />
+                              <Toast config={toastConfig} /> 
+                            </View>
+                          </TouchableWithoutFeedback>
+                        </KeyboardAvoidingView>
+                      </CategoryProvider>
+                  </ProfileProvider>
                 </DataManagerProvider>
             </AuthProvider>
           </ThemeProvider>
