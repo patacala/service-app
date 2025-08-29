@@ -20,6 +20,7 @@ import { LocationPanel } from '@/features/wall/components/LocationPanel';
 import { RootState } from '@/store';
 import { setLocation } from '@/features/location/slices/location.slice';
 import { ChatScreen } from '@/features/chat';
+import { useProfileContext } from '@/infrastructure/profile/ProfileContext';
 
 const Tab = createBottomTabNavigator<MainTabParamList>();
 const MainStack = createNativeStackNavigator();
@@ -43,9 +44,19 @@ const ScreenWrapper: React.FC<{
   const [locationPanelVisible, setLocationPanelVisible] = useState(false);
   const dispatch = useDispatch();
   const currentLocation = useSelector((state: RootState) => state.location.currentLocation);
+  const { profile, isLoading } = useProfileContext();
 
   const handleSelectLocation = (location: Location) => {
     dispatch(setLocation(location));
+  };
+
+  const getGreeting = () => {
+    const currentHour = new Date().getHours();
+    if (currentHour < 12) {
+      return 'Good Morning,';
+    } else {
+      return 'Good Afternoon,';
+    }
   };
 
   return (
@@ -64,11 +75,14 @@ const ScreenWrapper: React.FC<{
             />
             <Box width="100%" maxWidth={200}>
               <Typography variant="headingSecondary" color="white">
-                Good afternoon,
+                {getGreeting()}
               </Typography>
-              <Typography variant="headingPrimary" color="white">
-                Garry Calvin
-              </Typography>
+              
+              {!isLoading && profile?.name && (
+                <Typography variant="bodyMedium" color="white">
+                  {profile.name}
+                </Typography>
+              )}
             </Box>
             <Box>
               {showRating ? (

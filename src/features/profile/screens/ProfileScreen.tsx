@@ -38,20 +38,7 @@ import { useAuth } from '@/infrastructure/auth/AuthContext';
 import { ProfilePartial, useGetCurrentUserQuery, useUpdateProfileMutation } from '@/features/auth/store';
 import { useCreateServiceMutation, useUpdateServiceMutation, useGetMyServicesQuery } from '@/features/services/store';
 import { useCategoryContext } from '@/infrastructure/category/CategoryContext';
-
-// Interfaces
-interface ServiceData {
-  id: string;
-  title: string;
-  city: string;
-  address: string;
-  serviceOptions: ChipOption[];
-  selectedServices: string[];
-  pricePerHour: number;
-  addressService: string;
-  description: string;
-  photos: string[];
-}
+import { useProfileContext } from '@/infrastructure/profile/ProfileContext';
 
 interface ServiceFormData {
   id: string;
@@ -101,14 +88,14 @@ type ProfileFormData = z.infer<typeof profileSchema>;
 export const ProfileScreen = () => {
   const { t } = useTranslation('auth');
   const theme = useTheme<Theme>();
-  const { data: profile } = useGetCurrentUserQuery();
   const [updateProfile, { isLoading }] = useUpdateProfileMutation();
   const [createService, { isLoading: isLoadingCreateService, isError: isErrorCreateService, error: errorCreateService }] = useCreateServiceMutation();
   const [updateService, { isLoading: isLoadingUpdateService, isError: isErrorUpdateService, error: errorUpdateService }] = useUpdateServiceMutation();
   const { data: services, isLoading: isLoadingServices } = useGetMyServicesQuery();
-  
-  // Usar el contexto de categorías
+
+  // Usar contextos categorias y perfil
   const { categories, isLoading: isCategoriesLoading, error: categoriesError } = useCategoryContext();
+  const { profile, isLoading: isProfileLoading, error: profileError } = useProfileContext();
 
   // Estado para la imagen de perfil
   const [profileImage, setProfileImage] = useState<string>('');
