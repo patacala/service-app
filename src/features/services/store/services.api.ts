@@ -52,7 +52,7 @@ export const servicesApi = apiSlice.injectEndpoints({
         method: 'PATCH',
         data,
       }),
-      invalidatesTags: ['MyServices'],
+      invalidatesTags: ['Service', 'MyServices'],
     }),
     deleteService: builder.mutation<void, string>({
       query: (id) => ({
