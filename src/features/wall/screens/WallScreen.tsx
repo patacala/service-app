@@ -52,7 +52,8 @@ export const WallScreen: React.FC<WallScreenProps> = () => {
     query: searchQuery,
     cat: selectedCategories.includes('all') ? undefined : selectedCategories.join(','),
     tag: '',
-    city: currentLocation?.name,
+    /* city: currentLocation?.name, */
+    city: '',
   });
 
   const posts = data?.data || [];
