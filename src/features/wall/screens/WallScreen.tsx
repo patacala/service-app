@@ -58,6 +58,17 @@ export const WallScreen: React.FC<WallScreenProps> = () => {
   const posts = data?.data || [];
   const isLoadingPosts = isLoading || isCategoriesLoading;
 
+  const getCategoryNames = (categoryIds: string[]) => {
+    if (!categoryIds || categoryIds.length === 0 || !categories) return 'Sin categoría';
+    
+    return categoryIds
+      .map(id => {
+        const category = categories.find((cat: any) => cat.id === id);
+        return category ? category.label : `Category ${id}`;
+      })
+      .join(', ');
+  };
+
   const handleCategoryChange = (selectedIds: string[]) => {
     let newSelectedIds = [...selectedIds];
 
@@ -97,7 +108,10 @@ export const WallScreen: React.FC<WallScreenProps> = () => {
 
   const renderItem: ListRenderItem<CardPost> = ({ item }) => (
     <Post
-      post={item}
+      post={{
+        ...item,
+        category: getCategoryNames(item.categories)
+      }}
       isFavorite={favorites.some((fav: { id: string; }) => fav.id === item.id)}
       onPress={() => handlePostDetail(item)}
     />
