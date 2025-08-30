@@ -18,7 +18,6 @@ export const categoryApi = apiSlice.injectEndpoints({
       }),
       providesTags: ['Category'],
     }),
-
     // Obtener una categoría por ID
     getCategory: builder.query<CategoryResponse, string>({
       query: (id) => ({

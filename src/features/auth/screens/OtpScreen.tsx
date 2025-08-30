@@ -33,7 +33,7 @@ export const OtpScreen = () => {
   const recaptchaVerifier = useRef<FirebaseRecaptchaVerifierModal>(null);
 
   const { login } = useAuth();
-  const [loginWithFirebase] = useLoginMutation();
+  const [loginWithFirebase, { isLoading: isLoadingAuthF}] = useLoginMutation();
   
   useEffect(() => {
     otpRef.current?.clear();
@@ -95,33 +95,31 @@ export const OtpScreen = () => {
 
       const { user, token } = await loginWithFirebase().unwrap();
 
-      // Colocamos el token del backend
-      await login(token, user);
-      
-      if (user.isNewUser) {
-        navigation.navigate('Register', {
-          name: "",
-          email: "",
-          phonenumber: phoneNumber,
-        });
+      if (!isLoadingAuthF && user && token) {
+        // Colocamos el token del backend
+        await login(token, user);
 
-        Toast.show({
-          type: 'success',
-          text1: 'Verificación exitosa',
-          text2: 'Empecemos',
-        });
-      } else {
-        Toast.show({
-          type: 'success',
-          text1: 'Verificación exitosa',
-          text2: '¡Bienvenido de nuevo!',
-        });
+        if (user.isNewUser) {
+          navigation.navigate('Register', {
+            name: "",
+            email: "",
+            phonenumber: phoneNumber,
+          });
+
+          Toast.show({
+            type: 'success',
+            text1: 'Verificación exitosa',
+            text2: 'Empecemos',
+          });
+        } else {
+          Toast.show({
+            type: 'success',
+            text1: 'Verificación exitosa',
+            text2: '¡Bienvenido de nuevo!',
+          });
+        }
       }
-
     } catch (error: any) {
-      console.log(error);
-      console.error('OTP verification error:', error.data.message ?? error.data);
-
       Toast.show({
         type: 'error',
         text1: 'Error al verificar',
