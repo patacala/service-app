@@ -32,6 +32,9 @@ interface ProviderFormProps {
   secondaryButtonText?: string;
   formData?: any;
   setFormData?: (data: any) => void;
+  // Props para bloquear botones
+  primaryButtonDisabled?: boolean;
+  secondaryButtonDisabled?: boolean;
 }
 
 export const ProviderForm: React.FC<ProviderFormProps> = ({
@@ -46,7 +49,9 @@ export const ProviderForm: React.FC<ProviderFormProps> = ({
   primaryButtonText = "Continue",
   secondaryButtonText = "Go back",
   formData = {},
-  setFormData
+  setFormData,
+  primaryButtonDisabled = false,
+  secondaryButtonDisabled = false
 }) => {
   const theme = useTheme<Theme>();
   const styles = createStyles(theme);
@@ -73,17 +78,20 @@ export const ProviderForm: React.FC<ProviderFormProps> = ({
     }
     
     wasVisible.current = visible;
-  }, [visible]);
+  }, [visible, setFormData]);
 
   // Notificar cambios de paso
   useEffect(() => {
     if (onStepChange) {
       onStepChange(currentStep, currentFormData);
     }
-  }, [currentStep, currentFormData]);
+  }, [currentStep, currentFormData, onStepChange]);
 
   // Validación para habilitar/deshabilitar el botón de continuar
   const canContinue = () => {
+    // Si está explícitamente deshabilitado desde props, retornar false
+    if (primaryButtonDisabled) return false;
+    
     if (currentStep <= totalSteps) {
       const currentStepConfig = steps[currentStep - 1];
       if (currentStepConfig.validation) {
@@ -94,16 +102,25 @@ export const ProviderForm: React.FC<ProviderFormProps> = ({
     return true;
   };
 
+  // Determinar si el botón secundario debe estar deshabilitado
+  const canGoBack = () => {
+    return !secondaryButtonDisabled;
+  };
+
   // Función para avanzar al siguiente paso
-  const handleContinue = () => {
+  const handleContinue = async () => {
+    // Prevenir múltiples ejecuciones si no puede continuar
+    if (!canContinue()) return;
+
     if (currentStep < totalSteps) {
       setCurrentStep(currentStep + 1);
     } else if (currentStep === totalSteps) {
       if (onSubmit) {
-        const result = onSubmit(currentFormData);
+        try {
+          const result = onSubmit(currentFormData);
 
-        if (result instanceof Promise) {
-          result.then((success) => {
+          if (result instanceof Promise) {
+            const success = await result;
             if (success) {
               if (hasConfirmation) {
                 setCurrentStep(totalSteps + 1);
@@ -111,15 +128,17 @@ export const ProviderForm: React.FC<ProviderFormProps> = ({
                 onClose();
               }
             }
-          });
-        } else {
-          if (result) {
-            if (hasConfirmation) {
-              setCurrentStep(totalSteps + 1);
-            } else {
-              onClose();
+          } else {
+            if (result) {
+              if (hasConfirmation) {
+                setCurrentStep(totalSteps + 1);
+              } else {
+                onClose();
+              }
             }
           }
+        } catch (error) {
+          console.error('Error en onSubmit:', error);
         }
       } else {
         if (hasConfirmation) {
@@ -135,6 +154,9 @@ export const ProviderForm: React.FC<ProviderFormProps> = ({
 
   // Función para volver al paso anterior
   const handleBack = () => {
+    // Prevenir navegación hacia atrás si está deshabilitado
+    if (!canGoBack()) return;
+
     if (currentStep > 1) {
       setCurrentStep(currentStep - 1);
     } else {
@@ -200,6 +222,11 @@ export const ProviderForm: React.FC<ProviderFormProps> = ({
     return currentStep <= totalSteps;
   };
 
+  // Determinar si mostrar el botón secundario
+  const shouldShowSecondaryButton = () => {
+    return currentStep <= totalSteps;
+  };
+
   return (
     <BottomModal
       visible={visible}
@@ -216,10 +243,11 @@ export const ProviderForm: React.FC<ProviderFormProps> = ({
       secondaryButtonText={secondaryButtonText}
       primaryButtonVariant="secondary"
       onPrimaryButtonPress={handleContinue}
-      primaryButtonDisabled={!canContinue() && currentStep <= totalSteps}
-      showSecondaryButton={currentStep <= totalSteps}
+      primaryButtonDisabled={!canContinue()}
+      showSecondaryButton={shouldShowSecondaryButton()}
       secondaryButtonIcon="left-arrow"
       secondaryButtonVariant="outlined"
+      secondaryButtonDisabled={!canGoBack()}
       onSecondaryButtonPress={handleBack}
       height={getCurrentHeight()}
       enableScroll={enableScroll}
