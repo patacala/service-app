@@ -9,6 +9,7 @@ import {
   Keyboard,
   FlatList,
   View,
+  ActivityIndicator,
 } from 'react-native';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -36,9 +37,9 @@ import { SessionManager } from '@/infrastructure/session';
 /* import { GoogleSignin } from '@react-native-google-signin/google-signin'; */
 import { useAuth } from '@/infrastructure/auth/AuthContext';
 import { ProfilePartial, useGetCurrentUserQuery, useUpdateProfileMutation } from '@/features/auth/store';
+import { useGetCategoriesQuery } from '@/infrastructure/services/api';
 import { useCreateServiceMutation, useUpdateServiceMutation, useGetMyServicesQuery } from '@/features/services/store';
-import { useCategoryContext } from '@/infrastructure/category/CategoryContext';
-import { useProfileContext } from '@/infrastructure/profile/ProfileContext';
+import { getWallStyles } from '@/features/wall/screens/wall/wall.style';
 
 interface ServiceFormData {
   id: string;
@@ -88,14 +89,14 @@ type ProfileFormData = z.infer<typeof profileSchema>;
 export const ProfileScreen = () => {
   const { t } = useTranslation('auth');
   const theme = useTheme<Theme>();
+  // Categorias y perfil
+  const { data: categoriesData, isLoading: isCategoriesLoading, error: categoriesError } = useGetCategoriesQuery({ language: 'en' }); 
+  const { data: profile, error: profileError } = useGetCurrentUserQuery();
+
   const [updateProfile, { isLoading }] = useUpdateProfileMutation();
   const [createService, { isLoading: isLoadingCreateService, isError: isErrorCreateService, error: errorCreateService }] = useCreateServiceMutation();
   const [updateService, { isLoading: isLoadingUpdateService, isError: isErrorUpdateService, error: errorUpdateService }] = useUpdateServiceMutation();
   const { data: services, isLoading: isLoadingServices } = useGetMyServicesQuery();
-
-  // Usar contextos categorias y perfil
-  const { categories, isLoading: isCategoriesLoading, error: categoriesError } = useCategoryContext();
-  const { profile, isLoading: isProfileLoading, error: profileError } = useProfileContext();
 
   // Estado para la imagen de perfil
   const [profileImage, setProfileImage] = useState<string>('');
@@ -122,6 +123,12 @@ export const ProfileScreen = () => {
     addressService: '',
     pricePerHour: 62
   });
+
+  const categories: ChipOption[] =
+  categoriesData?.categories?.map((c: any) => ({
+    id: c.id,
+    label: c.name,
+  })) ?? [];
 
   // Función para convertir IDs de categorías a ChipOptions
   const getCategoryOptions = useMemo(() => {
@@ -184,6 +191,26 @@ export const ProfileScreen = () => {
       address: '',
     }
   });
+
+  useEffect(() => {
+    if (categoriesError) {
+      Toast.show({
+        type: 'error',
+        text1: 'Error al cargar categorías',
+        text2: (categoriesError as any)?.message ?? 'No se pudieron cargar las categorías.',
+      });
+    }
+  }, [categoriesError]);
+
+  useEffect(() => {
+    if (profileError) {
+      Toast.show({
+        type: 'error',
+        text1: 'Error al cargar perfil',
+        text2: (profileError as any)?.message ?? 'No se pudo cargar el perfil.',
+      });
+    }
+  }, [profileError]);
 
   useEffect(() => {
     if (profile) {
@@ -717,18 +744,14 @@ export const ProfileScreen = () => {
               </Typography>
             )}
 
-            {/* Error de categorías */}
-            {categoriesError && (
-              <Typography variant="bodyMedium" color={theme.colors.colorFeedbackError}>
-                Error loading categories
-              </Typography>
-            )}
-
             {/* Loading de servicios */}
             {isLoadingServices && (
-              <Typography variant="bodyMedium" color={theme.colors.colorBaseWhite}>
-                Loading services...
-              </Typography>
+              <Box style={getWallStyles.loadingContainer}>
+                <ActivityIndicator size="large" color={theme.colors.colorBrandPrimary} />
+                <Typography variant="bodyMedium" color="white" style={getWallStyles.loadingText}>
+                  Loading services...
+                </Typography>
+              </Box>
             )}
           </Box>
         }

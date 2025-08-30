@@ -20,7 +20,7 @@ import { LocationPanel } from '@/features/wall/components/LocationPanel';
 import { RootState } from '@/store';
 import { setLocation } from '@/features/location/slices/location.slice';
 import { ChatScreen } from '@/features/chat';
-import { useProfileContext } from '@/infrastructure/profile/ProfileContext';
+import { useGetCurrentUserQuery } from '@/features/auth/store';
 
 const Tab = createBottomTabNavigator<MainTabParamList>();
 const MainStack = createNativeStackNavigator();
@@ -44,7 +44,7 @@ const ScreenWrapper: React.FC<{
   const [locationPanelVisible, setLocationPanelVisible] = useState(false);
   const dispatch = useDispatch();
   const currentLocation = useSelector((state: RootState) => state.location.currentLocation);
-  const { profile, isLoading } = useProfileContext();
+  const { data: profile, isLoading: isProfileLoading, error: profileError } = useGetCurrentUserQuery();
 
   const handleSelectLocation = (location: Location) => {
     dispatch(setLocation(location));
@@ -78,7 +78,7 @@ const ScreenWrapper: React.FC<{
                 {getGreeting()}
               </Typography>
               
-              {!isLoading && profile?.name && (
+              {!isProfileLoading && profile?.name && (
                 <Typography variant="bodyMedium" color="white">
                   {profile.name}
                 </Typography>

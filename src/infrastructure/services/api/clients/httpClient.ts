@@ -19,6 +19,9 @@ httpClient.interceptors.request.use(async (config) => {
   }
 
   if (session.token) {
+    console.log('Inicio de Token');
+    console.log(session.token);
+    console.log('Fin de Token');
     config.headers.Authorization = `Bearer ${session.token}`;
   }
   return config;
@@ -28,7 +31,6 @@ httpClient.interceptors.request.use(async (config) => {
 httpClient.interceptors.response.use(
   (response) => response,
   (error) => {
-    // Aquí puedes manejar errores globales, logout en 401, etc
     return Promise.reject(error);
   }
 );

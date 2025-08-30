@@ -55,22 +55,18 @@ const App = () => {
           <ThemeProvider>
             <AuthProvider>
                 <DataManagerProvider>
-                  <ProfileProvider>
-                      <CategoryProvider>
-                        <KeyboardAvoidingView
-                          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-                          style={styles.container}
-                          keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 10}
-                        >
-                          <TouchableWithoutFeedback onPress={dismissKeyboard}>
-                            <View style={styles.container}>
-                              <AppNavigator />
-                              <Toast config={toastConfig} /> 
-                            </View>
-                          </TouchableWithoutFeedback>
-                        </KeyboardAvoidingView>
-                      </CategoryProvider>
-                  </ProfileProvider>
+                  <KeyboardAvoidingView
+                    behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+                    style={styles.container}
+                    keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 10}
+                  >
+                    <TouchableWithoutFeedback onPress={dismissKeyboard}>
+                      <View style={styles.container}>
+                        <AppNavigator />
+                        <Toast config={toastConfig} /> 
+                      </View>
+                    </TouchableWithoutFeedback>
+                  </KeyboardAvoidingView>
                 </DataManagerProvider>
             </AuthProvider>
           </ThemeProvider>
