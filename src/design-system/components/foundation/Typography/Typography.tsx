@@ -1,15 +1,18 @@
 import React from 'react';
-import {Text, Platform} from 'react-native';
-import {useTheme} from '@shopify/restyle';
-import type {Theme} from '../../../theme';
-import type {TypographyProps} from './types';
-import {getTypographyStyles} from './Typography.styles';
+import { Text, Platform } from 'react-native';
+import { useTheme } from '@shopify/restyle';
+import type { Theme } from '../../../theme';
+import type { TypographyProps } from './types';
+import { getTypographyStyles } from './Typography.styles';
 
 export const Typography: React.FC<TypographyProps> = ({
   variant,
   colorVariant = 'primary',
   color,
   style,
+  truncate,
+  numberOfLines,
+  ellipsizeMode,
   ...props
 }) => {
   const theme = useTheme<Theme>();
@@ -33,6 +36,9 @@ export const Typography: React.FC<TypographyProps> = ({
         }),
         style,
       ]}
-      {...props}></Text>
+      numberOfLines={truncate ? 1 : numberOfLines}
+      ellipsizeMode={truncate ? 'tail' : ellipsizeMode}
+      {...props}
+    />
   );
 };
