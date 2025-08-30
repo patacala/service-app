@@ -58,8 +58,8 @@ export const Post = ({
                     <Typography variant="bodyMedium" color="white">{post.provider.name}</Typography>
                     {/* <Typography variant="bodyXSmall" color="white">{post.type}</Typography> */}
                     <Typography variant="bodyXSmall" color="white">Services</Typography>
-                    <Box maxWidth={220} maxHeight={50} overflow='visible'>
-                      <Typography variant="bodyMedium" color="white">{post.title}</Typography>
+                    <Box maxWidth={220}>
+                      <Typography numberOfLines={1} variant="bodyMedium" color="white" truncate>{post.title}</Typography>
                     </Box>
                 </Box>
             </Row>

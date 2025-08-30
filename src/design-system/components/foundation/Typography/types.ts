@@ -19,6 +19,7 @@ export interface TypographyStylesProps {
   variant: TypographyVariant;
   colorVariant?: TypographyColorVariant;
   color?: string;
+  truncate?: boolean;
 }
 
 export interface TypographyProps extends TypographyStylesProps, RNTextProps {
