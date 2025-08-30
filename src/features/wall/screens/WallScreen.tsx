@@ -72,8 +72,6 @@ export const WallScreen: React.FC<WallScreenProps> = () => {
   }, [categoriesError]);
 
   const posts = data?.data || [];
-  const isLoadingPosts = isLoading || isCategoriesLoading;
-
   const getCategoryNames = (categoryIds: string[]) => {
     if (!categoryIds || categoryIds.length === 0 || !categories) return 'Sin categoría';
     
@@ -167,7 +165,7 @@ export const WallScreen: React.FC<WallScreenProps> = () => {
         />
       </Box>
 
-      {isLoadingPosts ? (
+      {isCategoriesLoading ? (
         <Box style={getWallStyles.loadingContainer}>
           <ActivityIndicator size="large" color={theme.colors.colorBrandPrimary} />
           <Typography variant="bodyMedium" color="white" style={getWallStyles.loadingText}>
