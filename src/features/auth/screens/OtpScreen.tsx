@@ -13,6 +13,7 @@ import { OtpRef } from '@/design-system/components/forms/Otp/types';
 import { getOtpConfirmationResult } from '@/infrastructure/auth/otpResultManager';
 import { useAuth } from '@/infrastructure/auth/AuthContext';
 import { useLoginMutation } from '../store';
+import { useDataManager } from '@/infrastructure/dataManager/DataManager';
 
 interface OtpScreenRouteParams {
   confirmationResult: ConfirmationResult;
@@ -24,6 +25,7 @@ export const OtpScreen = () => {
   const route = useRoute();
   const { phoneNumber } = route.params as OtpScreenRouteParams;
   const { t } = useTranslation('auth');
+  const { clearAll } = useDataManager();
 
   const [code, setCode] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -38,6 +40,7 @@ export const OtpScreen = () => {
   useEffect(() => {
     otpRef.current?.clear();
     otpRef.current?.focusFirst();
+    clearAll();
   }, []);
 
   const handleResendCode = async () => {

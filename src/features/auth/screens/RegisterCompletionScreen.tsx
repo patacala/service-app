@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { Box, Typography, GroupChipSelector, theme } from '@/design-system';
 import { useNavigation } from '@react-navigation/native';
 import { AuthStackNavigationProp } from '@/assembler/navigation/types';
@@ -78,19 +78,38 @@ export const RegisterCompletionScreen = () => {
     }
   }, [categoriesError]);
 
-  const handleInputChange = (field: keyof CompletionFormData, value: string | string[]) => {
+  // Función para guardar automáticamente los datos
+  const saveFormData = useCallback(async (updatedFormData: CompletionFormData) => {
+    try {
+      await setData('registerCompletionForm', updatedFormData);
+    } catch (error) {
+      console.error('Error guardando datos del formulario:', error);
+    }
+  }, [setData]);
+
+  const handleInputChange = useCallback((field: keyof CompletionFormData, value: string | string[]) => {
     const updatedFormData = {
       ...completionFormData,
       [field]: field === 'selectedCategories' ? (value as string[]) : value,
     };
+    
     setCompletionFormData(updatedFormData);
-    setData('registerCompletionForm', updatedFormData);
-  };
+    
+    // Guardar automáticamente cuando cambian las categorías
+    saveFormData(updatedFormData);
+  }, [completionFormData, saveFormData]);
+
+  // Función específica para manejar cambios en las categorías
+  const handleCategoryChange = useCallback((selectedIds: string[] | null) => {
+    const selectedCategories = selectedIds || [];
+    handleInputChange('selectedCategories', selectedCategories);
+  }, [handleInputChange]);
 
   const handleRegisterCompletion = async () => {
     setIsSubmitting(true);
     try {
-      await setData('registerCompletionForm', completionFormData);
+      // Asegurar que los datos más recientes estén guardados
+      await saveFormData(completionFormData);
 
       const savedFormData = await getData('registerCompletionForm');
       const registerRequest = {
@@ -106,6 +125,11 @@ export const RegisterCompletionScreen = () => {
         text1: 'Success!',
         text2: message ?? 'You have successfully completed registration.',
       });
+
+      // Limpiar los datos guardados después del registro exitoso
+      await removeData('registerCompletionForm');
+      await removeData('registerForm');
+
     } catch (error: any) {
       Toast.show({
         type: 'error',
@@ -118,7 +142,7 @@ export const RegisterCompletionScreen = () => {
   };
 
   const handleGoBack = () => {
-    removeData('registerCompletionForm');
+    // No eliminar los datos cuando va hacia atrás para mantener las selecciones
     navigation.goBack();
   };
 
@@ -145,7 +169,7 @@ export const RegisterCompletionScreen = () => {
         ) : (
           <GroupChipSelector
             multiSelect
-            onChange={(selectedIds) => handleInputChange('selectedCategories', selectedIds || [])}
+            onChange={handleCategoryChange}
             options={tagOptions}
             selectedIds={completionFormData.selectedCategories || []}
           />
