@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { Box, Typography, GroupChipSelector } from '@/design-system';
+import React, { useState, useEffect, useMemo } from 'react';
+import { Box, Typography, GroupChipSelector, theme } from '@/design-system';
 import { useNavigation } from '@react-navigation/native';
 import { AuthStackNavigationProp } from '@/assembler/navigation/types';
 import { useTranslation } from 'react-i18next';
@@ -9,6 +9,8 @@ import Toast from 'react-native-toast-message';
 import { useGetCategoriesQuery } from '@/infrastructure/services/api/endpoints/category/store';
 import { useRegisterMutation } from '../store';
 import { useAuth } from '@/infrastructure/auth/AuthContext';
+import { ActivityIndicator } from 'react-native';
+import { getWallStyles } from '@/features/wall/screens/wall/wall.style';
 
 interface CompletionFormData {
   city: string;
@@ -17,16 +19,12 @@ interface CompletionFormData {
   selectedCategories: string[];
 }
 
-interface CategoryTagOption {
-  id: string;
-  name: string;
-}
-
 export const RegisterCompletionScreen = () => {
   const navigation = useNavigation<AuthStackNavigationProp>();
   const { t } = useTranslation('auth');
   const { getData, setData, removeData } = useDataManager();
-  const { data: categoriesData, isLoading: isCategoriesLoading, error: categoriesError } = useGetCategoriesQuery({language: 'en'});
+  const { data: categoriesData, isLoading: isCategoriesLoading, error: categoriesError } =
+    useGetCategoriesQuery({ language: 'en' });
   const { user: userData, userUpdate } = useAuth();
 
   const [completionFormData, setCompletionFormData] = useState<CompletionFormData>({
@@ -35,10 +33,17 @@ export const RegisterCompletionScreen = () => {
     phone: '',
     selectedCategories: []
   });
-
-  const [tagOptions, setTagOptions] = useState<CategoryTagOption[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [registerProfile] = useRegisterMutation();
+
+  const tagOptions = useMemo(() => {
+    return (
+      categoriesData?.categories?.map((category) => ({
+        id: category.id,
+        label: category.name,
+      })) || []
+    );
+  }, [categoriesData]);
 
   useEffect(() => {
     const loadAndMergeData = async () => {
@@ -46,41 +51,29 @@ export const RegisterCompletionScreen = () => {
         const savedFormData = await getData('registerCompletionForm');
         const basicRegisterData = await getData('registerForm');
 
-        let mergedData = { ...savedFormData, ...basicRegisterData };
-
-        if (mergedData) {
+        if (savedFormData || basicRegisterData) {
           setCompletionFormData({
-            ...mergedData,
-            selectedCategories: Array.isArray(mergedData.selectedCategories)
-              ? mergedData.selectedCategories
+            ...basicRegisterData,
+            ...savedFormData,
+            selectedCategories: Array.isArray(savedFormData?.selectedCategories)
+              ? savedFormData.selectedCategories
               : [],
           });
         }
       } catch (error) {
-        console.error('Error cargando y combinando datos del formulario:', error);
+        console.error('Error cargando datos del formulario:', error);
       }
     };
 
     loadAndMergeData();
   }, []);
 
-  // Procesar categorías cuando lleguen del API
-  useEffect(() => {
-    if (categoriesData?.categories && Array.isArray(categoriesData.categories)) {
-      setTagOptions(categoriesData.categories.map((category) => ({
-        id: category.id,
-        name: category.name
-      })));
-    }
-  }, [categoriesData]);
-
   useEffect(() => {
     if (categoriesError) {
-      console.error('Error cargando categorías:', categoriesError);
       Toast.show({
         type: 'error',
-        text1: 'Error',
-        text2: 'No se pudieron cargar las categorías.',
+        text1: 'Error al cargar categorías',
+        text2: (categoriesError as any)?.message ?? 'No se pudieron cargar las categorías.',
       });
     }
   }, [categoriesError]);
@@ -88,7 +81,7 @@ export const RegisterCompletionScreen = () => {
   const handleInputChange = (field: keyof CompletionFormData, value: string | string[]) => {
     const updatedFormData = {
       ...completionFormData,
-      [field]: field === 'selectedCategories' && Array.isArray(value) ? value : value
+      [field]: field === 'selectedCategories' ? (value as string[]) : value,
     };
     setCompletionFormData(updatedFormData);
     setData('registerCompletionForm', updatedFormData);
@@ -96,30 +89,27 @@ export const RegisterCompletionScreen = () => {
 
   const handleRegisterCompletion = async () => {
     setIsSubmitting(true);
-
     try {
-      await setData('registerCompletionForm', {
-        ...completionFormData,
-      });
+      await setData('registerCompletionForm', completionFormData);
 
       const savedFormData = await getData('registerCompletionForm');
       const registerRequest = {
         ...savedFormData,
-        userId: userData?.id
+        userId: userData?.id,
       };
 
-      const {message, user} = await registerProfile(registerRequest).unwrap();
+      const { message, user } = await registerProfile(registerRequest).unwrap();
       await userUpdate(user);
-      
+
       Toast.show({
         type: 'success',
         text1: 'Success!',
-        text2: message ?? 'You have successfully',
+        text2: message ?? 'You have successfully completed registration.',
       });
     } catch (error: any) {
       Toast.show({
         type: 'error',
-        text1: 'Error saving data.',
+        text1: 'Error saving data',
         text2: error?.data?.error || 'Unexpected error occurred.',
       });
     } finally {
@@ -147,24 +137,20 @@ export const RegisterCompletionScreen = () => {
         <Typography variant="bodyRegular" colorVariant="secondary">
           Services you're interested in:
         </Typography>
-        
+
         {isCategoriesLoading ? (
-          <Typography variant="bodyRegular" colorVariant="secondary">
-            {t('common.loading', 'Cargando...')}
-          </Typography>
+          <Box style={getWallStyles.loadingContainer}>
+            <ActivityIndicator size="large" color={theme.colors.colorBrandPrimary} />
+          </Box>
         ) : (
           <GroupChipSelector
             multiSelect
             onChange={(selectedIds) => handleInputChange('selectedCategories', selectedIds || [])}
-            options={tagOptions.map(tag => ({
-              id: tag.id,
-              label: tag.name
-            }))}
+            options={tagOptions}
             selectedIds={completionFormData.selectedCategories || []}
           />
         )}
       </Box>
-      
     </AuthenticationCard>
   );
 };

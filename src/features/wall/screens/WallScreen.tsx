@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { FlatList, Image, ImageSourcePropType, ListRenderItem, ActivityIndicator } from 'react-native';
 import { Box } from '../../../design-system/components/layout/Box';
 import { Typography } from '../../../design-system/components/foundation/Typography';
@@ -6,7 +6,7 @@ import { useSelector } from 'react-redux';
 import { RootState } from '../../../store';
 import { CardPost, setFilters } from '../slices/wall.slice';
 /* import { addToFavorites } from '../../favorites/slices/favorites.slice'; */
-import { Button, GroupChipSelector, Input, theme } from '@/design-system';
+import { Button, ChipOption, GroupChipSelector, Input, theme } from '@/design-system';
 import { Row } from '@/design-system/components/layout/Row/Row';
 import images from '@/assets/images/images';
 import { Post } from '../components/Post';
@@ -14,8 +14,9 @@ import { FilterActionSheet } from '../components/FilterActionSheet';
 import { useNavigation } from '@react-navigation/native';
 import { AuthStackNavigationProp } from '@/assembler/navigation/types';
 import { getWallStyles } from './wall/wall.style';
-import { useCategoryContext } from '@/infrastructure/category/CategoryContext';
 import { useGetServicesQuery } from '@/features/services/store';
+import { useGetCategoriesQuery } from '@/infrastructure/services/api';
+import Toast from 'react-native-toast-message';
 
 interface Location {
   id: string;
@@ -30,13 +31,8 @@ interface WallScreenProps {
 export const WallScreen: React.FC<WallScreenProps> = () => {
   const navigation = useNavigation<AuthStackNavigationProp>();
   const favorites = useSelector((state: RootState) => state.favorites.items);
-  const currentLocation = useSelector((state: RootState) => state.location.currentLocation);
-  const { categories, isLoading: isCategoriesLoading, error: categoriesError } = useCategoryContext();
-  const categoryOptionsWithAll = [{ id: 'all', label: 'All' }, ...(categories || []).filter((cat: { id: string; }) => cat.id !== 'all')];
-
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategories, setSelectedCategories] = useState<string[]>(['all']);
-
   const [filterVisible, setFilterVisible] = useState(false);
   const [activeFilters, setActiveFilters] = useState<{
     tags?: string[];
@@ -48,6 +44,8 @@ export const WallScreen: React.FC<WallScreenProps> = () => {
     maxPrice: undefined
   });
 
+  /* const currentLocation = useSelector((state: RootState) => state.location.currentLocation); */
+  const { data: categoriesData, isLoading: isCategoriesLoading, error: categoriesError } = useGetCategoriesQuery({ language: 'en' }); 
   const { data, isLoading } = useGetServicesQuery({
     query: searchQuery,
     cat: selectedCategories.includes('all') ? undefined : selectedCategories.join(','),
@@ -55,6 +53,23 @@ export const WallScreen: React.FC<WallScreenProps> = () => {
     /* city: currentLocation?.name, */
     city: '',
   });
+
+  const categories: ChipOption[] =
+  categoriesData?.categories?.map((c: any) => ({
+    id: c.id,
+    label: c.name,
+  })) ?? [];
+  const categoryOptionsWithAll = [{ id: 'all', label: 'All' }, ...(categories || []).filter((cat: { id: string; }) => cat.id !== 'all')];
+    
+  useEffect(() => {
+    if (categoriesError) {
+      Toast.show({
+        type: 'error',
+        text1: 'Error al cargar categorías',
+        text2: (categoriesError as any)?.message ?? 'No se pudieron cargar las categorías.',
+      });
+    }
+  }, [categoriesError]);
 
   const posts = data?.data || [];
   const isLoadingPosts = isLoading || isCategoriesLoading;

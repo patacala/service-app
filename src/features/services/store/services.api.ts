@@ -44,7 +44,7 @@ export const servicesApi = apiSlice.injectEndpoints({
         method: 'POST',
         data: serviceData,
       }),
-      invalidatesTags: ['MyServices'],
+      invalidatesTags: ['Service', 'MyServices'],
     }),
     updateService: builder.mutation<Service, UpdateServiceRequest>({
       query: ({ id, data }) => ({
