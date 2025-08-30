@@ -40,6 +40,7 @@ import { ProfilePartial, useGetCurrentUserQuery, useUpdateProfileMutation } from
 import { useGetCategoriesQuery } from '@/infrastructure/services/api';
 import { useCreateServiceMutation, useUpdateServiceMutation, useGetMyServicesQuery } from '@/features/services/store';
 import { getWallStyles } from '@/features/wall/screens/wall/wall.style';
+import { ServiceOffer } from '@/features/services/components/ServiceOffer';
 
 interface ServiceFormData {
   id: string;
@@ -759,70 +760,12 @@ export const ProfileScreen = () => {
           const serviceOptions = getCategoryOptions(service.categories || []);
           return (
             <TouchableWithoutFeedback onPress={() => {}}>
-              <Box
+              <ServiceOffer
                 key={service.id}
-                marginTop="lg"
-                paddingHorizontal="md"
-                paddingTop="sm"
-                paddingBottom="md"
-                backgroundColor="colorGrey600"
-                borderRadius={16}
-                gap="sm"
-              >
-                <Row justifyContent="space-between">
-                  <Row spacing="none" gap="lg">
-                    <Box maxWidth={180}>
-                      <GroupChipSelector
-                        onChange={() => {}}
-                        options={serviceOptions}
-                        selectedIds={service.categories || []}
-                        variant="horizontal"
-                        multiSelect={false}
-                        textVariant="bodyMedium"
-                      />
-                    </Box>
-                    <Typography variant="bodyMedium" color={theme.colors.colorBaseWhite}>
-                      ${service.price}/Hr
-                    </Typography>
-                  </Row>
-                  <Box>
-                    <Button
-                      variant="transparent"
-                      label="Edit"
-                      iconWidth={20}
-                      iconHeight={20}
-                      leftIcon={images.iconEdit as ImageSourcePropType}
-                      onPress={() => handleEditService(service.id)}
-                    />
-                  </Box>
-                </Row>
-
-                <Box gap="sm">
-                  <Row spacing="sm">
-                    <Icon name="location" color="colorBaseWhite" />
-                    <Typography variant="bodySmall" color={theme.colors.colorBaseWhite}>
-                      {service.city}
-                    </Typography>
-                  </Row>
-
-                  <Box paddingVertical="sm">
-                    <Typography variant="bodyLarge" color={theme.colors.colorBaseWhite}>
-                      {service.title}
-                    </Typography>
-                  </Box>
-
-                  <Typography variant="bodyRegular" color={theme.colors.colorGrey100}>
-                    {service.description}
-                  </Typography>
-
-                  {/* Mostrar categorías como texto */}
-                  {service.categories && service.categories.length > 0 && (
-                    <Typography variant="bodySmall" color={theme.colors.colorGrey300}>
-                      Categories: {service.categories.map(getCategoryName).join(', ')}
-                    </Typography>
-                  )}
-                </Box>
-              </Box>
+                service={service}
+                serviceOptions={serviceOptions}
+                onEditPress={handleEditService}
+              />
             </TouchableWithoutFeedback>
           );
         }}
@@ -1107,6 +1050,8 @@ export const ProfileScreen = () => {
         onSubmit={handleServiceSubmit}
         formData={serviceFormData}
         setFormData={setServiceFormData}
+        primaryButtonDisabled={isLoadingCreateService || isLoadingUpdateService}
+        secondaryButtonDisabled={isLoadingCreateService || isLoadingUpdateService}
       />
     </View>
   );

@@ -19,9 +19,6 @@ httpClient.interceptors.request.use(async (config) => {
   }
 
   if (session.token) {
-    console.log('Inicio de Token');
-    console.log(session.token);
-    console.log('Fin de Token');
     config.headers.Authorization = `Bearer ${session.token}`;
   }
   return config;

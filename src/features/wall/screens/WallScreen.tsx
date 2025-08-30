@@ -4,7 +4,7 @@ import { Box } from '../../../design-system/components/layout/Box';
 import { Typography } from '../../../design-system/components/foundation/Typography';
 import { useSelector } from 'react-redux';
 import { RootState } from '../../../store';
-import { CardPost, setFilters } from '../slices/wall.slice';
+import { CardPost } from '../slices/wall.slice';
 /* import { addToFavorites } from '../../favorites/slices/favorites.slice'; */
 import { Button, ChipOption, GroupChipSelector, Input, theme } from '@/design-system';
 import { Row } from '@/design-system/components/layout/Row/Row';
@@ -45,8 +45,8 @@ export const WallScreen: React.FC<WallScreenProps> = () => {
   });
 
   /* const currentLocation = useSelector((state: RootState) => state.location.currentLocation); */
-  const { data: categoriesData, isLoading: isCategoriesLoading, error: categoriesError } = useGetCategoriesQuery({ language: 'en' }); 
-  const { data, isLoading } = useGetServicesQuery({
+  const { data: categoriesData, error: categoriesError } = useGetCategoriesQuery({ language: 'en' }); 
+  const { data, isLoading: isLoadingServices, isFetching: isFetchingServices } = useGetServicesQuery({
     query: searchQuery,
     cat: selectedCategories.includes('all') ? undefined : selectedCategories.join(','),
     tag: '',
@@ -165,7 +165,7 @@ export const WallScreen: React.FC<WallScreenProps> = () => {
         />
       </Box>
 
-      {isCategoriesLoading ? (
+      {isLoadingServices || isFetchingServices ? (
         <Box style={getWallStyles.loadingContainer}>
           <ActivityIndicator size="large" color={theme.colors.colorBrandPrimary} />
           <Typography variant="bodyMedium" color="white" style={getWallStyles.loadingText}>

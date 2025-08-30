@@ -33,7 +33,7 @@ export const DataManagerProvider: React.FC<{children: ReactNode}> = ({ children 
                 // Es un string plano, no lo parses
                 loadedData[key] = value;
               } else {
-                loadedData[key] = JSON.parse(value); // Solo parseas si es JSON válido
+                loadedData[key] = JSON.parse(value);
               }
             } catch (parseError) {
               console.error(`Error parsing data for key ${key}:`, parseError);
