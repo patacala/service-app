@@ -12,6 +12,7 @@ import {
   PanResponder,
   View,
   LayoutChangeEvent,
+  TouchableWithoutFeedback,
 } from 'react-native';
 import { useRoute, useNavigation } from '@react-navigation/native';
 import { useDispatch, useSelector } from 'react-redux';
@@ -62,7 +63,7 @@ export const ServicesDetailScreen = () => {
 
   const reviews = [
     {
-      rating: post.rating,
+      rating: 4.2,
       reviewDate: '21 Apr',
       username: 'Username_010',
       reviewText: 'I hired them a month ago for a complete interior painting of my home, and the results are absolutely stunning.',
@@ -74,7 +75,7 @@ export const ServicesDetailScreen = () => {
       reviewTitle: 'Awesome Work!',
     },
     {
-      rating: post.rating,
+      rating: 4.2,
       reviewDate: '15 Apr',
       username: 'Customer_456',
       reviewText: 'Professional service with attention to detail. They completed the job ahead of schedule and the quality exceeded my expectations.',
@@ -85,7 +86,7 @@ export const ServicesDetailScreen = () => {
       reviewTitle: 'Great Experience',
     },
     {
-      rating: post.rating,
+      rating: 4.2,
       reviewDate: '02 Apr',
       username: 'HomeOwner_22',
       reviewText: 'The team was courteous and skilled. They transformed my living space with beautiful paint work and clean edges.',
@@ -261,9 +262,9 @@ export const ServicesDetailScreen = () => {
             />
           </Box>
 
-          <Box justifyContent="center" alignItems="center">
-            <Typography variant="bodyLarge" color={theme.colors.colorBaseWhite}>
-              {post.category}
+          <Box justifyContent="center" alignItems="center"  maxWidth={220}>
+            <Typography variant="bodyLarge" color={theme.colors.colorBaseWhite} truncate>
+              {post.title}
             </Typography>
             <Row spacing="sm">
               <Typography variant="bodyRegular" color={theme.colors.colorGrey100}>
@@ -271,7 +272,7 @@ export const ServicesDetailScreen = () => {
               </Typography>
               <Typography variant="bodySmall" color={theme.colors.colorGrey300}> | </Typography>
               <Typography variant="bodyRegular" color={theme.colors.colorGrey100}>
-                {post.distance} Km
+                1.5 Km
               </Typography>
             </Row>
           </Box>
@@ -306,7 +307,7 @@ export const ServicesDetailScreen = () => {
 
       <ScrollView 
         ref={scrollViewRef}
-        showsVerticalScrollIndicator={true}
+        showsVerticalScrollIndicator={false}
         onScroll={handleScroll}
         scrollEventThrottle={16}
         keyboardShouldPersistTaps="handled"
@@ -316,137 +317,135 @@ export const ServicesDetailScreen = () => {
         nestedScrollEnabled={true}
         style={styles.scrollView}
       >
-        {/* SECCIÓN: PORTFOLIO */}
-        <View onLayout={handlePortfolioLayout}>
-          <Box marginTop="sm" zIndex={1}>
-            <Box>
-              <Box style={styles.carouselContainer} pointerEvents="box-none">
-                <Animated.View
-                  style={[styles.carouselWrapper, { opacity: animatedOpacity }]}
-                  {...panResponder.panHandlers}
-                >
-                  <ScrollView
-                    ref={carouselScrollViewRef}
-                    horizontal
-                    showsHorizontalScrollIndicator={false}
-                    onMomentumScrollEnd={handleScrollEnd}
-                    scrollEventThrottle={16}
-                    decelerationRate="fast"
-                    snapToInterval={slideWidth}
-                    snapToAlignment="center"
-                    contentContainerStyle={styles.scrollViewContent}
-                    pagingEnabled={true}
-                  >
-                    {imageGallery.map((image, index) => (
-                      <Box key={index} width={slideWidth} height={230}>
-                        <Image source={image} style={styles.carouselImage} resizeMode="cover" />
-                      </Box>
-                    ))}
-                  </ScrollView>
-                </Animated.View>
+        <TouchableWithoutFeedback onPress={() => {}}>
+          <View>
+            {/* SECCIÓN: PORTFOLIO */}
+            <View onLayout={handlePortfolioLayout}>
+              <Box marginTop="sm" zIndex={1}>
+                <Box>
+                  <Box style={styles.carouselContainer} pointerEvents="box-none">
+                    <Animated.View
+                      style={[styles.carouselWrapper, { opacity: animatedOpacity }]}
+                      {...panResponder.panHandlers}
+                    >
+                      <ScrollView
+                        ref={carouselScrollViewRef}
+                        horizontal
+                        showsHorizontalScrollIndicator={false}
+                        onMomentumScrollEnd={handleScrollEnd}
+                        scrollEventThrottle={16}
+                        decelerationRate="fast"
+                        snapToInterval={slideWidth}
+                        snapToAlignment="center"
+                        contentContainerStyle={styles.scrollViewContent}
+                        pagingEnabled={true}
+                      >
+                        {imageGallery.map((image, index) => (
+                          <Box key={index} width={slideWidth} height={230}>
+                            <Image source={image} style={styles.carouselImage} resizeMode="cover" />
+                          </Box>
+                        ))}
+                      </ScrollView>
+                    </Animated.View>
 
-                <TouchableOpacity
-                  style={[styles.touchArea, styles.leftTouchArea]}
-                  activeOpacity={1}
-                  onPress={() => currentImageIndex > 0 && handleDotPress(currentImageIndex - 1)}
-                />
-                <TouchableOpacity
-                  style={[styles.touchArea, styles.rightTouchArea]}
-                  activeOpacity={1}
-                  onPress={() =>
-                    currentImageIndex < imageGallery.length - 1 &&
-                    handleDotPress(currentImageIndex + 1)
-                  }
-                />
-
-                <Image
-                  style={styles.linearGradientBlack}
-                  source={images.linearGradientBlack as ImageSourcePropType}
-                  resizeMode="cover"
-                />
-              </Box>
-
-              <Row position="absolute" left={0} right={0} bottom={15} justifyContent="center" pointerEvents="box-none">
-                {imageGallery.map((_, index) => (
-                  <TouchableOpacity
-                    key={index}
-                    onPress={() => handleDotPress(index)}
-                    hitSlop={{ top: 15, bottom: 15, left: 10, right: 10 }}
-                  >
-                    <Box
-                      style={[
-                        styles.indicator,
-                        currentImageIndex === index ? styles.activeIndicator : {},
-                      ]}
+                    <TouchableOpacity
+                      style={[styles.touchArea, styles.leftTouchArea]}
+                      activeOpacity={1}
+                      onPress={() => currentImageIndex > 0 && handleDotPress(currentImageIndex - 1)}
                     />
-                  </TouchableOpacity>
-                ))}
-              </Row>
-            </Box>
-            <Row justifyContent="space-between" borderBottomWidth={0.5} 
-              borderBottomColor="colorGrey400" 
-              paddingBottom="md" 
-              marginTop="md"
-              marginBottom="md"
-            >
-              <Row spacing="xs" alignItems="flex-start">
-                <Icon size={20} name="tag" color="colorBaseWhite"></Icon>
-                <Box marginLeft="xs">
-                  <Typography variant="bodySmall" color={theme.colors.colorGrey200}>Price</Typography>
-                  <Typography variant="bodyLarge" color={theme.colors.colorBaseWhite}>
-                    ${post.price}/hr
+                    <TouchableOpacity
+                      style={[styles.touchArea, styles.rightTouchArea]}
+                      activeOpacity={1}
+                      onPress={() =>
+                        currentImageIndex < imageGallery.length - 1 &&
+                        handleDotPress(currentImageIndex + 1)
+                      }
+                    />
+
+                    <Image
+                      style={styles.linearGradientBlack}
+                      source={images.linearGradientBlack as ImageSourcePropType}
+                      resizeMode="cover"
+                    />
+                  </Box>
+
+                  <Row position="absolute" left={0} right={0} bottom={15} justifyContent="center" pointerEvents="box-none">
+                    {imageGallery.map((_, index) => (
+                      <TouchableOpacity
+                        key={index}
+                        onPress={() => handleDotPress(index)}
+                        hitSlop={{ top: 15, bottom: 15, left: 10, right: 10 }}
+                      >
+                        <Box
+                          style={[
+                            styles.indicator,
+                            currentImageIndex === index ? styles.activeIndicator : {},
+                          ]}
+                        />
+                      </TouchableOpacity>
+                    ))}
+                  </Row>
+                </Box>
+                <Row justifyContent="space-between" borderBottomWidth={0.5} 
+                  borderBottomColor="colorGrey400" 
+                  paddingBottom="md" 
+                  marginTop="md"
+                  marginBottom="md"
+                >
+                  <Row spacing="xs" alignItems="flex-start">
+                    <Icon size={20} name="tag" color="colorBaseWhite"></Icon>
+                    <Box marginLeft="xs">
+                      <Typography variant="bodySmall" color={theme.colors.colorGrey200}>Price</Typography>
+                      <Typography variant="bodyLarge" color={theme.colors.colorBaseWhite}>
+                        ${post.price}/hr
+                      </Typography>
+                    </Box>
+                  </Row>
+
+                  <Row spacing="xs" alignItems="flex-start">
+                    <Icon size={20} name="location" color="colorBaseWhite"></Icon>
+                    <Box marginLeft="xs">
+                      <Typography variant="bodySmall" color={theme.colors.colorGrey200}>Location</Typography>
+                      <Typography variant="bodyLarge" color={theme.colors.colorBaseWhite}>
+                        {post.city}
+                      </Typography>
+                    </Box>
+                  </Row>
+
+                  <Box style={styles.labelDetail} justifyContent='center' alignItems='center'>
+                    <Image style={styles.imageLabelDetail} source={images.labelGrayImage as ImageSourcePropType} />
+                    { images.labelGrayImage ? <Typography variant="bodySmall" color="white">Super Host</Typography> : null }
+                  </Box>
+                </Row>
+              </Box> 
+            </View>
+
+            {/* SECCIÓN: BOOKING DETAIL */}
+            <View onLayout={handleBookingDetailLayout}>
+              <Box>
+                <Row spacing="sm">
+                  <Image source={images.profile1 as ImageSourcePropType} />
+                  <Box marginLeft="sm">
+                    <Typography variant="bodySmall" color={theme.colors.colorGrey200}>{post.title}</Typography>
+                    <Typography variant="bodyLarge" color="white">{post.provider.name}</Typography>
+                  </Box>
+                </Row>
+                <Box marginTop="md">
+                  <Typography variant="bodyRegular" color={theme.colors.colorGrey100}>
+                    {post.description}
                   </Typography>
                 </Box>
-              </Row>
-
-              <Row spacing="xs" alignItems="flex-start">
-                <Icon size={20} name="location" color="colorBaseWhite"></Icon>
-                <Box marginLeft="xs">
-                  <Typography variant="bodySmall" color={theme.colors.colorGrey200}>Location</Typography>
-                  <Typography variant="bodyLarge" color={theme.colors.colorBaseWhite}>
-                    {post.location}
-                  </Typography>
-                </Box>
-              </Row>
-
-              <Box style={styles.labelDetail} justifyContent='center' alignItems='center'>
-                <Image style={styles.imageLabelDetail} source={images.labelGrayImage as ImageSourcePropType} />
-                { images.labelGrayImage ? <Typography variant="bodySmall" color="white">Super Host</Typography> : '' }
               </Box>
-            </Row>
-          </Box> 
-        </View>
+            </View>
 
-        {/* SECCIÓN: BOOKING DETAIL */}
-        <View onLayout={handleBookingDetailLayout}>
-          <Box>
-            <Row spacing="sm">
-              <Image source={post.miniImage} />
-              <Box marginLeft="sm">
-                <Typography variant="bodySmall" color={theme.colors.colorGrey200}>{post.category}</Typography>
-                <Typography variant="bodyLarge" color="white">{post.name}</Typography>
+            {/* SECCIÓN: USER REVIEWS */}
+            <View onLayout={handleUserReviewsLayout}>
+              <Box marginTop="lg">
+                {renderReviews()}
               </Box>
-            </Row>
-            <Box marginTop="md">
-              <Typography variant="bodyRegular" color={theme.colors.colorGrey100}>
-                Residential Painting, 
-                Commercial Painting, 
-                Furniture Painting, 
-                Decorative Painting, 
-                Paint Restoration, 
-                Drywall Repair and Painting, 
-                Paint Consultation.
-              </Typography>
-            </Box>
-          </Box>
-        </View>
-
-        {/* SECCIÓN: USER REVIEWS */}
-        <View onLayout={handleUserReviewsLayout}>
-          <Box marginTop="lg">
-            {renderReviews()}
-          </Box>
-        </View>
+            </View>
+          </View>
+        </TouchableWithoutFeedback>
       </ScrollView>
 
       <Box 
@@ -463,11 +462,11 @@ export const ServicesDetailScreen = () => {
         />
       </Box>
 
-      <BookServiceForm
+      {/* <BookServiceForm
         visible={serviceBookVisible}
         onClose={() => setServiceBookVisible(false)}
         chipOptions={[{ id: post.category.toLowerCase(), label: post.category, icon: 'painter' }]}
-      />
+      /> */}
     </SafeContainer>
   );
 };
