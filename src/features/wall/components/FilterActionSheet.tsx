@@ -202,7 +202,7 @@ export const FilterActionSheet: React.FC<FilterActionSheetProps> = ({
           <Box width="100%" alignItems="center" marginVertical="sm">
             <MultiSlider
               values={priceValues}
-              sliderLength={width - 40}
+              sliderLength={width - 52}
               min={0}
               max={100}
               step={1}
