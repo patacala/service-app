@@ -110,7 +110,6 @@ export const FilterActionSheet: React.FC<FilterActionSheetProps> = ({
       onClose={onClose}
       title="Filters"
       draggable={true}
-      height={'90%'}
     >
       <Box>
         {/* Service Tags Section */}
@@ -158,9 +157,9 @@ export const FilterActionSheet: React.FC<FilterActionSheetProps> = ({
               <Typography variant="bodyMedium" color={theme.colors.colorGrey200}>
                 All Services
               </Typography>
-              <Typography variant="bodyRegular" color={theme.colors.colorGrey200}>
+              {/* <Typography variant="bodyRegular" color={theme.colors.colorGrey200}>
                 Hold over the tap in order to switch your pinned services
-              </Typography>
+              </Typography> */}
             </Box>
             
             {isLoading ? (

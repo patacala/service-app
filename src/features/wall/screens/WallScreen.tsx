@@ -104,6 +104,8 @@ export const WallScreen: React.FC<WallScreenProps> = () => {
   };
 
   const handleApplyFilters = (filters: any) => {
+    console.log(filters);
+    
     setActiveFilters(filters);
     setFilterVisible(false);
     
