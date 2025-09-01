@@ -10,8 +10,7 @@ import { Button, theme, GroupChipSelector, BottomModal } from '@/design-system';
 import { Icon } from '@/design-system/components/layout/Icon';
 import { Row } from '@/design-system/components/layout/Row/Row';
 import MultiSlider from '@ptomasroos/react-native-multi-slider';
-import { useSelector } from 'react-redux';
-import { RootState } from '@/store';
+import { useGetCategoriesQuery } from '@/infrastructure/services/api';
 
 interface FilterValues {
   tags?: string[];
@@ -40,9 +39,19 @@ export const FilterActionSheet: React.FC<FilterActionSheetProps> = ({
   initialValues = { tags: [], minPrice: 10, maxPrice: 62 },
   selectedCategories = ['all']
 }) => {
-  const reduxFilters = useSelector((state: RootState) => state.wall.filters);
-  const pinnedServices = useSelector((state: RootState) => state.wall.pinnedServices);
-  const allServices = useSelector((state: RootState) => state.wall.allServices);
+  // 🔥 Traemos las categorías con RTK Query
+  const { data: categoriesData, isLoading } = useGetCategoriesQuery({ language: 'en' });
+
+  // Por ahora simulamos "pinnedServices" (si luego quieres podemos añadirlo a RTK)
+  const pinnedServices = categoriesData?.categories?.slice(0, 6).map((c: any) => ({
+    id: c.id,
+    label: c.name,
+  })) || [];
+
+  const allServices = categoriesData?.categories?.map((c: any) => ({
+    id: c.id,
+    label: c.name,
+  })) || [];
   
   const [selectedTags, setSelectedTags] = useState<string[]>(initialValues.tags || []);
   const [priceValues, setPriceValues] = useState<number[]>([
@@ -50,39 +59,15 @@ export const FilterActionSheet: React.FC<FilterActionSheetProps> = ({
     initialValues.maxPrice || 62
   ]);
 
-  // Sincronizar con Redux cuando cambian los filtros
-  useEffect(() => {
-    if (reduxFilters && visible) {
-      // Actualizar tags desde Redux
-      if (reduxFilters.tags) {
-        const tagsFromRedux = reduxFilters.tags;
-        // Solo actualizar si hay diferencia real
-        if (JSON.stringify(tagsFromRedux) !== JSON.stringify(selectedTags)) {
-          setSelectedTags(tagsFromRedux);
-        }
-      }
-      
-      // Actualizar precio desde Redux
-      if (reduxFilters.minPrice !== undefined && reduxFilters.maxPrice !== undefined) {
-        if (priceValues[0] !== reduxFilters.minPrice || priceValues[1] !== reduxFilters.maxPrice) {
-          setPriceValues([reduxFilters.minPrice, reduxFilters.maxPrice]);
-        }
-      }
-    }
-  }, [reduxFilters, visible]);
-
-  // Efecto para sincronizar los tags con las categorías seleccionadas cuando se abre el modal
+  // Efecto para sincronizar cuando se abre el modal
   useEffect(() => {
     if (visible) {
-      // Solo si hay categorías seleccionadas que no son 'all' y no hay filtros activos todavía
       if (!selectedCategories.includes('all') && initialValues.tags && initialValues.tags.length === 0) {
         setSelectedTags([...selectedCategories]);
       } else {
-        // Usamos los tags del initialValues (pueden estar vacíos)
         setSelectedTags(initialValues.tags || []);
       }
       
-      // Actualizamos los valores del precio
       setPriceValues([
         initialValues.minPrice || 10,
         initialValues.maxPrice || 62
@@ -111,7 +96,6 @@ export const FilterActionSheet: React.FC<FilterActionSheetProps> = ({
 
   useEffect(() => {
     if (!visible) {
-      // Resetear estados internos cuando se cierra el modal
       setSelectedTags(initialValues.tags || []);
       setPriceValues([
         initialValues.minPrice || 10,
@@ -126,14 +110,15 @@ export const FilterActionSheet: React.FC<FilterActionSheetProps> = ({
       onClose={onClose}
       title="Filters"
       draggable={true}
+      height={'90%'}
     >
-      <Box padding="lg">
+      <Box>
         {/* Service Tags Section */}
-        <Box marginTop="md">
+        <Box>
           <Row justifyContent="space-between" marginBottom="md">
             <Row>
               <Icon name="tag" size={20} color="colorBaseWhite" />
-              <Box marginLeft="xs">
+              <Box>
                 <Typography variant="bodyLarge" color={theme.colors.colorBaseWhite}>
                   Service Tags
                 </Typography>
@@ -152,13 +137,19 @@ export const FilterActionSheet: React.FC<FilterActionSheetProps> = ({
               </Typography>
             </Row>
             
-            <GroupChipSelector
-              options={pinnedServices}
-              selectedIds={selectedTags}
-              onChange={handleSelectTags}
-              multiSelect={true}
-              variant="vertical"
-            />
+            {isLoading ? (
+              <Typography variant="bodySmall" color={theme.colors.colorGrey200}>
+                Loading...
+              </Typography>
+            ) : (
+              <GroupChipSelector
+                options={pinnedServices}
+                selectedIds={selectedTags}
+                onChange={handleSelectTags}
+                multiSelect={true}
+                variant="vertical"
+              />
+            )}
           </Box>
           
           {/* All Services */}
@@ -172,13 +163,19 @@ export const FilterActionSheet: React.FC<FilterActionSheetProps> = ({
               </Typography>
             </Box>
             
-            <GroupChipSelector
-              options={allServices}
-              selectedIds={selectedTags}
-              onChange={handleSelectTags}
-              multiSelect={true}
-              variant="vertical"
-            />
+            {isLoading ? (
+              <Typography variant="bodySmall" color={theme.colors.colorGrey200}>
+                Loading...
+              </Typography>
+            ) : (
+              <GroupChipSelector
+                options={allServices}
+                selectedIds={selectedTags}
+                onChange={handleSelectTags}
+                multiSelect={true}
+                variant="vertical"
+              />
+            )}
           </Box>
         </Box>
         
@@ -202,10 +199,10 @@ export const FilterActionSheet: React.FC<FilterActionSheetProps> = ({
             </Typography>
           </Row>
           
-          <Box alignItems="center" marginVertical="md">
+          <Box width="100%" alignItems="center" marginVertical="sm">
             <MultiSlider
               values={priceValues}
-              sliderLength={width * 0.8 - 40}
+              sliderLength={width - 40}
               min={0}
               max={100}
               step={1}
@@ -231,7 +228,7 @@ export const FilterActionSheet: React.FC<FilterActionSheetProps> = ({
           </Box>
         </Box>
         
-        <Box marginTop="lg">
+        <Box>
           <Button
             label="Apply Filters"
             variant="primary"
