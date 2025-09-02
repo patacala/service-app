@@ -9,13 +9,11 @@ import { Icon } from '@/design-system/components/layout/Icon';
 
 interface PostProps {
   post: CardPost;
-  isFavorite: boolean;
   onPress?: () => void;
 }
 
 export const Post = ({
   post,
-  isFavorite,
   onPress,
 }: PostProps) => {
   return (
@@ -68,7 +66,7 @@ export const Post = ({
                 <Typography variant="bodyMedium" color="white">1.5 Km</Typography>
                 <Box paddingTop="sm">
                     <Image 
-                      source={isFavorite ? images.bookmarkSiBg as ImageSourcePropType : images.bookmarkNoBg as ImageSourcePropType} 
+                      source={post.isFavorite ? images.bookmarkSiBg as ImageSourcePropType : images.bookmarkNoBg as ImageSourcePropType} 
                       width={14}
                       height={20}
                     />

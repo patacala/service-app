@@ -23,7 +23,7 @@ export const servicesApi = apiSlice.injectEndpoints({
         method: 'GET',
         params,
       }),
-      providesTags: ['Service'],
+      providesTags: ['Service', 'Favorite'],
     }),
     getServiceById: builder.query<Service, string>({
       query: (id) => ({
