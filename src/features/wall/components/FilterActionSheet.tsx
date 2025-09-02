@@ -39,25 +39,27 @@ export const FilterActionSheet: React.FC<FilterActionSheetProps> = ({
   initialValues = { tags: [], minPrice: 10, maxPrice: 62 },
   selectedCategories = ['all']
 }) => {
-  // 🔥 Traemos las categorías con RTK Query
+  // 🔥 Traemos categorías con RTK Query
   const { data: categoriesData, isLoading } = useGetCategoriesQuery({ language: 'en' });
 
-  // Por ahora simulamos "pinnedServices" (si luego quieres podemos añadirlo a RTK)
-  const pinnedServices = categoriesData?.categories?.slice(0, 6).map((c: any) => ({
+  // Todas las categorías base
+  const allCategories = categoriesData?.categories?.map((c: any) => ({
     id: c.id,
     label: c.name,
   })) || [];
 
-  const allServices = categoriesData?.categories?.map((c: any) => ({
-    id: c.id,
-    label: c.name,
-  })) || [];
-  
+  // Estado con los seleccionados
   const [selectedTags, setSelectedTags] = useState<string[]>(initialValues.tags || []);
   const [priceValues, setPriceValues] = useState<number[]>([
     initialValues.minPrice || 10, 
     initialValues.maxPrice || 62
   ]);
+
+  // Pinned Services → solo los seleccionados
+  const pinnedServices = allCategories.filter((s) => selectedTags.includes(s.id)).slice(0, 6);
+
+  // All Services → solo los que NO están seleccionados
+  const unpinnedServices = allCategories.filter((s) => !selectedTags.includes(s.id));
 
   // Efecto para sincronizar cuando se abre el modal
   useEffect(() => {
@@ -76,6 +78,8 @@ export const FilterActionSheet: React.FC<FilterActionSheetProps> = ({
   }, [visible, initialValues, selectedCategories]);
 
   const handleSelectTags = (tags: string[]) => {
+    // limitar a máximo 6
+    if (tags.length > 6) return;
     setSelectedTags(tags);
   };
 
@@ -126,8 +130,8 @@ export const FilterActionSheet: React.FC<FilterActionSheetProps> = ({
           </Row>
           
           {/* Pinned Services */}
-          <Box marginBottom="md">
-            <Row justifyContent="space-between" alignItems="center" marginBottom="xs">
+          <Box marginBottom="md" height={130}>
+            <Row justifyContent="space-between" alignItems="flex-start" marginBottom="xs">
               <Typography variant="bodyMedium" color={theme.colors.colorGrey200}>
                 Pinned Services
               </Typography>
@@ -139,6 +143,10 @@ export const FilterActionSheet: React.FC<FilterActionSheetProps> = ({
             {isLoading ? (
               <Typography variant="bodySmall" color={theme.colors.colorGrey200}>
                 Loading...
+              </Typography>
+            ) : pinnedServices.length === 0 ? (
+              <Typography variant="bodySmall" color={theme.colors.colorGrey200}>
+                No pinned services yet
               </Typography>
             ) : (
               <GroupChipSelector
@@ -157,9 +165,9 @@ export const FilterActionSheet: React.FC<FilterActionSheetProps> = ({
               <Typography variant="bodyMedium" color={theme.colors.colorGrey200}>
                 All Services
               </Typography>
-              {/* <Typography variant="bodyRegular" color={theme.colors.colorGrey200}>
-                Hold over the tap in order to switch your pinned services
-              </Typography> */}
+              <Typography variant="bodyRegular" color={theme.colors.colorGrey200}>
+                Tap a service to pin it. Unpin to move it back here.
+              </Typography>
             </Box>
             
             {isLoading ? (
@@ -168,7 +176,7 @@ export const FilterActionSheet: React.FC<FilterActionSheetProps> = ({
               </Typography>
             ) : (
               <GroupChipSelector
-                options={allServices}
+                options={unpinnedServices}
                 selectedIds={selectedTags}
                 onChange={handleSelectTags}
                 multiSelect={true}
