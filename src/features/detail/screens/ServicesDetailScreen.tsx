@@ -40,8 +40,8 @@ export const ServicesDetailScreen = () => {
     userreviews: 0
   });
   const { post } = route.params as { post: CardPost };
-  const [createFavorite] = useCreateFavoriteMutation();
-  const [deleteFavorite] = useDeleteFavoriteMutation();
+  const [createFavorite, {isLoading: isLoadingCreaFav}] = useCreateFavoriteMutation();
+  const [deleteFavorite, {isLoading: isLoadingDelFav}] = useDeleteFavoriteMutation();
   const [isFavorite, setIsFavorite] = useState(post.isFavorite ?? false);
 
   const [isScrollingProgrammatically, setIsScrollingProgrammatically] = useState(false);
@@ -112,8 +112,22 @@ export const ServicesDetailScreen = () => {
     try {
       if (prevValue) {
         await deleteFavorite(post.id).unwrap();
+        if (!isLoadingDelFav) {
+          Toast.show({
+            type: "success",
+            text1: "Favorito",
+            text2: "Servicio eliminado de favorito",
+          });
+        }
       } else {
         await createFavorite({ service_id: post.id }).unwrap();
+        if (!isLoadingCreaFav) {
+          Toast.show({
+            type: "success",
+            text1: "Favorito",
+            text2: "Servicio agregado a favorito",
+          });
+        }
       }
     } catch (error: any) {
       setIsFavorite(prevValue);
