@@ -2,10 +2,7 @@ import { useEffect, useState } from 'react';
 import { FlatList, Image, ImageSourcePropType, ListRenderItem, ActivityIndicator } from 'react-native';
 import { Box } from '../../../design-system/components/layout/Box';
 import { Typography } from '../../../design-system/components/foundation/Typography';
-import { useSelector } from 'react-redux';
-import { RootState } from '../../../store';
 import { CardPost } from '../slices/wall.slice';
-/* import { addToFavorites } from '../../favorites/slices/favorites.slice'; */
 import { Button, ChipOption, GroupChipSelector, Input, theme } from '@/design-system';
 import { Row } from '@/design-system/components/layout/Row/Row';
 import images from '@/assets/images/images';
@@ -30,7 +27,6 @@ interface WallScreenProps {
 
 export const WallScreen: React.FC<WallScreenProps> = () => {
   const navigation = useNavigation<AuthStackNavigationProp>();
-  const favorites = useSelector((state: RootState) => state.favorites.items);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategories, setSelectedCategories] = useState<string[]>(['all']);
   const [filterVisible, setFilterVisible] = useState(false);
@@ -138,7 +134,6 @@ export const WallScreen: React.FC<WallScreenProps> = () => {
         ...item,
         category: getCategoryNames(item.categories)
       }}
-      isFavorite={favorites.some((fav: { id: string; }) => fav.id === item.id)}
       onPress={() => handlePostDetail(item)}
     />
   );

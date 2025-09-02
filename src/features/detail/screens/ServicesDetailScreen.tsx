@@ -14,18 +14,17 @@ import {
   LayoutChangeEvent,
   TouchableWithoutFeedback,
 } from 'react-native';
+import images from '@/assets/images/images';
+import Toast from 'react-native-toast-message';
 import { useRoute, useNavigation } from '@react-navigation/native';
-import { useDispatch, useSelector } from 'react-redux';
-import { RootState, AppDispatch } from '@/store';
-import { addToFavorites, removeFromFavorites } from '@/features/favorites/slices/favorites.slice';
 import { Box } from '@/design-system/components/layout/Box';
 import { Typography } from '@/design-system/components/foundation/Typography';
 import { Row } from '@/design-system/components/layout/Row/Row';
 import { Button, theme, SafeContainer, GroupChipSelector } from '@/design-system';
 import { CardPost } from '@/features/wall/slices/wall.slice';
-import images from '@/assets/images/images';
 import { Icon } from '@/design-system/components/layout/Icon';
 import { RatingReview } from '../components/RatingReview';
+import { useCreateFavoriteMutation, useDeleteFavoriteMutation } from '@/features/favorites/store/favorites.api';
 import { BookServiceForm } from '../components/BookServiceForm';
 
 const { width } = Dimensions.get('window');
@@ -33,33 +32,29 @@ const { width } = Dimensions.get('window');
 export const ServicesDetailScreen = () => {
   const route = useRoute();
   const navigation = useNavigation();
-  const dispatch = useDispatch<AppDispatch>();
   const scrollViewRef = useRef<ScrollView>(null);
   const carouselScrollViewRef = useRef<ScrollView>(null);
-  
   const [sectionPositions, setSectionPositions] = useState({
     portfolio: 0,
     bookingdetail: 0,
     userreviews: 0
   });
+  const { post } = route.params as { post: CardPost };
+  const [createFavorite] = useCreateFavoriteMutation();
+  const [deleteFavorite] = useDeleteFavoriteMutation();
+  const [isFavorite, setIsFavorite] = useState(post.isFavorite ?? false);
 
   const [isScrollingProgrammatically, setIsScrollingProgrammatically] = useState(false);
-  
+  const [selectedItemDetail, setSelectedItemDetail] = useState(['portfolio']);
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  const [dotPressInProgress, setDotPressInProgress] = useState(false);
+  const [serviceBookVisible, setServiceBookVisible] = useState(false);
+
   const itemsDetail = [
     { id: 'portfolio', label: 'Portfolio' },
     { id: 'bookingdetail', label: 'Service Detail' },
     { id: 'userreviews', label: 'User Reviews' },
   ];
-
-  const [selectedItemDetail, setSelectedItemDetail] = useState(['portfolio']);
-
-  const { post } = route.params as { post: CardPost };
-  const favorites = useSelector((state: RootState) => state.favorites.items);
-  const isFavorite = favorites.some(fav => fav.id === post.id);
-
-  const [currentImageIndex, setCurrentImageIndex] = useState(0);
-  const [dotPressInProgress, setDotPressInProgress] = useState(false);
-  const [serviceBookVisible, setServiceBookVisible] = useState(false);
 
   const reviews = [
     {
@@ -110,8 +105,24 @@ export const ServicesDetailScreen = () => {
 
   const handleGoBackPress = () => navigation.goBack();
 
-  const handleFavoritePress = () => {
-    isFavorite ? dispatch(removeFromFavorites(post.id)) : dispatch(addToFavorites(post));
+  const handleFavoritePress = async () => {
+    const prevValue = isFavorite;
+    setIsFavorite(!prevValue);
+
+    try {
+      if (prevValue) {
+        await deleteFavorite(post.id).unwrap();
+      } else {
+        await createFavorite({ service_id: post.id }).unwrap();
+      }
+    } catch (error: any) {
+      setIsFavorite(prevValue);
+      Toast.show({
+        type: "error",
+        text1: "Error Favorito",
+        text2: error?.data?.message ?? "No se pudo actualizar el favorito.",
+      });
+    }
   };
 
   const handlePortfolioLayout = (event: LayoutChangeEvent) => {
