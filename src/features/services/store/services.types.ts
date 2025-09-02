@@ -39,6 +39,7 @@ export interface Service {
   lon?: number;
   createdAt: string;         
   updatedAt: string;           
+  isFavorite: boolean;
 }
 
 export interface ServicesResponse {
