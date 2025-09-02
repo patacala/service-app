@@ -56,6 +56,8 @@ export interface GetServicesParams {
   tag?: string;
   cat?: string;
   city?: string;
+  minPrice?: number;
+  maxPrice?: number;
   near?: string;
   radius?: string;
   page?: number;

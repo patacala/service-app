@@ -49,6 +49,8 @@ export const WallScreen: React.FC<WallScreenProps> = () => {
   const { data, isLoading: isLoadingServices, isFetching: isFetchingServices } = useGetServicesQuery({
     query: searchQuery,
     cat: selectedCategories.includes('all') ? undefined : selectedCategories.join(','),
+    minPrice: activeFilters.minPrice,
+    maxPrice: activeFilters.maxPrice,
     tag: '',
     /* city: currentLocation?.name, */
     city: '',
@@ -59,7 +61,17 @@ export const WallScreen: React.FC<WallScreenProps> = () => {
     id: c.id,
     label: c.name,
   })) ?? [];
-  const categoryOptionsWithAll = [{ id: 'all', label: 'All' }, ...(categories || []).filter((cat: { id: string; }) => cat.id !== 'all')];
+
+  const selectedWithoutAll = selectedCategories.filter(id => id !== 'all');
+  const sortedCategories = [
+    { id: 'all', label: 'All' },
+    // categorías seleccionadas primero (sin repetir "all")
+    ...categories.filter(cat => selectedWithoutAll.includes(cat.id)),
+    // luego las demás categorías que no están seleccionadas ni son "all"
+    ...categories.filter(cat => cat.id !== 'all' && !selectedWithoutAll.includes(cat.id)),
+  ];
+
+  const categoryOptionsWithAll = sortedCategories;
     
   useEffect(() => {
     if (categoriesError) {
@@ -104,8 +116,6 @@ export const WallScreen: React.FC<WallScreenProps> = () => {
   };
 
   const handleApplyFilters = (filters: any) => {
-    console.log(filters);
-    
     setActiveFilters(filters);
     setFilterVisible(false);
     
