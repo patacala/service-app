@@ -1,4 +1,4 @@
-import axios, { AxiosInstance, AxiosRequestConfig } from 'axios';
+import axios, { AxiosInstance } from 'axios';
 import { SessionManager } from '@/infrastructure/session';
 
 const httpClient: AxiosInstance = axios.create({

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { StyleSheet, TouchableOpacity, Image, ImageSourcePropType } from 'react-native';
 import { createBottomTabNavigator, BottomTabBarProps } from '@react-navigation/bottom-tabs';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
@@ -50,13 +50,27 @@ const ScreenWrapper: React.FC<{
     dispatch(setLocation(location));
   };
 
-  const getGreeting = () => {
-    const currentHour = new Date().getHours();
-    if (currentHour < 12) {
-      return 'Good Morning,';
-    } else {
-      return 'Good Afternoon,';
+  const Greeting = () => {
+    const [greeting, setGreeting] = useState(getGreeting());
+
+    function getGreeting() {
+      const currentHour = new Date().getHours();
+      if (currentHour < 12) {
+        return "Good Morning,";
+      } else {
+        return "Good Afternoon,";
+      }
     }
+
+    useEffect(() => {
+      const interval = setInterval(() => {
+        setGreeting(getGreeting());
+      }, 60000);
+
+      return () => clearInterval(interval);
+    }, []);
+
+    return greeting;
   };
 
   return (
@@ -75,11 +89,11 @@ const ScreenWrapper: React.FC<{
             />
             <Box width="100%" maxWidth={200}>
               <Typography variant="headingSecondary" color="white">
-                {getGreeting()}
+                {Greeting()}
               </Typography>
               
               {!isProfileLoading && profile?.name && (
-                <Typography variant="bodyMedium" color="white">
+                <Typography variant="bodyMedium" color="white" truncate>
                   {profile.name}
                 </Typography>
               )}

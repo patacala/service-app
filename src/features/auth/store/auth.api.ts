@@ -22,6 +22,7 @@ export const authApi = apiSlice.injectEndpoints({
         url: '/auth/me',
         method: 'GET',
       }),
+      providesTags: ['User'],
     }),
     updateProfile: builder.mutation<{ message: string }, Partial<ProfilePartial>>({
       query: (profileData) => ({
@@ -29,6 +30,7 @@ export const authApi = apiSlice.injectEndpoints({
         method: 'PUT',
         data: profileData,
       }),
+      invalidatesTags: ['User'],
     }),
   }),
 });
