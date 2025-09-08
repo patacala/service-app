@@ -71,7 +71,7 @@ export const FormResponsible: React.FC<FormResponsibleProps> = ({
           onChangeValue={handleNameChange}
         />
       </Box>
-      <Box gap='md' marginBottom="md">
+      <Box gap='md' marginBottom="xl">
         <Row spacing="none" gap="sm" justify='space-between'>
           <Box style={styles.prefix} padding="md">
             <Typography variant="bodyRegular" colorVariant="secondary">+1</Typography>

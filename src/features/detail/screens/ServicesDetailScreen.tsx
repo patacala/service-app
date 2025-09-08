@@ -487,11 +487,14 @@ export const ServicesDetailScreen = () => {
         />
       </Box>
 
-      {/* <BookServiceForm
+      <BookServiceForm
         visible={serviceBookVisible}
         onClose={() => setServiceBookVisible(false)}
-        chipOptions={[{ id: post.category.toLowerCase(), label: post.category, icon: 'painter' }]}
-      /> */}
+        service={post} 
+        onSubmit={(data) => {
+          console.log("Formulario completo:", data);
+        }}
+      />
     </SafeContainer>
   );
 };
