@@ -66,7 +66,7 @@ export const servicesApi = apiSlice.injectEndpoints({
       query: (bookServiceData) => ({
         url: '/book-services',
         method: 'POST',
-        body: bookServiceData,
+        data: bookServiceData,
       }),
     }),
   }),
