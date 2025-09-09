@@ -5,6 +5,8 @@ import type {
   Service,
   ServicesResponse,
   GetServicesParams,
+  CreateBookServiceRequest,
+  BookService,
 } from './services.types';
 
 export const servicesApi = apiSlice.injectEndpoints({
@@ -60,6 +62,13 @@ export const servicesApi = apiSlice.injectEndpoints({
         method: 'DELETE',
       }),
     }),
+    createBookService: builder.mutation<BookService, CreateBookServiceRequest>({
+      query: (bookServiceData) => ({
+        url: '/book-services',
+        method: 'POST',
+        body: bookServiceData,
+      }),
+    }),
   }),
 });
 
@@ -70,4 +79,5 @@ export const {
   useCreateServiceMutation,
   useUpdateServiceMutation,
   useDeleteServiceMutation,
+  useCreateBookServiceMutation
 } = servicesApi;
