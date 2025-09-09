@@ -24,8 +24,10 @@ import { Button, theme, SafeContainer, GroupChipSelector } from '@/design-system
 import { CardPost } from '@/features/wall/slices/wall.slice';
 import { Icon } from '@/design-system/components/layout/Icon';
 import { RatingReview } from '../components/RatingReview';
+import { useCreateBookServiceMutation } from '@/features/services/store/services.api';
 import { useCreateFavoriteMutation, useDeleteFavoriteMutation } from '@/features/favorites/store/favorites.api';
 import { BookServiceForm } from '../components/BookServiceForm';
+import { CreateBookServiceRequest } from '@/features/services/store';
 
 const { width } = Dimensions.get('window');
 
@@ -40,6 +42,7 @@ export const ServicesDetailScreen = () => {
     userreviews: 0
   });
   const { post } = route.params as { post: CardPost };
+  const [createBookService, { isLoading: isLoadBookingService}] = useCreateBookServiceMutation();
   const [createFavorite, {isLoading: isLoadingCreaFav}] = useCreateFavoriteMutation();
   const [deleteFavorite, {isLoading: isLoadingDelFav}] = useDeleteFavoriteMutation();
   const [isFavorite, setIsFavorite] = useState(post.isFavorite ?? false);
@@ -266,6 +269,39 @@ export const ServicesDetailScreen = () => {
     ));
   };
 
+  const handleBookingSubmit = async (formData: any) => {
+    try {
+      const bookingData: CreateBookServiceRequest = {
+        serviceId: post.id,
+        serviceName: post.title,
+        dateTime: formData.dateTime,
+        address: formData.address,
+        comments: formData.comments || undefined,
+        responsibleName: formData.responsibleName,
+        phoneNumber: formData.phoneNumber,
+      };
+
+      const result = await createBookService(bookingData).unwrap();
+      Toast.show({
+        type: "success",
+        text1: "Reserva Exitosa",
+        text2: "Tu solicitud de servicio ha sido enviada correctamente",
+      });
+
+      console.log("Reserva creada:", result);
+      return true;      
+    } catch (error: any) {
+      console.error(error?.data?.message);
+
+      Toast.show({
+        type: "error",
+        text1: "Error en Reserva",
+        text2: error?.data?.message ?? "No se pudo procesar la reserva. Intenta nuevamente.",
+      });
+      return false;
+    }
+  };
+
   return (
     <SafeContainer fluid backgroundColor="colorBaseBlack" paddingHorizontal="md">
       <Box>
@@ -489,11 +525,10 @@ export const ServicesDetailScreen = () => {
 
       <BookServiceForm
         visible={serviceBookVisible}
+        disabled={isLoadBookingService}
         onClose={() => setServiceBookVisible(false)}
         service={post} 
-        onSubmit={(data) => {
-          console.log("Formulario completo:", data);
-        }}
+        onSubmit={handleBookingSubmit}
       />
     </SafeContainer>
   );
