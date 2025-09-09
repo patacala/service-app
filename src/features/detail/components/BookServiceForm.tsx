@@ -7,6 +7,7 @@ import { CardPost } from '@/features/wall/slices/wall.slice';
 
 interface BookServiceFormProps {
   visible: boolean;
+  disabled?: boolean;
   onClose: () => void;
   service: CardPost; 
   onSubmit?: (data: {
@@ -17,11 +18,12 @@ interface BookServiceFormProps {
     comments: string;
     responsibleName: string;
     phoneNumber: string;
-  }) => void;
+  }) => Promise<boolean> | boolean;
 }
 
 export const BookServiceForm: React.FC<BookServiceFormProps> = ({
   visible,
+  disabled,
   onClose,
   service,
   onSubmit
@@ -85,14 +87,18 @@ export const BookServiceForm: React.FC<BookServiceFormProps> = ({
     return false;
   };
 
-  const handleContinue = () => {
+  const handleContinue = async () => {
+    if (disabled) return;
+
     if (currentStep === 1) {
       setCurrentStep(2);
     } else if (currentStep === 2) {
       if (onSubmit) {
-        onSubmit(serviceData);
+        const success = await onSubmit(serviceData);
+        if (success) {
+          setContactProviderVisible(true);
+        }
       }
-      setContactProviderVisible(true);
     }
   };
 
@@ -124,7 +130,7 @@ export const BookServiceForm: React.FC<BookServiceFormProps> = ({
       secondaryButtonText={currentStep === 2 ? "Go back" : "Cancel"}
       primaryButtonVariant="secondary"
       onPrimaryButtonPress={handleContinue}
-      primaryButtonDisabled={!contactProviderVisible ? !canContinue() : false}
+      primaryButtonDisabled={disabled || (!contactProviderVisible ? !canContinue() : false)}
       showSecondaryButton={!contactProviderVisible}
       secondaryButtonIcon="left-arrow"
       secondaryButtonVariant="outlined"
