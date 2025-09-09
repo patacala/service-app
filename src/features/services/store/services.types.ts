@@ -1,6 +1,6 @@
 import { CardPost } from "@/features/wall";
+// Services TYPES
 
-// Request
 export interface CreateServiceRequest {
   title: string;
   description: string;
@@ -19,7 +19,6 @@ export interface UpdateServiceRequest {
   data: Partial<CreateServiceRequest>;
 }
 
-// Response
 export interface Service {
   id: string;
   title: string;
@@ -63,4 +62,30 @@ export interface GetServicesParams {
   radius?: string;
   page?: number;
   limit?: number;
+}
+
+// BookServices TYPES
+export interface BookService {
+  id: string;
+  serviceId: string;
+  serviceName: string;
+  userId: string;
+  dateTime: string;
+  address: string;
+  comments?: string;
+  responsibleName: string;
+  phoneNumber: string;
+  status: 'pending' | 'accepted' | 'rejected' | 'completed' | 'cancelled';
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CreateBookServiceRequest {
+  serviceId: string;
+  serviceName: string;
+  dateTime: string;
+  address: string;
+  comments?: string;
+  responsibleName: string;
+  phoneNumber: string;
 }
