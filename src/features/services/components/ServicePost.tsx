@@ -51,7 +51,7 @@ export const ServicePost: React.FC<ServicePostProps> = ({
             }}
           />
           <Box marginLeft="sm" width="100%" maxWidth={179}>
-            <Typography variant="bodySmall" color={theme.colors.colorGrey200}>
+            <Typography variant="bodyMedium" color={theme.colors.colorGrey200} truncate>
               {servicePost.role === 'provider' ? 'User' : servicePost.serviceName}
             </Typography>
             <Typography variant="bodyLarge" color="white" truncate>
