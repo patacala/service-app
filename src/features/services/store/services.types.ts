@@ -1,4 +1,5 @@
 import { CardPost } from "@/features/wall";
+import { ImageSourcePropType } from "react-native";
 // Services TYPES
 
 export interface CreateServiceRequest {
@@ -70,14 +71,22 @@ export interface BookService {
   serviceId: string;
   serviceName: string;
   userId: string;
-  dateTime: string;
+  role: string;
+  provider: {
+    id: string;
+    name: string;
+  };
+  dateTime: string;     // ISO original
+  dateShort: string;    // 21 Apr
+  timeShort: string;    // 2:00 PM EST
   address: string;
   comments?: string;
   responsibleName: string;
   phoneNumber: string;
-  status: 'pending' | 'accepted' | 'rejected' | 'completed' | 'cancelled';
-  createdAt: string;
-  updatedAt: string;
+  status: "pending" | "accepted" | "rejected" | "completed" | "cancelled";
+  categories: string[];
+  description?: string;
+  image?: ImageSourcePropType
 }
 
 export interface CreateBookServiceRequest {

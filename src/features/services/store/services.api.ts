@@ -68,6 +68,14 @@ export const servicesApi = apiSlice.injectEndpoints({
         method: 'POST',
         data: bookServiceData,
       }),
+      invalidatesTags: ['MyBookServices'],
+    }),
+    getMyBookServices: builder.query<BookService[], void>({
+      query: () => ({
+        url: '/book-services/me',
+        method: 'GET',
+      }),
+      providesTags: ['MyBookServices'],
     }),
   }),
 });
@@ -79,5 +87,6 @@ export const {
   useCreateServiceMutation,
   useUpdateServiceMutation,
   useDeleteServiceMutation,
+  useGetMyBookServicesQuery,
   useCreateBookServiceMutation
 } = servicesApi;
