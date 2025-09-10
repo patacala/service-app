@@ -288,11 +288,8 @@ export const ServicesDetailScreen = () => {
         text2: "Tu solicitud de servicio ha sido enviada correctamente",
       });
 
-      console.log("Reserva creada:", result);
       return true;      
     } catch (error: any) {
-      console.error(error?.data?.message);
-
       Toast.show({
         type: "error",
         text1: "Error en Reserva",
