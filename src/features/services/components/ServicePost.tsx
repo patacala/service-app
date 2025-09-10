@@ -1,6 +1,6 @@
 import React from "react";
 import { Image, ImageSourcePropType } from "react-native";
-import { Box, Button, GroupChipSelector, theme, Typography } from "@/design-system";
+import { Box, Button, theme, Typography } from "@/design-system";
 import { Row } from "@/design-system/components/layout/Row/Row";
 import images from "@/assets/images/images";
 import { Icon } from "@/design-system/components/layout/Icon";
