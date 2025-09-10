@@ -95,8 +95,8 @@ export const ProfileScreen = () => {
   const { data: profile, error: profileError } = useGetCurrentUserQuery();
 
   const [updateProfile, { isLoading }] = useUpdateProfileMutation();
-  const [createService, { isLoading: isLoadingCreateService, isError: isErrorCreateService, error: errorCreateService }] = useCreateServiceMutation();
-  const [updateService, { isLoading: isLoadingUpdateService, isError: isErrorUpdateService, error: errorUpdateService }] = useUpdateServiceMutation();
+  const [createService, { isLoading: isLoadingCreateService }] = useCreateServiceMutation();
+  const [updateService, { isLoading: isLoadingUpdateService }] = useUpdateServiceMutation();
   const { data: services, isLoading: isLoadingServices } = useGetMyServicesQuery();
 
   // Estado para la imagen de perfil
@@ -133,22 +133,22 @@ export const ProfileScreen = () => {
 
   // Función para convertir IDs de categorías a ChipOptions
   const getCategoryOptions = useMemo(() => {
-  return (categoryIds: string[]): ChipOption[] => {
-    if (!categories || categories.length === 0) {
-      return [];
-    }
-    
-    return categoryIds
-      .map(id => {
-        const category = categories.find((cat: ChipOption) => cat.id === id);
-        return category ? { id: category.id, label: category.label } : null;
-      })
-      .filter(Boolean) as ChipOption[];
-  };
+    return (categoryIds: string[]): ChipOption[] => {
+      if (!categories || categories.length === 0) {
+        return [];
+      }
+      
+      return categoryIds
+        .map(id => {
+          const category = categories.find((cat: ChipOption) => cat.id === id);
+          return category ? { id: category.id, label: category.label } : null;
+        })
+        .filter(Boolean) as ChipOption[];
+    };
   }, [categories]);
 
   // Función para obtener el nombre de una categoría por su ID
-  const getCategoryName = useMemo(() => {
+  /* const getCategoryName = useMemo(() => {
   return (id: string): string => {
     if (!categories || categories.length === 0) {
       return id;
@@ -157,7 +157,7 @@ export const ProfileScreen = () => {
     const category = categories.find((cat: ChipOption) => cat.id === id);
     return category?.label || id;
   };
-  }, [categories]);
+  }, [categories]); */
 
   const getPhoneDetail = (phoneNumber: string) => {
       if (typeof phoneNumber !== 'string' || phoneNumber.trim() === '') {
