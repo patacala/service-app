@@ -109,11 +109,8 @@ export const ServicesScreen = () => {
 
     const [currentLocation, setCurrentLocation] = useState<Location>({ id: '1', name: 'Miami, FL' });
     const navigation = useNavigation<AuthStackNavigationProp>();
-
     const bookings: BookService[] = bookServices;
 
-    console.log(bookings);
-    
     const categories: ChipOption[] =
     categoriesData?.categories?.map((c: any) => ({
         id: c.id,
