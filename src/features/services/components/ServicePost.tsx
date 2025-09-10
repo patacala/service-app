@@ -4,10 +4,10 @@ import { Box, Button, GroupChipSelector, theme, Typography } from "@/design-syst
 import { Row } from "@/design-system/components/layout/Row/Row";
 import images from "@/assets/images/images";
 import { Icon } from "@/design-system/components/layout/Icon";
-import { ServiceData } from "../slices/services.slice";
+import { BookService } from "../store";
 
 interface ServicePostProps {
-  servicePost: ServiceData;
+  servicePost: BookService;
   onCancel?: (serviceId: string) => void;
   onRate?: (serviceId: string) => void;
   onDetail?: (serviceId: string) => void;
@@ -31,7 +31,7 @@ export const ServicePost: React.FC<ServicePostProps> = ({
     onDetail(servicePost.id);
   };
 
-  const chipOptionsArray = [servicePost.chipOption];
+  /* const chipOptionsArray = [servicePost.chipOption]; */
 
   return (
     <Box
@@ -50,21 +50,21 @@ export const ServicePost: React.FC<ServicePostProps> = ({
               borderRadius: 20
             }}
           />
-          <Box marginLeft="sm">
+          <Box marginLeft="sm" width="100%" maxWidth={179}>
             <Typography variant="bodySmall" color={theme.colors.colorGrey200}>
-              {servicePost.role === 'provider' ? 'User' : servicePost.category}
+              {servicePost.role === 'provider' ? 'User' : servicePost.serviceName}
             </Typography>
-            <Typography variant="bodyLarge" color="white">
-              {servicePost.name}
+            <Typography variant="bodyLarge" color="white" truncate>
+              {servicePost.provider.name}
             </Typography>
           </Box>
         </Row>
         <Box alignItems="flex-end">
           <Typography variant="bodySmall" color={theme.colors.colorGrey100}>
-            {servicePost.date}
+            {servicePost.dateShort}
           </Typography>
           <Typography variant="bodySmall" color={theme.colors.colorGrey100}>
-            {servicePost.time}
+            {servicePost.timeShort}
           </Typography>
         </Box>
       </Row>
@@ -79,13 +79,13 @@ export const ServicePost: React.FC<ServicePostProps> = ({
       </Box>
 
       <Row spacing="none" justifyContent="flex-end">
-        <GroupChipSelector
+        {/* <GroupChipSelector
           onChange={() => ({})}
           options={chipOptionsArray}
           selectedIds={servicePost.selectedChipId ? [servicePost.selectedChipId] : []}
           multiSelect={false}
           noPadding={true}
-        />
+        /> */}
         
         {servicePost.status === 'pending' && servicePost.role === 'user' && (
           <Button

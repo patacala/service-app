@@ -119,8 +119,14 @@ export const BookServiceForm: React.FC<BookServiceFormProps> = ({
     setContactProviderVisible(false);
     onClose();
 
-    navigation.navigate('Tabs', {
-      screen: 'Services',
+    navigation.reset({
+      index: 0,
+      routes: [
+        {
+          name: 'Tabs',
+          params: { screen: 'Services' },
+        },
+      ],
     });
   };
 
