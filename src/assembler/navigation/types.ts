@@ -32,10 +32,6 @@ export type AuthStackParamList = {
 export type RootStackParamList = {
   Auth: NavigatorScreenParams<AuthStackParamList>;
   Main: NavigatorScreenParams<MainStackParamList>;
-  App: undefined;
-  PostDetails: { postId: string };
-  CreatePost: undefined;
-  EditPost: { post: Post };
 };
 
 // Tipos auxiliares
