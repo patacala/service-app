@@ -4,6 +4,9 @@ import { FormService } from './FormService';
 import { FormResponsible } from './FormResponsible';
 import { ContactProvider } from './ContactProvider';
 import { CardPost } from '@/features/wall/slices/wall.slice';
+import { useNavigation } from 'expo-router';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { MainStackParamList } from '@/assembler/navigation/types';
 
 interface BookServiceFormProps {
   visible: boolean;
@@ -20,6 +23,7 @@ interface BookServiceFormProps {
     phoneNumber: string;
   }) => Promise<boolean> | boolean;
 }
+type NavigationProp = NativeStackNavigationProp<MainStackParamList, 'Tabs'>;
 
 export const BookServiceForm: React.FC<BookServiceFormProps> = ({
   visible,
@@ -28,6 +32,7 @@ export const BookServiceForm: React.FC<BookServiceFormProps> = ({
   service,
   onSubmit
 }) => {
+  const navigation = useNavigation<NavigationProp>();
   const [currentStep, setCurrentStep] = useState<number>(1);
   const [contactProviderVisible, setContactProviderVisible] = useState<boolean>(false);
   const wasVisible = useRef(false);
@@ -113,6 +118,10 @@ export const BookServiceForm: React.FC<BookServiceFormProps> = ({
   const handleContactProvider = () => {
     setContactProviderVisible(false);
     onClose();
+
+    navigation.navigate('Tabs', {
+      screen: 'Services',
+    });
   };
 
   return (
@@ -161,7 +170,7 @@ export const BookServiceForm: React.FC<BookServiceFormProps> = ({
             }}
           />
         ) : (
-          <ContactProvider onButtonPress={handleContactProvider} initialValues={{}} />
+          <ContactProvider onButtonPress={handleContactProvider} />
         )
       )}
     </BottomModal>

@@ -108,7 +108,6 @@ export const RegisterCompletionScreen = () => {
   const handleRegisterCompletion = async () => {
     setIsSubmitting(true);
     try {
-      // Asegurar que los datos más recientes estén guardados
       await saveFormData(completionFormData);
 
       const savedFormData = await getData('registerCompletionForm');
@@ -126,7 +125,6 @@ export const RegisterCompletionScreen = () => {
         text2: message ?? 'You have successfully completed registration.',
       });
 
-      // Limpiar los datos guardados después del registro exitoso
       await removeData('registerCompletionForm');
       await removeData('registerForm');
 
