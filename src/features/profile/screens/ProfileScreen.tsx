@@ -354,7 +354,6 @@ export const ProfileScreen = () => {
   const handleServiceSubmit = async (data: ServiceFormData) => {
     try {
       if (editingServiceId) {
-        console.log('Editing service:', editingServiceId);
         await updateService({
           id: data.id,
           data: {
@@ -1016,8 +1015,6 @@ export const ProfileScreen = () => {
 
       const sessionManager = SessionManager.getInstance();
       await sessionManager.clearSession();
-
-      console.log('Session successfully closed.');
     } catch (error) {
       console.error('Error while signing out:', error);
     }
