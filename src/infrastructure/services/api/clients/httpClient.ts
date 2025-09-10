@@ -1,5 +1,19 @@
 import axios, { AxiosInstance } from 'axios';
 import { SessionManager } from '@/infrastructure/session';
+import { useAuth } from '@/infrastructure/auth/AuthContext';
+
+const { logout } = useAuth();
+const proceedLogout = async () => {
+  try {
+    /* await GoogleSignin.signOut(); */
+    await logout();
+
+    const sessionManager = SessionManager.getInstance();
+    await sessionManager.clearSession();
+  } catch (error) {
+    console.error('Error while signing out:', error);
+  }
+};
 
 const httpClient: AxiosInstance = axios.create({
   baseURL: process.env.EXPO_PUBLIC_API_URL,
@@ -28,6 +42,13 @@ httpClient.interceptors.request.use(async (config) => {
 httpClient.interceptors.response.use(
   (response) => response,
   (error) => {
+    if (error.response) {
+      const status = error.response.status;
+
+      if (status === 401 || status === 403) {
+        proceedLogout();
+      }
+    }
     return Promise.reject(error);
   }
 );
