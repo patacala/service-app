@@ -34,7 +34,7 @@
     "@reduxjs/toolkit": "^2.6.1",
     "@shopify/restyle": "^2.4.5",
     "axios": "^1.9.0",
-    "expo": "~53.0.12",
+    "expo": "~54.0.1",
     "expo-apple-authentication": "~7.2.4",
     "expo-auth-session": "6.2.1",
     "expo-blur": "14.1.5",
