@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react';
 import { useAuth, AuthProvider } from '@/infrastructure/auth/AuthContext';
-import { Stack, useRouter, useSegments } from 'expo-router';
+import { Stack, usePathname, useRouter, useSegments } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { Provider } from 'react-redux';
 import { ThemeProvider } from '@/design-system/theme/ThemeProvider';
@@ -19,21 +19,23 @@ SplashScreen.preventAutoHideAsync();
 function RootLayoutNav() {
   const { user, loading } = useAuth();
   const needsOnboarding = user?.isNewUser === true;
-  const segments = useSegments(); 
+  const pathname = usePathname();
   const router = useRouter();
 
   useEffect(() => {
     if (loading) return;
 
-    if ((!user || needsOnboarding)) {
-      router.replace('/intro');
-    } 
-    else if (user && !needsOnboarding) {
-      router.replace('/home');
+    if (pathname === '/') {
+      if ((!user || needsOnboarding)) {
+        router.replace('/login');
+      } 
+      else if (user && !needsOnboarding) {
+        router.replace('/home');
+      }
     }
 
     SplashScreen.hideAsync();
-  }, [user, loading, needsOnboarding, segments]);
+  }, [user, loading, needsOnboarding, pathname]);
 
   if (loading) {
     return null;
