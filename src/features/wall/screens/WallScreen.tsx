@@ -9,11 +9,11 @@ import images from '@/assets/images/images';
 import { Post } from '../components/Post';
 import { FilterActionSheet } from '../components/FilterActionSheet';
 import { useNavigation } from '@react-navigation/native';
-import { AuthStackNavigationProp } from '@/assembler/navigation/types';
 import { getWallStyles } from './wall/wall.style';
 import { useGetServicesQuery } from '@/features/services/store';
 import { useGetCategoriesQuery } from '@/infrastructure/services/api';
 import Toast from 'react-native-toast-message';
+import { useRouter } from 'expo-router';
 
 interface Location {
   id: string;
@@ -26,7 +26,7 @@ interface WallScreenProps {
 }
 
 export const WallScreen: React.FC<WallScreenProps> = () => {
-  const navigation = useNavigation<AuthStackNavigationProp>();
+  const router = useRouter();
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategories, setSelectedCategories] = useState<string[]>(['all']);
   const [filterVisible, setFilterVisible] = useState(false);
@@ -123,8 +123,11 @@ export const WallScreen: React.FC<WallScreenProps> = () => {
   };
 
   const handlePostDetail = (item: CardPost) => {
-    navigation.navigate('ServiceDetail', {
-      post: item
+    router.push({
+      pathname: '/service-detail',
+      params: { 
+        post: JSON.stringify(item) 
+      }
     });
   };
 
