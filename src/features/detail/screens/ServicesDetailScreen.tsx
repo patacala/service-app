@@ -28,11 +28,13 @@ import { useCreateBookServiceMutation } from '@/features/services/store/services
 import { useCreateFavoriteMutation, useDeleteFavoriteMutation } from '@/features/favorites/store/favorites.api';
 import { BookServiceForm } from '../components/BookServiceForm';
 import { CreateBookServiceRequest } from '@/features/services/store';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 
 const { width } = Dimensions.get('window');
 
 export const ServicesDetailScreen = () => {
-  const route = useRoute();
+  const params = useLocalSearchParams();
+  const router = useRouter();
   const navigation = useNavigation();
   const scrollViewRef = useRef<ScrollView>(null);
   const carouselScrollViewRef = useRef<ScrollView>(null);
@@ -41,7 +43,7 @@ export const ServicesDetailScreen = () => {
     bookingdetail: 0,
     userreviews: 0
   });
-  const { post } = route.params as { post: CardPost };
+  const post: CardPost = JSON.parse(params.post as string);
   const [createBookService, { isLoading: isLoadBookingService}] = useCreateBookServiceMutation();
   const [createFavorite, {isLoading: isLoadingCreaFav}] = useCreateFavoriteMutation();
   const [deleteFavorite, {isLoading: isLoadingDelFav}] = useDeleteFavoriteMutation();
@@ -106,7 +108,7 @@ export const ServicesDetailScreen = () => {
   const slideWidth = width - theme.spacing.md * 2;
   const animatedOpacity = useRef(new Animated.Value(1)).current;
 
-  const handleGoBackPress = () => navigation.goBack();
+  const handleGoBackPress = () => router.back();
 
   const handleFavoritePress = async () => {
     const prevValue = isFavorite;

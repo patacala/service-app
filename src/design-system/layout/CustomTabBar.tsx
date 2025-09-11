@@ -14,7 +14,6 @@ export const CustomTabBar = ({ state, navigation }: BottomTabBarProps) => {
     const insets = useSafeAreaInsets();
   
     const renderTabItem = (routeName: keyof MainTabParamList, label: string, iconName: IconName) => {
-      // Encuentra el índice de la ruta actual para saber si está enfocada
       const routeIndex = state.routes.findIndex(route => route.name === routeName);
       const isFocused = state.index === routeIndex;
       const color = isFocused ? 'colorBaseBlack' : 'colorBaseWhite';
