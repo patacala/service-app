@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Image, ImageSourcePropType, Platform, TouchableOpacity } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
 import { useTranslation } from 'react-i18next';
 import Toast from 'react-native-toast-message';
 import Constants from 'expo-constants';
@@ -13,12 +12,13 @@ import { auth } from '@/infrastructure/config/firebase';
 
 import { Box, Input, theme, Typography } from '@/design-system';
 import { AuthenticationCard } from '../components/AuthenticationCard/AuthenticationCard';
-import { AuthStackNavigationProp } from '@/assembler/navigation/types';
 import { Row } from '@/design-system/components/layout/Row/Row';
 import { getLoginStyles } from './login/login.style';
 import images from '@/assets/images/images';
 import { SessionManager } from '@/infrastructure/session';
 import { setOtpConfirmationResult } from '@/infrastructure/auth/otpResultManager';
+import { useRouter } from 'expo-router';
+import { RegisterScreenParams } from '@/types/navigation';
 
 WebBrowser.maybeCompleteAuthSession();
 
@@ -31,7 +31,7 @@ interface FormErrors {
 }
 
 export const LoginScreen = () => {
-  const navigation = useNavigation<AuthStackNavigationProp>();
+  const router = useRouter();
   const { t } = useTranslation('auth');
   const styles = getLoginStyles(theme);
   const recaptchaVerifier = useRef(null);
@@ -61,9 +61,14 @@ export const LoginScreen = () => {
           const firebaseIdToken = await userCredential.user.getIdToken();
           await sessionManager.setSession(firebaseIdToken, null);
 
-          navigation.navigate('Register', {
-            name: userCredential.user.displayName,
-            email: userCredential.user.email,
+          const params: Partial<RegisterScreenParams> = {
+            name: userCredential.user.displayName || undefined,
+            email: userCredential.user.email || undefined,
+          };
+
+          router.push({
+            pathname: '/register',
+            params: params,
           });
 
         } catch (error: any) {
@@ -76,7 +81,7 @@ export const LoginScreen = () => {
       }
     };
     handleGoogleResponse();
-  }, [response, navigation]);
+  }, [response]);
 
   const validateForm = () => {
     let isValid = true;
@@ -108,8 +113,9 @@ export const LoginScreen = () => {
       const confirmationResult = await signInWithPhoneNumber(auth, fullPhoneNumber, recaptchaVerifier.current!);
       setOtpConfirmationResult(confirmationResult);
       
-      navigation.navigate('Otp', {
-        phoneNumber: fullPhoneNumber,
+      router.push({
+        pathname: '/otp',
+        params: { phoneNumber: fullPhoneNumber },
       });
 
       Toast.show({ type: 'info', text1: 'Código enviado', text2: `Enviamos un código a ${fullPhoneNumber}` });
@@ -122,7 +128,7 @@ export const LoginScreen = () => {
     }
   };
 
-  const handleGoBack = () => navigation.goBack();
+  const handleGoBack = () => router.back();
 
   return (
     <AuthenticationCard

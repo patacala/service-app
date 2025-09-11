@@ -1,5 +1,6 @@
 import React, { createContext, useEffect, useState, ReactNode, useContext } from 'react';
 import { SessionManager } from '@/infrastructure/session';
+import { useRouter } from 'expo-router';
 
 interface BackendUser {
   id: string;
@@ -41,6 +42,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [sessionUser, setSessionUser] = useState<BackendUser | null>(null);
 
   const sessionManager = SessionManager.getInstance();
+  const router = useRouter();
 
   const login = async (backendToken: string, userData: BackendUser | null) => {
     await sessionManager.setSession(backendToken, userData);
@@ -57,6 +59,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     await sessionManager.clearSession();
     setSessionToken(null);
     setSessionUser(null);
+    router.replace('/login');
   };
 
   useEffect(() => {

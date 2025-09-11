@@ -1,7 +1,5 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { Box, Typography, GroupChipSelector, theme } from '@/design-system';
-import { useNavigation } from '@react-navigation/native';
-import { AuthStackNavigationProp } from '@/assembler/navigation/types';
 import { useTranslation } from 'react-i18next';
 import { AuthenticationCard } from '../components/AuthenticationCard/AuthenticationCard';
 import { useDataManager } from '@/infrastructure/dataManager/DataManager';
@@ -11,6 +9,7 @@ import { useRegisterMutation } from '../store';
 import { useAuth } from '@/infrastructure/auth/AuthContext';
 import { ActivityIndicator } from 'react-native';
 import { getWallStyles } from '@/features/wall/screens/wall/wall.style';
+import { useRouter } from 'expo-router';
 
 interface CompletionFormData {
   city: string;
@@ -20,7 +19,7 @@ interface CompletionFormData {
 }
 
 export const RegisterCompletionScreen = () => {
-  const navigation = useNavigation<AuthStackNavigationProp>();
+  const router = useRouter();
   const { t } = useTranslation('auth');
   const { getData, setData, removeData } = useDataManager();
   const { data: categoriesData, isLoading: isCategoriesLoading, error: categoriesError } =
@@ -128,6 +127,7 @@ export const RegisterCompletionScreen = () => {
       await removeData('registerCompletionForm');
       await removeData('registerForm');
 
+      router.push('/home');
     } catch (error: any) {
       Toast.show({
         type: 'error',
@@ -140,8 +140,7 @@ export const RegisterCompletionScreen = () => {
   };
 
   const handleGoBack = () => {
-    // No eliminar los datos cuando va hacia atrás para mantener las selecciones
-    navigation.goBack();
+    router.back();
   };
 
   return (
