@@ -1,7 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { Box, Input, theme, Typography } from '@/design-system';
-import { RouteProp, useNavigation, useRoute } from '@react-navigation/native';
-import { AuthStackNavigationProp, AuthStackParamList } from '@/assembler/navigation/types';
 import { useTranslation } from 'react-i18next';
 import { AuthenticationCard } from '../components/AuthenticationCard/AuthenticationCard';
 import { useDataManager } from '@/infrastructure/dataManager/DataManager';
@@ -9,6 +7,8 @@ import { RegisterPayload } from '@/infrastructure/services/api/types/auth.types'
 import { Row } from '@/design-system/components/layout/Row/Row';
 import { getLoginStyles } from './login/login.style';
 import Toast from 'react-native-toast-message';
+import { useLocalSearchParams, useRouter } from 'expo-router';
+import { RegisterScreenParams } from '@/types/navigation';
 
 interface RegisterFormData extends RegisterPayload {
   name: string;
@@ -25,11 +25,12 @@ interface FormErrors {
 }
 
 export const RegisterScreen = () => {
-  const navigation = useNavigation<AuthStackNavigationProp>();
+  const router = useRouter();
+  const params = useLocalSearchParams<Partial<RegisterScreenParams>>();
+  const { name, email, phonenumber } = params;
+  
   const { t } = useTranslation('auth');
   const { getData, setData, removeData } = useDataManager();
-  const route = useRoute<RouteProp<AuthStackParamList, 'Register'>>();
-  const { name, email, phonenumber } = route.params || {};
   const styles = getLoginStyles(theme);
 
   const [RegisterFormData, setRegisterFormData] = useState<RegisterFormData>({
@@ -133,7 +134,7 @@ export const RegisterScreen = () => {
 
       await setData('registerForm', payload);
 
-      navigation.navigate('RegisterCompletion');
+      router.push('/register-completion');
     } catch (err: any) {
       Toast.show({
         type: 'error',
@@ -147,7 +148,7 @@ export const RegisterScreen = () => {
 
   const handleGoBack = () => {
     removeData('registerForm');
-    navigation.goBack();
+    router.back();
   };
 
   return (

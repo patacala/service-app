@@ -1,19 +1,19 @@
 import React, { useEffect, useRef, useState } from 'react';
 import Constants from 'expo-constants';
 import Toast from 'react-native-toast-message';
-import { useNavigation, useRoute } from '@react-navigation/native';
 import { useTranslation } from 'react-i18next';
 import { ConfirmationResult, signInWithPhoneNumber } from 'firebase/auth';
 import { auth } from '@/infrastructure/config/firebase';
 import { FirebaseRecaptchaVerifierModal } from 'expo-firebase-recaptcha';
 import { Box, SendCode, Otp } from '@/design-system';
 import { AuthenticationCard } from '../components/AuthenticationCard/AuthenticationCard';
-import { AuthStackNavigationProp } from '@/assembler/navigation/types';
 import { OtpRef } from '@/design-system/components/forms/Otp/types';
 import { getOtpConfirmationResult } from '@/infrastructure/auth/otpResultManager';
 import { useAuth } from '@/infrastructure/auth/AuthContext';
 import { useLoginMutation } from '../store';
 import { useDataManager } from '@/infrastructure/dataManager/DataManager';
+import { useLocalSearchParams, useRouter } from 'expo-router';
+import { RegisterScreenParams } from '@/types/navigation';
 
 interface OtpScreenRouteParams {
   confirmationResult: ConfirmationResult;
@@ -21,9 +21,9 @@ interface OtpScreenRouteParams {
 }
 
 export const OtpScreen = () => {
-  const navigation = useNavigation<AuthStackNavigationProp>();
-  const route = useRoute();
-  const { phoneNumber } = route.params as OtpScreenRouteParams;
+  const router = useRouter();
+  const params = useLocalSearchParams<{ phoneNumber: string }>();
+  const { phoneNumber } = params;
   const { t } = useTranslation('auth');
   const { clearAll } = useDataManager();
 
@@ -103,10 +103,15 @@ export const OtpScreen = () => {
         await login(token, user);
 
         if (user.isNewUser) {
-          navigation.navigate('Register', {
+          const registerParams: Partial<RegisterScreenParams> = {
+            phonenumber: phoneNumber,
             name: "",
             email: "",
-            phonenumber: phoneNumber,
+          };
+
+          router.replace({
+            pathname: '/register',
+            params: registerParams,
           });
 
           Toast.show({
@@ -120,6 +125,8 @@ export const OtpScreen = () => {
             text1: 'Verificación exitosa',
             text2: '¡Bienvenido de nuevo!',
           });
+
+          router.replace('/home');
         }
       }
     } catch (error: any) {
@@ -134,7 +141,7 @@ export const OtpScreen = () => {
   };
 
   const handleGoBack = () => {
-    navigation.goBack();
+    router.back();
   };
 
   return (

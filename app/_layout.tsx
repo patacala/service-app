@@ -27,7 +27,7 @@ function RootLayoutNav() {
 
     if (pathname === '/') {
       if ((!user || needsOnboarding)) {
-        router.replace('/login');
+        router.replace('/intro');
       } 
       else if (user && !needsOnboarding) {
         router.replace('/home');

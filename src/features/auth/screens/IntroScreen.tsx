@@ -1,22 +1,20 @@
 import {Box, Typography, Button, SafeContainer, theme} from '@/design-system';
-import {useNavigation} from '@react-navigation/native';
-import {AuthStackNavigationProp} from '@/assembler/navigation/types';
 import backgroundImage from '@/assets/images/brand-background.jpg';
 import {useTranslation} from 'react-i18next';
 import {formatMultilineText} from '@/utils/text';
-//import {Icon} from '@/design-system/components/layout/Icon';
 import {ImageSourcePropType} from 'react-native';
+import { useRouter } from 'expo-router';
 
 export const IntroScreen = () => {
-  const navigation = useNavigation<AuthStackNavigationProp>();
+  const router = useRouter();
   const {t} = useTranslation('auth');
 
   const handleLogin = () => {
-    navigation.navigate('Login');
+    router.push('/login');
   };
 
   const handleSignUp = () => {
-    navigation.navigate('Register');
+    router.push('/register');
   };
 
   return (
