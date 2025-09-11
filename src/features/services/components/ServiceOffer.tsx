@@ -6,16 +6,10 @@ import { Row } from '@/design-system/components/layout/Row/Row';
 import { Icon } from '@/design-system/components/layout/Icon';
 import { ChipOption } from '@/design-system';
 import images from '@/assets/images/images';
+import { Service } from '../store';
 
 interface ServiceOfferProps {
-  service: {
-    id: string;
-    title: string;
-    description: string;
-    price: number;
-    city: string;
-    categories: string[];
-  };
+  service: Service;
   serviceOptions: ChipOption[];
   onEditPress: (serviceId: string) => void;
 }
