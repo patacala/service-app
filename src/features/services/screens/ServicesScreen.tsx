@@ -1,8 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
-import { ActivityIndicator, ImageSourcePropType, ScrollView, TouchableWithoutFeedback, View } from "react-native";
+import { ActivityIndicator, ScrollView, TouchableWithoutFeedback, View } from "react-native";
 import { Box, ChipOption, Typography, theme } from "@/design-system";
 import { getServicesStyles } from './services/services.styles';
-import images from "@/assets/images/images";
 import { LocationPanel } from "@/features/wall/components/LocationPanel";
 import { ServicePost } from "../components/ServicePost";
 import { CancelService } from "../components/CancelService";
