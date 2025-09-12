@@ -8,12 +8,13 @@ import { Row } from '@/design-system/components/layout/Row/Row';
 import images from '@/assets/images/images';
 import { Post } from '../components/Post';
 import { FilterActionSheet } from '../components/FilterActionSheet';
-import { useNavigation } from '@react-navigation/native';
 import { getWallStyles } from './wall/wall.style';
 import { useGetServicesQuery } from '@/features/services/store';
 import { useGetCategoriesQuery } from '@/infrastructure/services/api';
 import Toast from 'react-native-toast-message';
 import { useRouter } from 'expo-router';
+import { useTranslation } from 'react-i18next';
+import { getDeviceLanguage } from '@/assembler/config/i18n';
 
 interface Location {
   id: string;
@@ -27,6 +28,7 @@ interface WallScreenProps {
 
 export const WallScreen: React.FC<WallScreenProps> = () => {
   const router = useRouter();
+  const { t } = useTranslation('auth');
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategories, setSelectedCategories] = useState<string[]>(['all']);
   const [filterVisible, setFilterVisible] = useState(false);
@@ -41,8 +43,8 @@ export const WallScreen: React.FC<WallScreenProps> = () => {
   });
 
   /* const currentLocation = useSelector((state: RootState) => state.location.currentLocation); */
-  const { data: categoriesData, error: categoriesError } = useGetCategoriesQuery({ language: 'en' }); 
-  const { data, isLoading: isLoadingServices, isFetching: isFetchingServices } = useGetServicesQuery({
+  const { data: categoriesData, error: categoriesError } = useGetCategoriesQuery({ language: getDeviceLanguage() }); 
+  const { data, isLoading: isLoadingServices, isFetching: isFetchingServices, isError: isErrorServices } = useGetServicesQuery({
     query: searchQuery,
     cat: selectedCategories.includes('all') ? undefined : selectedCategories.join(','),
     minPrice: activeFilters.minPrice,
@@ -61,9 +63,7 @@ export const WallScreen: React.FC<WallScreenProps> = () => {
   const selectedWithoutAll = selectedCategories.filter(id => id !== 'all');
   const sortedCategories = [
     { id: 'all', label: 'All' },
-    // categorías seleccionadas primero (sin repetir "all")
     ...categories.filter(cat => selectedWithoutAll.includes(cat.id)),
-    // luego las demás categorías que no están seleccionadas ni son "all"
     ...categories.filter(cat => cat.id !== 'all' && !selectedWithoutAll.includes(cat.id)),
   ];
 
@@ -73,15 +73,25 @@ export const WallScreen: React.FC<WallScreenProps> = () => {
     if (categoriesError) {
       Toast.show({
         type: 'error',
-        text1: 'Error al cargar categorías',
-        text2: (categoriesError as any)?.message ?? 'No se pudieron cargar las categorías.',
+        text1: t("message.msg25"),
+        text2: t("message.msg26"),
       });
     }
   }, [categoriesError]);
 
+  useEffect(() => {
+    if (isErrorServices) {
+      Toast.show({
+        type: 'error',
+        text1: t("message.msg28"),
+        text2: t("message.msg29"),
+      });
+    }
+  }, [isErrorServices]);
+
   const posts = data?.data || [];
   const getCategoryNames = (categoryIds: string[]) => {
-    if (!categoryIds || categoryIds.length === 0 || !categories) return 'Sin categoría';
+    if (!categoryIds || categoryIds.length === 0 || !categories) return t("message.msg27");
     
     return categoryIds
       .map(id => {
@@ -147,7 +157,7 @@ export const WallScreen: React.FC<WallScreenProps> = () => {
         <Row justifyContent="space-between" alignItems="center">
           <Box style={{ flex: 1 }}>
             <Input
-              placeholder="Search from 100+ services"
+              placeholder={t("messages.msg33")}
               variant="search"
               style={getWallStyles.inputSearch}
               value={searchQuery}
@@ -179,7 +189,7 @@ export const WallScreen: React.FC<WallScreenProps> = () => {
         <Box style={getWallStyles.loadingContainer}>
           <ActivityIndicator size="large" color={theme.colors.colorBrandPrimary} />
           <Typography variant="bodyMedium" color="white" style={getWallStyles.loadingText}>
-            Loading services...
+            {t("messages.msg31")}
           </Typography>
         </Box>
       ) : (
@@ -202,8 +212,7 @@ export const WallScreen: React.FC<WallScreenProps> = () => {
                 <Typography style={getWallStyles.textWithoutResult}
                   variant="bodyMedium"
                   color={theme.colors.colorBaseWhite}>
-                  Looks like we're all out of results.
-                  Want to try again, or are we officially lost?
+                  {t("messages.msg30")}
                 </Typography>
               </Box>
             </Box>

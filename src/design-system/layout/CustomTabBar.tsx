@@ -9,8 +9,10 @@ import { Icon, IconName } from '@/design-system/components/layout/Icon';
 import { Typography } from '@/design-system/components/foundation/Typography';
 import { Box, theme } from '@/design-system';
 import { MainTabParamList } from '@/types/navigation';
+import { useTranslation } from 'react-i18next';
 
 export const CustomTabBar = ({ state, navigation }: BottomTabBarProps) => {
+    const { t } = useTranslation('auth');
     const insets = useSafeAreaInsets();
   
     const renderTabItem = (routeName: keyof MainTabParamList, label: string, iconName: IconName) => {
@@ -50,10 +52,10 @@ export const CustomTabBar = ({ state, navigation }: BottomTabBarProps) => {
           alignItems="center"
           style={styles.tabBar}
         >
-          {renderTabItem('provider-mode', 'Provider Mode', 'transfer')}
-          {renderTabItem('services', 'Services', 'bookmark-other')}
-          {renderTabItem('profile', 'Profile', 'user-circle')}
-          {renderTabItem('home', 'Home', 'home')}
+          {renderTabItem('provider-mode', t("tabs.provmode"), 'transfer')}
+          {renderTabItem('services', t("tabs.services"), 'bookmark-other')}
+          {renderTabItem('profile', t("tabs.profile"), 'user-circle')}
+          {renderTabItem('home', t("tabs.home"), 'home')}
         </Box>
       </Box>
     );
