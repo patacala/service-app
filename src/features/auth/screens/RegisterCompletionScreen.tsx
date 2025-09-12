@@ -10,6 +10,7 @@ import { useAuth } from '@/infrastructure/auth/AuthContext';
 import { ActivityIndicator } from 'react-native';
 import { getWallStyles } from '@/features/wall/screens/wall/wall.style';
 import { useRouter } from 'expo-router';
+import { getDeviceLanguage } from '@/assembler/config/i18n';
 
 interface CompletionFormData {
   city: string;
@@ -22,8 +23,7 @@ export const RegisterCompletionScreen = () => {
   const router = useRouter();
   const { t } = useTranslation('auth');
   const { getData, setData, removeData } = useDataManager();
-  const { data: categoriesData, isLoading: isCategoriesLoading, error: categoriesError } =
-    useGetCategoriesQuery({ language: 'en' });
+  const { data: categoriesData, isLoading: isCategoriesLoading, error: categoriesError } = useGetCategoriesQuery({ language: getDeviceLanguage() });
   const { user: userData, userUpdate } = useAuth();
 
   const [completionFormData, setCompletionFormData] = useState<CompletionFormData>({
@@ -155,9 +155,12 @@ export const RegisterCompletionScreen = () => {
       primaryButtonDisabled={isSubmitting}
     >
       <Box>
-        <Typography variant="bodyRegular" colorVariant="secondary">
-          Services you're interested in:
-        </Typography>
+        <Box marginBottom='sm'>
+          <Typography variant="bodyRegular" colorVariant="secondary">
+            {t("messages.msg32")}
+          </Typography>
+        </Box>
+        
 
         {isCategoriesLoading ? (
           <Box style={getWallStyles.loadingContainer}>

@@ -45,7 +45,7 @@ export interface GetCategoriesParams {
   limit?: number;
   parent_id?: string;
   search?: string;
-  language?: 'es' | 'en';
+  language?: string;
 }
 
 export interface GetUserCategoriesParams {
