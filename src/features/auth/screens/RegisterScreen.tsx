@@ -138,8 +138,8 @@ export const RegisterScreen = () => {
     } catch (err: any) {
       Toast.show({
         type: 'error',
-        text1: 'Registration failed',
-        text2: 'There was an unexpected error.',
+        text1: t("messages.msg19"),
+        text2: t("messages.msg18"),
       });
     } finally {
       setIsSubmitting(false);

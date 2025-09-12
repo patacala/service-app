@@ -72,12 +72,12 @@ export const LoginScreen = () => {
           });
 
         } catch (error: any) {
-          Toast.show({ type: 'error', text1: 'Error de Firebase', text2: error.message });
+          Toast.show({ type: 'error', text1: t('messages.msg1'), text2: error.message });
         } finally {
           setLoading(false);
         }
       } else if (response?.type === 'error') {
-        Toast.show({ type: 'error', text1: 'Inicio de sesión cancelado' });
+        Toast.show({ type: 'error', text1: t('messages.msg2')});
       }
     };
     handleGoogleResponse();
@@ -118,11 +118,10 @@ export const LoginScreen = () => {
         params: { phoneNumber: fullPhoneNumber },
       });
 
-      Toast.show({ type: 'info', text1: 'Código enviado', text2: `Enviamos un código a ${fullPhoneNumber}` });
+      Toast.show({ type: 'info', text1: t('messages.msg3'), text2: `${t('messages.msg4')} ${fullPhoneNumber}` });
 
     } catch (err: any) {
-      Toast.show({ type: 'error', text1: 'Fallo en el envío', text2: err.message });
-      console.error('Phone login error:', err);
+      Toast.show({ type: 'error', text1: t('messages.msg5'), text2: err.message });
     } finally {
       setLoading(false);
     }
