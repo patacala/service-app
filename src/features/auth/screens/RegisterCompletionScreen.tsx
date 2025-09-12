@@ -60,7 +60,7 @@ export const RegisterCompletionScreen = () => {
           });
         }
       } catch (error) {
-        console.error('Error cargando datos del formulario:', error);
+        return false;
       }
     };
 
@@ -71,8 +71,8 @@ export const RegisterCompletionScreen = () => {
     if (categoriesError) {
       Toast.show({
         type: 'error',
-        text1: 'Error al cargar categorías',
-        text2: (categoriesError as any)?.message ?? 'No se pudieron cargar las categorías.',
+        text1: t("messages.msg20"),
+        text2: t("messages.msg21"),
       });
     }
   }, [categoriesError]);
@@ -82,7 +82,7 @@ export const RegisterCompletionScreen = () => {
     try {
       await setData('registerCompletionForm', updatedFormData);
     } catch (error) {
-      console.error('Error guardando datos del formulario:', error);
+      return false;
     }
   }, [setData]);
 
@@ -115,13 +115,13 @@ export const RegisterCompletionScreen = () => {
         userId: userData?.id,
       };
 
-      const { message, user } = await registerProfile(registerRequest).unwrap();
+      const { user } = await registerProfile(registerRequest).unwrap();
       await userUpdate(user);
 
       Toast.show({
         type: 'success',
-        text1: 'Success!',
-        text2: message ?? 'You have successfully completed registration.',
+        text1: t("messages.msg22"),
+        text2: t("messages.msg23"),
       });
 
       await removeData('registerCompletionForm');
@@ -131,8 +131,8 @@ export const RegisterCompletionScreen = () => {
     } catch (error: any) {
       Toast.show({
         type: 'error',
-        text1: 'Error saving data',
-        text2: error?.data?.error || 'Unexpected error occurred.',
+        text1: t("messages.msg24"),
+        text2: t("messages.msg18"),
       });
     } finally {
       setIsSubmitting(false);

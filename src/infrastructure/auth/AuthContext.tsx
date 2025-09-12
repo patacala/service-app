@@ -59,7 +59,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     await sessionManager.clearSession();
     setSessionToken(null);
     setSessionUser(null);
-    router.replace('/login');
+    router.replace('/intro');
   };
 
   useEffect(() => {
