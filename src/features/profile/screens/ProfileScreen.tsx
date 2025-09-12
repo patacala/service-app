@@ -32,7 +32,6 @@ import { InfoMain } from '@/features/provMode/components/InfoMain';
 import { DetailInfo } from '@/features/provMode/components/DetailInfo';
 import { DetailService } from '@/features/provMode/components/DetailService';
 import { ProviderForm } from '@/features/provMode/components/ProviderForm';
-import { SessionManager } from '@/infrastructure/session';
 
 /* import { GoogleSignin } from '@react-native-google-signin/google-signin'; */
 import { useAuth } from '@/infrastructure/auth/AuthContext';
@@ -197,8 +196,8 @@ export const ProfileScreen = () => {
     if (categoriesError) {
       Toast.show({
         type: 'error',
-        text1: 'Error al cargar categorías',
-        text2: (categoriesError as any)?.message ?? 'No se pudieron cargar las categorías.',
+        text1: t("messages.msg20"),
+        text2: t("messages.msg21"),
       });
     }
   }, [categoriesError]);
@@ -207,8 +206,8 @@ export const ProfileScreen = () => {
     if (profileError) {
       Toast.show({
         type: 'error',
-        text1: 'Error al cargar perfil',
-        text2: (profileError as any)?.message ?? 'No se pudo cargar el perfil.',
+        text1: t("messages.msg34"),
+        text2: t("messages.msg35")
       });
     }
   }, [profileError]);
@@ -225,7 +224,6 @@ export const ProfileScreen = () => {
     }
   }, [profile, reset]);
 
-  // Función para seleccionar imagen directamente de la galería
   const pickImage = async () => {
     try {
       const result = await ImagePicker.launchImageLibraryAsync({
@@ -239,8 +237,7 @@ export const ProfileScreen = () => {
         setProfileImage(result.assets[0].uri);
       }
     } catch (error) {
-      console.error('Error selecting image:', error);
-      Alert.alert('Error', 'Could not select image');
+      Alert.alert('Error', t("messages.msg36"));
     }
   };
 
@@ -266,16 +263,15 @@ export const ProfileScreen = () => {
 
       Toast.show({
         type: 'success',
-        text1: 'Success!',
-        text2: response?.message ?? 'Profile successfully updated.',
+        text1: t("messages.msg22"),
+        text2: t("messages.msg37"),
       });
     } catch (error: any) {
-      console.log(error);
 
       Toast.show({
         type: 'error',
-        text1: 'Error saving data.',
-        text2: error?.data?.error || 'Unexpected error occurred.',
+        text1: t("messages.msg24"),
+        text2: t("messages.msg9"),
       });
     }
   };
@@ -467,10 +463,10 @@ export const ProfileScreen = () => {
   };
 
   const itemsDetail = [
-    { id: 'myprofile', label: 'My Profile' },
-    { id: 'portfolio', label: 'Portfolio' },
-    { id: 'userreviews', label: 'User Reviews' },
-    { id: 'subscriptions', label: 'Subscriptions' },
+    { id: 'myprofile', label: t("profile.myprofile")},
+    { id: 'portfolio', label: t("profile.portfolio")},
+    { id: 'userreviews', label: t("profile.userreviews")},
+    { id: 'subscriptions', label: t("profile.subscriptions")},
   ];
 
   const [selectedItemDetail, setSelectedItemDetail] = useState(['myprofile']);
@@ -549,11 +545,11 @@ export const ProfileScreen = () => {
               render={({ field: { onChange, onBlur, value } }) => (
                 <Box>
                   <Input
-                    label="Name"
+                    label={t("profile.name-label")}
                     value={value}
                     onChangeValue={onChange}
                     onBlur={onBlur}
-                    placeholder="Enter your full name"
+                    placeholder={t("profile.name-placeholder")}
                   />
                   {errors.name && (
                     <Box marginTop="xs">
@@ -573,11 +569,11 @@ export const ProfileScreen = () => {
               render={({ field: { onChange, onBlur, value } }) => (
                 <Box>
                   <Input
-                    label="Email"
+                    label={t("profile.email-label")}
                     value={value}
                     onChangeValue={onChange}
                     onBlur={onBlur}
-                    placeholder="Enter your email"
+                    placeholder={t("profile.email-placeholder")}
                     keyboardType="email-address"
                     autoCapitalize="none"
                     editable={false}
@@ -640,12 +636,12 @@ export const ProfileScreen = () => {
               render={({ field: { onChange, onBlur, value } }) => (
                 <Box>
                   <Input
-                    label="City"
+                    label={t("profile.city-label")}
                     icon="transfer"
                     value={value}
                     onChangeValue={onChange}
                     onBlur={onBlur}
-                    placeholder="Enter your city"
+                    placeholder={t("profile.email-placeholder")}
                   />
                   {errors.city && (
                     <Box marginTop="xs">
@@ -665,12 +661,12 @@ export const ProfileScreen = () => {
               render={({ field: { onChange, onBlur, value } }) => (
                 <Box>
                   <Input
-                    label="Address"
+                    label={t("profile.address-label")}
                     icon="transfer"
                     value={value}
                     onChangeValue={onChange}
                     onBlur={onBlur}
-                    placeholder="Enter your full address"
+                    placeholder={t("profile.address-placeholder")}
                   />
                   {errors.address && (
                     <Box marginTop="xs">
@@ -700,7 +696,7 @@ export const ProfileScreen = () => {
               <Row spacing="sm" alignItems="center">
                 <Icon name="sound" color="colorBaseWhite" />
                 <Typography variant="bodyMedium" color={theme.colors.colorBaseWhite}>
-                  Help
+                  {t("profile.help")}
                 </Typography>
               </Row>
             </TouchableOpacity>
@@ -710,7 +706,7 @@ export const ProfileScreen = () => {
                 <Row spacing="sm" alignItems="center">
                   <Icon name="left-arrow" color="colorFeedbackError" />
                   <Typography variant="bodyMedium" color={theme.colors.colorFeedbackError}>
-                    Logout
+                    {t("profile.logout")}
                   </Typography>
                 </Row>
               </TouchableOpacity>
@@ -734,7 +730,9 @@ export const ProfileScreen = () => {
           <Box>
             <Row marginTop="md" gap="sm">
               <Icon name="tag" color="colorBaseWhite" />
-              <Typography variant="bodyLarge" color="white">Services to offer</Typography>
+              <Typography variant="bodyLarge" color="white">
+                {t("profile.offerservices")}
+              </Typography>
             </Row>
 
             {/* Loading de categorías */}
@@ -749,7 +747,7 @@ export const ProfileScreen = () => {
               <Box style={getWallStyles.loadingContainer}>
                 <ActivityIndicator size="large" color={theme.colors.colorBrandPrimary} />
                 <Typography variant="bodyMedium" color="white" style={getWallStyles.loadingText}>
-                  Loading services...
+                  {t("profile.loadportfolio")}
                 </Typography>
               </Box>
             )}
@@ -772,7 +770,7 @@ export const ProfileScreen = () => {
           <Box marginTop="xl">
             <Button
               variant="secondary"
-              label="Add New Service"
+              label={t("profile.addnewservice")}
               onPress={handleAddNewService}
               disabled={isCategoriesLoading}
             />
