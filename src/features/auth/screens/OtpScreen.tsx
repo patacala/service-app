@@ -15,11 +15,6 @@ import { useDataManager } from '@/infrastructure/dataManager/DataManager';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { RegisterScreenParams } from '@/types/navigation';
 
-interface OtpScreenRouteParams {
-  confirmationResult: ConfirmationResult;
-  phoneNumber: string;
-}
-
 export const OtpScreen = () => {
   const router = useRouter();
   const params = useLocalSearchParams<{ phoneNumber: string }>();
@@ -54,16 +49,15 @@ export const OtpScreen = () => {
 
         Toast.show({
           type: 'success',
-          text1: 'Código reenviado',
-          text2: `Enviamos un nuevo código a ${phoneNumber}`
+          text1: t("messages.msg6"),
+          text2: `${t("messages.msg7")} ${phoneNumber}`
         });
       }
     } catch (err: any) {
-      console.error('Resend code error:', err);
       Toast.show({
         type: 'error',
-        text1: 'Error al reenviar',
-        text2: err.message || 'Ocurrió un error inesperado.'
+        text1: t("messages.msg8"),
+        text2: t("messages.msg9")
       });
     }
   };
@@ -72,8 +66,8 @@ export const OtpScreen = () => {
     if (!confirmation) {
       Toast.show({
         type: 'error',
-        text1: 'Error de Sesión',
-        text2: 'No se encontró la confirmación. Por favor, vuelve a intentarlo.',
+        text1: t("messages.msg10"),
+        text2: t("messages.msg11"),
       });
       return;
     }
@@ -81,8 +75,8 @@ export const OtpScreen = () => {
     if (!code || code.length !== 6) {
       Toast.show({
         type: 'error',
-        text1: 'Código inválido',
-        text2: 'Por favor, ingresa el código completo.',
+        text1: t("messages.msg12"),
+        text2: t("messages.msg13"),
       });
       return;
     }
@@ -116,14 +110,14 @@ export const OtpScreen = () => {
 
           Toast.show({
             type: 'success',
-            text1: 'Verificación exitosa',
-            text2: 'Empecemos',
+            text1: t("messages.msg14"),
+            text2: t("messages.msg15"),
           });
         } else {
           Toast.show({
             type: 'success',
-            text1: 'Verificación exitosa',
-            text2: '¡Bienvenido de nuevo!',
+            text1: t("messages.msg14"),
+            text2: t("messages.msg16")
           });
 
           router.replace('/home');
@@ -132,8 +126,8 @@ export const OtpScreen = () => {
     } catch (error: any) {
       Toast.show({
         type: 'error',
-        text1: 'Error al verificar',
-        text2: error.data.message ?? 'Ocurrió un error inesperado.',
+        text1: t("messages.msg17"),
+        text2: t("messages.msg18"),
       });
     } finally {
       setIsSubmitting(false);

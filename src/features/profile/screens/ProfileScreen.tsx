@@ -1012,9 +1012,6 @@ export const ProfileScreen = () => {
     try {
       /* await GoogleSignin.signOut(); */
       await logout();
-
-      const sessionManager = SessionManager.getInstance();
-      await sessionManager.clearSession();
     } catch (error) {
       console.error('Error while signing out:', error);
     }
