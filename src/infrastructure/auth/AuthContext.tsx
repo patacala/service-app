@@ -70,7 +70,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         setSessionToken(sessionManager.token);
         setSessionUser(sessionManager.user);
       } catch (error) {
-        console.error('Error initializing SessionManager:', error);
         await logout();
       } finally {
         setLoading(false);

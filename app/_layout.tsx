@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { useAuth, AuthProvider } from '@/infrastructure/auth/AuthContext';
 import { Stack, usePathname, useRouter, useSegments } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
@@ -21,6 +21,7 @@ function RootLayoutNav() {
   const needsOnboarding = user?.isNewUser === true;
   const pathname = usePathname();
   const router = useRouter();
+  const [navigationReady, setNavigationReady] = useState(false);
 
   useEffect(() => {
     if (loading) return;
@@ -28,16 +29,15 @@ function RootLayoutNav() {
     if (pathname === '/') {
       if ((!user || needsOnboarding)) {
         router.replace('/intro');
-      } 
-      else if (user && !needsOnboarding) {
+      } else if (user && !needsOnboarding) {
         router.replace('/home');
       }
     }
-
-    SplashScreen.hideAsync();
+    
+    setNavigationReady(true);
   }, [user, loading, needsOnboarding, pathname]);
 
-  if (loading) {
+  if (loading || !navigationReady) {
     return null;
   }
 
@@ -45,6 +45,8 @@ function RootLayoutNav() {
 }
 
 export default function RootLayout() {
+  const [appIsReady, setAppIsReady] = useState(false);
+  
   const [fontsLoaded, fontError] = useFonts({
     'CustomIcons': require('@/design-system/assets/fonts/CustomIcons.ttf'),
     'Lexend Deca': require('@/design-system/assets/fonts/LexendDeca-Regular.ttf'),
@@ -58,12 +60,42 @@ export default function RootLayout() {
     SessionManager.getInstance().initialize();
   }, []);
 
-  if (!fontsLoaded && !fontError) {
+  useEffect(() => {
+    async function prepare() {
+      try {
+        // Esperar a que las fuentes se carguen completamente
+        if (fontsLoaded || fontError) {
+          // Simular cualquier otra preparación necesaria
+          await new Promise(resolve => setTimeout(resolve, 100));
+          setAppIsReady(true);
+        }
+      } catch (e) {
+        console.warn('Error during app preparation:', e);
+        // Aún así, marcar como listo para evitar que la app se quede colgada
+        setAppIsReady(true);
+      }
+    }
+
+    prepare();
+  }, [fontsLoaded, fontError]);
+
+  const onLayoutRootView = useCallback(async () => {
+    if (appIsReady) {
+      try {
+        // Ocultar la splash screen cuando todo esté listo
+        await SplashScreen.hideAsync();
+      } catch (error) {
+        console.warn('Error hiding splash screen:', error);
+      }
+    }
+  }, [appIsReady]);
+
+  if (!appIsReady) {
     return null;
   }
 
   return (
-    <GestureHandlerRootView style={{ flex: 1 }}>
+    <GestureHandlerRootView style={{ flex: 1 }} onLayout={onLayoutRootView}>
       <SafeAreaProvider>
         <Provider store={store}>
           <ThemeProvider>

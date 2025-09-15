@@ -40,6 +40,7 @@ import { useGetCategoriesQuery } from '@/infrastructure/services/api';
 import { useCreateServiceMutation, useUpdateServiceMutation, useGetMyServicesQuery } from '@/features/services/store';
 import { getWallStyles } from '@/features/wall/screens/wall/wall.style';
 import { ServiceOffer } from '@/features/services/components/ServiceOffer';
+import { getDeviceLanguage } from '@/assembler/config/i18n';
 
 interface ServiceFormData {
   id: string;
@@ -90,7 +91,7 @@ export const ProfileScreen = () => {
   const { t } = useTranslation('auth');
   const theme = useTheme<Theme>();
   // Categorias y perfil
-  const { data: categoriesData, isLoading: isCategoriesLoading, error: categoriesError } = useGetCategoriesQuery({ language: 'en' }); 
+  const { data: categoriesData, isLoading: isCategoriesLoading, error: categoriesError } = useGetCategoriesQuery({ language: getDeviceLanguage() }); 
   const { data: profile, error: profileError } = useGetCurrentUserQuery();
 
   const [updateProfile, { isLoading }] = useUpdateProfileMutation();
@@ -129,6 +130,8 @@ export const ProfileScreen = () => {
     id: c.id,
     label: c.name,
   })) ?? [];
+
+  const { logout, user } = useAuth();
 
   // Función para convertir IDs de categorías a ChipOptions
   const getCategoryOptions = useMemo(() => {
@@ -462,11 +465,13 @@ export const ProfileScreen = () => {
     setStep3Valid(isValid);
   };
 
-  const itemsDetail = [
+  const itemsDetail = user?.role === 'publisher' || user?.role === 'both' ? [
     { id: 'myprofile', label: t("profile.myprofile")},
     { id: 'portfolio', label: t("profile.portfolio")},
     { id: 'userreviews', label: t("profile.userreviews")},
     { id: 'subscriptions', label: t("profile.subscriptions")},
+  ]:[
+    { id: 'myprofile', label: t("profile.myprofile")},
   ];
 
   const [selectedItemDetail, setSelectedItemDetail] = useState(['myprofile']);
@@ -1005,7 +1010,6 @@ export const ProfileScreen = () => {
     );
   };
 
-  const { logout } = useAuth();
   const proceedLogout = async () => {
     try {
       /* await GoogleSignin.signOut(); */
