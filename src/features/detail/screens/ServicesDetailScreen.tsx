@@ -35,7 +35,6 @@ const { width } = Dimensions.get('window');
 export const ServicesDetailScreen = () => {
   const params = useLocalSearchParams();
   const router = useRouter();
-  const navigation = useNavigation();
   const scrollViewRef = useRef<ScrollView>(null);
   const carouselScrollViewRef = useRef<ScrollView>(null);
   const [sectionPositions, setSectionPositions] = useState({

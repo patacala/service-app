@@ -6,13 +6,13 @@ import { LocationPanel } from "@/features/wall/components/LocationPanel";
 import { ServicePost } from "../components/ServicePost";
 import { CancelService } from "../components/CancelService";
 import { RateService } from "../components/RateService";
-import { AuthStackNavigationProp } from "@/assembler/navigation/types";
-import { useNavigation } from "@react-navigation/native";
 import Toast from "react-native-toast-message";
 import { useGetCategoriesQuery } from "@/infrastructure/services/api";
 import { useGetMyBookServicesQuery } from "../store/services.api";
 import { BookService } from "../store";
 import { getWallStyles } from "@/features/wall/screens/wall/wall.style";
+import { getDeviceLanguage } from "@/assembler/config/i18n";
+import { useRouter } from "expo-router";
 
 interface Location {
     id: string;
@@ -100,14 +100,14 @@ interface Location {
 ]; */
 
 export const ServicesScreen = () => {
+    const router = useRouter();
     const [locationPanelVisible, setLocationPanelVisible] = useState(false);
     const [cancelServiceVisible, setCancelServiceVisible] = useState(false);
     const [rateServiceVisible, setRateServiceVisible] = useState(false);
-    const { data: categoriesData, error: categoriesError } = useGetCategoriesQuery({ language: 'en' });
+    const { data: categoriesData, error: categoriesError } = useGetCategoriesQuery({ language: getDeviceLanguage() });
     const { data: bookServices = [], isLoading: isLoadBookServices, error: bookServicesError } = useGetMyBookServicesQuery();
 
     const [currentLocation, setCurrentLocation] = useState<Location>({ id: '1', name: 'Miami, FL' });
-    const navigation = useNavigation<AuthStackNavigationProp>();
     const bookings: BookService[] = bookServices;
 
     const categories: ChipOption[] =
@@ -116,7 +116,7 @@ export const ServicesScreen = () => {
         label: c.name,
     })) ?? [];
 
-    const getCategoryOptions = useMemo(() => {
+    /* const getCategoryOptions = useMemo(() => {
         return (categoryIds: string[]): ChipOption[] => {
             if (!categories || categories.length === 0) {
             return [];
@@ -129,7 +129,7 @@ export const ServicesScreen = () => {
             })
             .filter(Boolean) as ChipOption[];
         };
-    }, [categories]);
+    }, [categories]); */
 
     useEffect(() => {
         if (categoriesError) {
@@ -168,7 +168,12 @@ export const ServicesScreen = () => {
     };
 
     const navigateToChat = (service: BookService) => {
-        navigation.navigate('Chat', { service });
+        router.push({
+            pathname: '/chat',
+            params: { 
+                post: JSON.stringify(service) 
+            }
+        });
     };
 
     const renderSectionHeader = (title: string) => (
