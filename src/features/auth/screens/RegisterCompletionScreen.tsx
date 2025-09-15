@@ -127,7 +127,7 @@ export const RegisterCompletionScreen = () => {
       await removeData('registerCompletionForm');
       await removeData('registerForm');
 
-      router.push('/home');
+      router.replace('/home');
     } catch (error: any) {
       Toast.show({
         type: 'error',
