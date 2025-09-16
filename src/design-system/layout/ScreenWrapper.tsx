@@ -34,7 +34,9 @@ export const ScreenWrapper: React.FC<{
   const [locationPanelVisible, setLocationPanelVisible] = useState(false);
   const dispatch = useDispatch();
   const currentLocation = useSelector((state: RootState) => state.location.currentLocation);
-  const { data: profile, isLoading: isProfileLoading } = useGetCurrentUserQuery();
+  const { data: profile, isLoading: isProfileLoading } = useGetCurrentUserQuery(undefined, {
+    refetchOnMountOrArgChange: true,
+  });
 
   const handleSelectLocation = (location: Location) => {
     dispatch(setLocation(location));
