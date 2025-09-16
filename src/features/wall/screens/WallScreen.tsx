@@ -43,7 +43,11 @@ export const WallScreen: React.FC<WallScreenProps> = () => {
   });
 
   /* const currentLocation = useSelector((state: RootState) => state.location.currentLocation); */
-  const { data: categoriesData, error: categoriesError } = useGetCategoriesQuery({ language: getDeviceLanguage() }); 
+  const { data: categoriesData, error: categoriesError } = useGetCategoriesQuery({ language: getDeviceLanguage() }, {
+    refetchOnMountOrArgChange: true,
+    refetchOnFocus: true,
+    refetchOnReconnect: true
+  }); 
   const { data, isLoading: isLoadingServices, isFetching: isFetchingServices, isError: isErrorServices } = useGetServicesQuery({
     query: searchQuery,
     cat: selectedCategories.includes('all') ? undefined : selectedCategories.join(','),
@@ -52,6 +56,10 @@ export const WallScreen: React.FC<WallScreenProps> = () => {
     tag: '',
     /* city: currentLocation?.name, */
     city: '',
+  }, {
+    refetchOnMountOrArgChange: true,
+    refetchOnFocus: true,
+    refetchOnReconnect: true
   });
 
   const categories: ChipOption[] =
@@ -73,8 +81,8 @@ export const WallScreen: React.FC<WallScreenProps> = () => {
     if (categoriesError) {
       Toast.show({
         type: 'error',
-        text1: t("message.msg25"),
-        text2: t("message.msg26"),
+        text1: t("messages.msg25"),
+        text2: t("messages.msg26"),
       });
     }
   }, [categoriesError]);
@@ -83,15 +91,15 @@ export const WallScreen: React.FC<WallScreenProps> = () => {
     if (isErrorServices) {
       Toast.show({
         type: 'error',
-        text1: t("message.msg28"),
-        text2: t("message.msg29"),
+        text1: t("messages.msg28"),
+        text2: t("messages.msg29"),
       });
     }
   }, [isErrorServices]);
 
   const posts = data?.data || [];
   const getCategoryNames = (categoryIds: string[]) => {
-    if (!categoryIds || categoryIds.length === 0 || !categories) return t("message.msg27");
+    if (!categoryIds || categoryIds.length === 0 || !categories) return t("messages.msg27");
     
     return categoryIds
       .map(id => {

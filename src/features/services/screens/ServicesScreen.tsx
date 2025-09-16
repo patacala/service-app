@@ -107,8 +107,16 @@ export const ServicesScreen = () => {
     const [locationPanelVisible, setLocationPanelVisible] = useState(false);
     const [cancelServiceVisible, setCancelServiceVisible] = useState(false);
     const [rateServiceVisible, setRateServiceVisible] = useState(false);
-    const { data: categoriesData, error: categoriesError } = useGetCategoriesQuery({ language: getDeviceLanguage() });
-    const { data: bookServices = [], isLoading: isLoadBookServices, error: bookServicesError, refetch: bookServicesRefetch } = useGetMyBookServicesQuery();
+    const { data: categoriesData, error: categoriesError } = useGetCategoriesQuery({ language: getDeviceLanguage() }, {
+        refetchOnMountOrArgChange: true,
+        refetchOnFocus: true,
+        refetchOnReconnect: true
+    });
+    const { data: bookServices = [], isLoading: isLoadBookServices, error: bookServicesError } = useGetMyBookServicesQuery(undefined, {
+        refetchOnMountOrArgChange: true,
+        refetchOnFocus: true,
+        refetchOnReconnect: true
+    });
 
     const [currentLocation, setCurrentLocation] = useState<Location>({ id: '1', name: 'Miami, FL' });
     const bookings: BookService[] = bookServices;
@@ -148,8 +156,8 @@ export const ServicesScreen = () => {
         if (bookServicesError) {
             Toast.show({
             type: 'error',
-            text1: t("messages.msgerrorrservices"),
-            text2: t("messages.msgcouldrservices"),
+            text1: t("services.msgerrorrservices"),
+            text2: t("services.msgcouldrservices"),
             });
         }
     }, [bookServicesError]);
