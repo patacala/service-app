@@ -91,13 +91,25 @@ export const ProfileScreen = () => {
   const { t } = useTranslation('auth');
   const theme = useTheme<Theme>();
   // Categorias y perfil
-  const { data: categoriesData, isLoading: isCategoriesLoading, error: categoriesError } = useGetCategoriesQuery({ language: getDeviceLanguage() }); 
-  const { data: profile, error: profileError } = useGetCurrentUserQuery();
+  const { data: categoriesData, isLoading: isCategoriesLoading, error: categoriesError } = useGetCategoriesQuery({ language: getDeviceLanguage() }, {
+    refetchOnMountOrArgChange: true,
+    refetchOnFocus: true,
+    refetchOnReconnect: true
+  }); 
+  const { data: profile, error: profileError } = useGetCurrentUserQuery(undefined, {
+    refetchOnMountOrArgChange: true,
+    refetchOnFocus: true,
+    refetchOnReconnect: true
+  });
 
   const [updateProfile, { isLoading }] = useUpdateProfileMutation();
   const [createService, { isLoading: isLoadingCreateService }] = useCreateServiceMutation();
   const [updateService, { isLoading: isLoadingUpdateService }] = useUpdateServiceMutation();
-  const { data: services, isLoading: isLoadingServices } = useGetMyServicesQuery();
+  const { data: services, isLoading: isLoadingServices } = useGetMyServicesQuery(undefined, {
+    refetchOnMountOrArgChange: true,
+    refetchOnFocus: true,
+    refetchOnReconnect: true
+  });
 
   // Estado para la imagen de perfil
   const [profileImage, setProfileImage] = useState<string>('');

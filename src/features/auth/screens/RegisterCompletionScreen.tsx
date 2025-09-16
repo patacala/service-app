@@ -23,7 +23,9 @@ export const RegisterCompletionScreen = () => {
   const router = useRouter();
   const { t } = useTranslation('auth');
   const { getData, setData, removeData } = useDataManager();
-  const { data: categoriesData, isLoading: isCategoriesLoading, error: categoriesError } = useGetCategoriesQuery({ language: getDeviceLanguage() });
+  const { data: categoriesData, isLoading: isCategoriesLoading, error: categoriesError } = useGetCategoriesQuery({ language: getDeviceLanguage() }, {
+    refetchOnMountOrArgChange: true,
+  });
   const { user: userData, userUpdate } = useAuth();
 
   const [completionFormData, setCompletionFormData] = useState<CompletionFormData>({

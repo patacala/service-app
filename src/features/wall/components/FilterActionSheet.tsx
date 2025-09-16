@@ -39,8 +39,9 @@ export const FilterActionSheet: React.FC<FilterActionSheetProps> = ({
   initialValues = { tags: [], minPrice: 10, maxPrice: 62 },
   selectedCategories = ['all']
 }) => {
-  // 🔥 Traemos categorías con RTK Query
-  const { data: categoriesData, isLoading } = useGetCategoriesQuery({ language: 'en' });
+  const { data: categoriesData, isLoading } = useGetCategoriesQuery({ language: 'en' }, {
+    refetchOnMountOrArgChange: true,
+  });
 
   // Todas las categorías base
   const allCategories = categoriesData?.categories?.map((c: any) => ({
