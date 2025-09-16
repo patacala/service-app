@@ -1,37 +1,39 @@
 import React from "react";
 import { Image, ImageSourcePropType } from "react-native";
-import { Box, Button, theme, Typography } from "@/design-system";
+import { Box, Button, ChipOption, GroupChipSelector, theme, Typography } from "@/design-system";
 import { Row } from "@/design-system/components/layout/Row/Row";
 import images from "@/assets/images/images";
 import { Icon } from "@/design-system/components/layout/Icon";
 import { BookService } from "../store";
 
 interface ServicePostProps {
-  servicePost: BookService;
+  bookService: BookService;
+  serviceOptions: ChipOption[];
   onCancel?: (serviceId: string) => void;
   onRate?: (serviceId: string) => void;
   onDetail?: (serviceId: string) => void;
 }
 
 export const ServicePost: React.FC<ServicePostProps> = ({
-  servicePost,
+  bookService,
+  serviceOptions,
   onCancel = () => console.log("Service cancelled"),
   onRate = () => console.log("Service rated"),
   onDetail = () => console.log("Service detail")
 }) => {
   const handleCancel = () => {
-    onCancel(servicePost.id);
+    onCancel(bookService.id);
   };
 
   const handleRate = () => {
-    onRate(servicePost.id);
+    onRate(bookService.id);
   };
 
   const handleDetail = () => {
-    onDetail(servicePost.id);
+    onDetail(bookService.id);
   };
 
-  /* const chipOptionsArray = [servicePost.chipOption]; */
+  /* const chipOptionsArray = [bookService.chipOption]; */
 
   return (
     <Box
@@ -43,7 +45,7 @@ export const ServicePost: React.FC<ServicePostProps> = ({
       <Row justifyContent="space-between">
         <Row spacing="none">
           <Image
-            source={servicePost.image || images.profile1 as ImageSourcePropType}
+            source={bookService.image || images.profile1 as ImageSourcePropType}
             style={{
               width: 40,
               height: 40,
@@ -52,19 +54,19 @@ export const ServicePost: React.FC<ServicePostProps> = ({
           />
           <Box marginLeft="sm" width="100%" maxWidth={179}>
             <Typography variant="bodyMedium" color={theme.colors.colorGrey200} truncate>
-              {servicePost.role === 'provider' ? 'User' : servicePost.serviceName}
+              {bookService.role === 'provider' ? 'User' : bookService.serviceName}
             </Typography>
             <Typography variant="bodyLarge" color="white" truncate>
-              {servicePost.provider.name}
+              {bookService.provider.name}
             </Typography>
           </Box>
         </Row>
         <Box alignItems="flex-end">
           <Typography variant="bodySmall" color={theme.colors.colorGrey100}>
-            {servicePost.dateShort}
+            {bookService.dateShort}
           </Typography>
           <Typography variant="bodySmall" color={theme.colors.colorGrey100}>
-            {servicePost.timeShort}
+            {bookService.timeShort}
           </Typography>
         </Box>
       </Row>
@@ -73,36 +75,26 @@ export const ServicePost: React.FC<ServicePostProps> = ({
         <Row spacing="sm">
           <Icon name="location" size={25} color="colorGrey100" />
           <Typography variant="bodySmall" color={theme.colors.colorGrey100}>
-            {servicePost.address}
+            {bookService.address}
           </Typography>
         </Row>
       </Box>
 
-      <Row spacing="none" justifyContent="flex-end">
-        {/* <GroupChipSelector
-          onChange={() => ({})}
-          options={chipOptionsArray}
-          selectedIds={servicePost.selectedChipId ? [servicePost.selectedChipId] : []}
+      <Row spacing="none" justifyContent="flex-start">
+        <GroupChipSelector
+          onChange={() => {}}
+          options={serviceOptions}
+          selectedIds={bookService.categories || []}
+          variant="horizontal"
           multiSelect={false}
-          noPadding={true}
-        /> */}
+          textVariant="bodyMedium"
+        />
         
-        {servicePost.status === 'pending' && servicePost.role === 'user' && (
-          <Button
-            variant="transparent"
-            label="Cancel"
-            iconWidth={18}
-            iconHeight={18}
-            leftIcon={images.clearIcon as ImageSourcePropType}
-            onPress={handleCancel}
-          />
-        )}
-        
-        <Box maxWidth={180} justifyContent="flex-end">
-          {servicePost.status === 'completed' && (
+        <Box position="relative" right={-10} maxWidth={180}>
+          {bookService.status === 'completed' && (
             <Button
               variant="transparent"
-              label={servicePost.role === 'user' ? "Rate Service":"Rate User"}
+              label={bookService.role === 'seeker' ? "Rate Service":"Rate User"}
               iconWidth={20}
               iconHeight={19}
               leftIcon={images.starOutline as ImageSourcePropType}
@@ -110,7 +102,18 @@ export const ServicePost: React.FC<ServicePostProps> = ({
             />
           )}
 
-          {servicePost.status === 'pending' && servicePost.role === 'provider' && (
+          {bookService.status === 'pending' && bookService.role === 'seeker' && (
+            <Button
+              variant="transparent"
+              label="Cancel"
+              iconWidth={18}
+              iconHeight={18}
+              leftIcon={images.clearIcon as ImageSourcePropType}
+              onPress={handleCancel}
+            />
+          )}
+
+          {bookService.status === 'pending' && bookService.role === 'provider' && (
             <Button
               variant="transparent"
               label="Service Details"

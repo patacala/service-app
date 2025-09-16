@@ -105,7 +105,7 @@ export const ServicesScreen = () => {
     const [cancelServiceVisible, setCancelServiceVisible] = useState(false);
     const [rateServiceVisible, setRateServiceVisible] = useState(false);
     const { data: categoriesData, error: categoriesError } = useGetCategoriesQuery({ language: getDeviceLanguage() });
-    const { data: bookServices = [], isLoading: isLoadBookServices, error: bookServicesError } = useGetMyBookServicesQuery();
+    const { data: bookServices = [], isLoading: isLoadBookServices, error: bookServicesError, refetch: bookServicesRefetch } = useGetMyBookServicesQuery();
 
     const [currentLocation, setCurrentLocation] = useState<Location>({ id: '1', name: 'Miami, FL' });
     const bookings: BookService[] = bookServices;
@@ -116,20 +116,20 @@ export const ServicesScreen = () => {
         label: c.name,
     })) ?? [];
 
-    /* const getCategoryOptions = useMemo(() => {
+    const getCategoryOptions = useMemo(() => {
         return (categoryIds: string[]): ChipOption[] => {
-            if (!categories || categories.length === 0) {
+          if (!categories || categories.length === 0) {
             return [];
-            }
-            
-            return categoryIds
+          }
+          
+          return categoryIds
             .map(id => {
-                const category = categories.find((cat: ChipOption) => cat.id === id);
-                return category ? { id: category.id, label: category.label } : null;
+              const category = categories.find((cat: ChipOption) => cat.id === id);
+              return category ? { id: category.id, label: category.label } : null;
             })
             .filter(Boolean) as ChipOption[];
         };
-    }, [categories]); */
+    }, [categories]);
 
     useEffect(() => {
         if (categoriesError) {
@@ -200,15 +200,20 @@ export const ServicesScreen = () => {
                                 {pendingServices.length > 0 && !isLoadBookServices && (
                                     <Box gap="md">
                                         {renderSectionHeader('Pending Services')}
-                                        {pendingServices.map(service => (
-                                            <Box key={service.id}>
-                                            <ServicePost
-                                                servicePost={service}
-                                                onCancel={handleCancelServicePress}
-                                                onDetail={() => navigateToChat(service)}
-                                            />
-                                            </Box>
-                                        ))}
+                                        {pendingServices.map(service => {
+                                            const serviceOptions = getCategoryOptions(service.categories || []);
+
+                                            return (
+                                                <Box key={service.id}>
+                                                    <ServicePost
+                                                        bookService={service}
+                                                        serviceOptions={serviceOptions}
+                                                        onCancel={handleCancelServicePress}
+                                                        onDetail={() => navigateToChat(service)}
+                                                    />
+                                                </Box>
+                                            );
+                                        })}
                                     </Box>
                                 )}
 
@@ -216,14 +221,20 @@ export const ServicesScreen = () => {
                                 {completedServices.length > 0 && !isLoadBookServices && (
                                     <Box gap="md">
                                     {renderSectionHeader('Services Completed')}
-                                    {completedServices.map(service => (
-                                        <Box key={service.id}>
-                                        <ServicePost
-                                            servicePost={service}
-                                            onRate={handleRateServicePress}
-                                        />
-                                        </Box>
-                                    ))}
+                                    {completedServices.map(service => {
+                                        const serviceOptions = getCategoryOptions(service.categories || []);
+
+                                        return (
+                                            <Box key={service.id}>
+                                                <ServicePost
+                                                    bookService={service}
+                                                    serviceOptions={serviceOptions}
+                                                    onRate={handleRateServicePress}
+                                                />
+                                            </Box>
+                                        );
+                                        
+                                    })}
                                     </Box>
                                 )}
 
