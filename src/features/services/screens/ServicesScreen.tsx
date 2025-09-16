@@ -13,6 +13,8 @@ import { BookService } from "../store";
 import { getWallStyles } from "@/features/wall/screens/wall/wall.style";
 import { getDeviceLanguage } from "@/assembler/config/i18n";
 import { useRouter } from "expo-router";
+import { t } from "i18next";
+import { useTranslation } from "react-i18next";
 
 interface Location {
     id: string;
@@ -100,6 +102,7 @@ interface Location {
 ]; */
 
 export const ServicesScreen = () => {
+    const { t } = useTranslation('auth');
     const router = useRouter();
     const [locationPanelVisible, setLocationPanelVisible] = useState(false);
     const [cancelServiceVisible, setCancelServiceVisible] = useState(false);
@@ -135,8 +138,8 @@ export const ServicesScreen = () => {
         if (categoriesError) {
             Toast.show({
             type: 'error',
-            text1: 'Error al cargar categorías',
-            text2: (categoriesError as any)?.message ?? 'No se pudieron cargar las categorías.',
+            text1: t("messages.msg25"),
+            text2: t("messages.msg26"),
             });
         }
     }, [categoriesError]);
@@ -145,8 +148,8 @@ export const ServicesScreen = () => {
         if (bookServicesError) {
             Toast.show({
             type: 'error',
-            text1: 'Error al cargar servicios',
-            text2: (bookServicesError as any)?.message ?? 'No se pudieron cargar los servicios.',
+            text1: t("messages.msgerrorrservices"),
+            text2: t("messages.msgcouldrservices"),
             });
         }
     }, [bookServicesError]);
@@ -199,7 +202,7 @@ export const ServicesScreen = () => {
                                 {/* Servicios pendientes */}
                                 {pendingServices.length > 0 && !isLoadBookServices && (
                                     <Box gap="md">
-                                        {renderSectionHeader('Pending Services')}
+                                        {renderSectionHeader(t("services.pendingservices"))}
                                         {pendingServices.map(service => {
                                             const serviceOptions = getCategoryOptions(service.categories || []);
 
@@ -220,7 +223,7 @@ export const ServicesScreen = () => {
                                 {/* Servicios completados */}
                                 {completedServices.length > 0 && !isLoadBookServices && (
                                     <Box gap="md">
-                                    {renderSectionHeader('Services Completed')}
+                                    {renderSectionHeader(t("services.servicescompleted"))}
                                     {completedServices.map(service => {
                                         const serviceOptions = getCategoryOptions(service.categories || []);
 
@@ -242,7 +245,7 @@ export const ServicesScreen = () => {
                                 {bookings.length === 0 && !isLoadBookServices && (
                                     <Box alignItems="center" justifyContent="center" padding="xl">
                                     <Typography variant="bodyLarge" color={theme.colors.colorGrey200}>
-                                        No tienes servicios disponibles
+                                        {t("services.notfoundservices")}
                                     </Typography>
                                     </Box>
                                 )}
@@ -251,7 +254,7 @@ export const ServicesScreen = () => {
                                     <Box marginTop="lg" style={getWallStyles.loadingContainer}>
                                         <ActivityIndicator size="large" color={theme.colors.colorBrandPrimary} />
                                         <Typography variant="bodyMedium" color="white" style={getWallStyles.loadingText}>
-                                            Loading your services...
+                                            {t("services.loadservices")}
                                         </Typography>
                                     </Box>
                                 )}
