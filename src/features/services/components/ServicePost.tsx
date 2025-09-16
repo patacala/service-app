@@ -5,6 +5,7 @@ import { Row } from "@/design-system/components/layout/Row/Row";
 import images from "@/assets/images/images";
 import { Icon } from "@/design-system/components/layout/Icon";
 import { BookService } from "../store";
+import { useTranslation } from "react-i18next";
 
 interface ServicePostProps {
   bookService: BookService;
@@ -21,6 +22,8 @@ export const ServicePost: React.FC<ServicePostProps> = ({
   onRate = () => console.log("Service rated"),
   onDetail = () => console.log("Service detail")
 }) => {
+  const { t } = useTranslation('auth');
+  
   const handleCancel = () => {
     onCancel(bookService.id);
   };
@@ -52,7 +55,7 @@ export const ServicePost: React.FC<ServicePostProps> = ({
               borderRadius: 20
             }}
           />
-          <Box marginLeft="sm" width="100%" maxWidth={179}>
+          <Box marginLeft="sm" width="100%" maxWidth={170}>
             <Typography variant="bodyMedium" color={theme.colors.colorGrey200} truncate>
               {bookService.role === 'provider' ? 'User' : bookService.serviceName}
             </Typography>
@@ -61,7 +64,7 @@ export const ServicePost: React.FC<ServicePostProps> = ({
             </Typography>
           </Box>
         </Row>
-        <Box alignItems="flex-end">
+        <Box alignItems="flex-end" gap="sm">
           <Typography variant="bodySmall" color={theme.colors.colorGrey100}>
             {bookService.dateShort}
           </Typography>
@@ -94,7 +97,7 @@ export const ServicePost: React.FC<ServicePostProps> = ({
           {bookService.status === 'completed' && (
             <Button
               variant="transparent"
-              label={bookService.role === 'seeker' ? "Rate Service":"Rate User"}
+              label={bookService.role === 'seeker' ? t("services.btnrateservice"):t("services.btnrateuser")}
               iconWidth={20}
               iconHeight={19}
               leftIcon={images.starOutline as ImageSourcePropType}
@@ -105,7 +108,7 @@ export const ServicePost: React.FC<ServicePostProps> = ({
           {bookService.status === 'pending' && bookService.role === 'seeker' && (
             <Button
               variant="transparent"
-              label="Cancel"
+              label={t("services.cancel")}
               iconWidth={18}
               iconHeight={18}
               leftIcon={images.clearIcon as ImageSourcePropType}
@@ -113,10 +116,10 @@ export const ServicePost: React.FC<ServicePostProps> = ({
             />
           )}
 
-          {bookService.status === 'pending' && bookService.role === 'provider' && (
+          {bookService.status === 'pending' && bookService.role === 'both' && (
             <Button
               variant="transparent"
-              label="Service Details"
+              label={t("services.detailservice")}
               iconWidth={18}
               iconHeight={18}
               rightIcon={images.rightArrow as ImageSourcePropType}
