@@ -32,7 +32,6 @@ interface ProviderFormProps {
   secondaryButtonText?: string;
   formData?: any;
   setFormData?: (data: any) => void;
-  // Props para bloquear botones
   primaryButtonDisabled?: boolean;
   secondaryButtonDisabled?: boolean;
 }
@@ -66,7 +65,6 @@ export const ProviderForm: React.FC<ProviderFormProps> = ({
   
   // Usar formData externo o interno
   const currentFormData = formData || internalFormData;
-  const updateFormData = setFormData || setInternalFormData;
 
   // Resetear al abrir el modal
   useEffect(() => {

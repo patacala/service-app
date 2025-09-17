@@ -1,9 +1,7 @@
-import { useState } from "react";
-import { Image, ImageSourcePropType } from "react-native";
-import { Box, Button, PremiumCard, Typography, theme, ChipOption } from "@/design-system";
-import { getProvModeStyles } from './provMode/provmode.styles';
+import { useEffect, useState } from "react";
+import { ImageSourcePropType } from "react-native";
+import { Box, Button, PremiumCard, ChipOption } from "@/design-system";
 import images from "@/assets/images/images";
-import { Row } from "@/design-system/components/layout/Row/Row";
 import { LocationPanel } from "@/features/wall/components/LocationPanel";
 import { ProviderAccount } from "../components/ProviderAccount";
 import { ProviderForm } from "../components/ProviderForm";
@@ -11,6 +9,14 @@ import { InfoMain } from "../components/InfoMain";
 import { DetailInfo } from "../components/DetailInfo";
 import { DetailService } from "../components/DetailService";
 import { ProviderFormData } from "../slices/provmod.slice";
+import { getDeviceLanguage } from "@/assembler/config/i18n";
+import { useGetCategoriesQuery } from "@/infrastructure/services/api";
+import { useGetCurrentUserQuery } from "@/features/auth/store";
+import { useCreateAccountProvServiceMutation } from '@/features/services/store';
+import Toast from "react-native-toast-message";
+import { useTranslation } from "react-i18next";
+import { useAuth } from "@/infrastructure/auth/AuthContext";
+import { router } from "expo-router";
 
 interface Location {
   id: string;
@@ -18,6 +24,21 @@ interface Location {
 }
 
 export const ProvModeScreen = () => {
+  const { t } = useTranslation('auth');
+  const { login } = useAuth();
+  const { data: categoriesData, isLoading: isCategoriesLoading, error: categoriesError } =
+  useGetCategoriesQuery({ language: getDeviceLanguage() }, {
+    refetchOnMountOrArgChange: true,
+    refetchOnFocus: true,
+    refetchOnReconnect: true
+  });
+  const { data: profile, error: profileError } = useGetCurrentUserQuery(undefined, {
+      refetchOnMountOrArgChange: true,
+      refetchOnFocus: true,
+      refetchOnReconnect: true
+  });
+  const [createAccountProvService, { isLoading: isLoadingCreateAccountProvService }] = useCreateAccountProvServiceMutation();
+
   const [locationPanelVisible, setLocationPanelVisible] = useState(false);
   const [currentLocation, setCurrentLocation] = useState<Location>({ id: '1', name: 'Miami, FL' });
   const [provAccountVisible, setProvAccountVisible] = useState(false);
@@ -28,8 +49,14 @@ export const ProvModeScreen = () => {
   const [step2Valid, setStep2Valid] = useState(false);
   const [step3Valid, setStep3Valid] = useState(false);
 
+  const categories: ChipOption[] =
+  categoriesData?.categories?.map((c: any) => ({
+    id: c.id,
+    label: c.name,
+  })) ?? [];
+
   // Estado para manejar los datos del formulario
-  const [formData, setFormData] = useState<ProviderFormData>({
+  const [providerFormData, setProviderFormData] = useState<ProviderFormData>({
     title: '',
     phone: '',
     city: '',
@@ -41,6 +68,26 @@ export const ProvModeScreen = () => {
     addressService: '',
     pricePerHour: 62
   });
+
+  useEffect(() => {
+    if (categoriesError) {
+      Toast.show({
+        type: 'error',
+        text1: t("messages.msg20"),
+        text2: t("messages.msg21"),
+      });
+    }
+  }, [categoriesError]);
+  
+  useEffect(() => {
+    if (profileError) {
+      Toast.show({
+        type: 'error',
+        text1: t("messages.msg34"),
+        text2: t("messages.msg35")
+      });
+    }
+  }, [profileError]);
 
   const handleSelectLocation = (location: Location) => {
     setCurrentLocation(location);
@@ -54,38 +101,67 @@ export const ProvModeScreen = () => {
     setProviderFormVisible(true);
   };
 
-  const handleProviderSubmit = (data: ProviderFormData) => {
-    console.log('Datos del formulario completo:', data);
+  const handleProviderSubmit = async (data: ProviderFormData) => {
+    try {
+      const { user, token } = await createAccountProvService({
+        title: data.title,
+        description: data.description,
+        price: data.pricePerHour,   
+        categoryIds: data.selectedServices,
+        images: data.photos,
+        currency: 'USD',
+        city: profile?.city ?? '',
+        lat: undefined,
+        lon: undefined,
+        coverMediaId: undefined
+      }).unwrap();
+      await login(token, user);
 
-    setFormData({
-      title: '',
-      phone: '',
-      city: '',
-      address: '',
-      selectedServices: [],
-      selectedServiceOptions: [],
-      description: '',
-      photos: [],
-      addressService: '',
-      pricePerHour: 62
-    });
+      setProviderFormData({
+        title: '',
+        phone: '',
+        city: '',
+        address: '',
+        selectedServices: [],
+        selectedServiceOptions: [],
+        description: '',
+        photos: [],
+        addressService: '',
+        pricePerHour: 62
+      });
+      router.replace({ pathname: '/profile', params: { section: 'portfolio' } });
+      
+      return true;
+    } catch (error: any) {
+      Toast.show({
+        type: 'error',
+        text1: 'Error',
+        text2: error?.data?.message || 'Failed to create account',
+      });
+
+      return false;
+    }
   };
 
   // Handlers para cada paso
+  const handleTitleChange = (title: string) => {
+    setProviderFormData(prev => ({ ...prev, title }));
+  };
+
   const handlePhoneChange = (phone: string) => {
-    setFormData(prev => ({ ...prev, phone }));
+    setProviderFormData(prev => ({ ...prev, phone }));
   };
 
   const handleCityChange = (city: string) => {
-    setFormData(prev => ({ ...prev, city }));
+    setProviderFormData(prev => ({ ...prev, city }));
   };
 
   const handleAddressChange = (address: string) => {
-    setFormData(prev => ({ ...prev, address }));
+    setProviderFormData(prev => ({ ...prev, address }));
   };
 
   const handleSelectedServicesChange = (services: string[], serviceOptions: ChipOption[]) => {
-    setFormData(prev => ({ 
+    setProviderFormData(prev => ({ 
       ...prev, 
       selectedServices: services,
       selectedServiceOptions: serviceOptions
@@ -93,19 +169,19 @@ export const ProvModeScreen = () => {
   };
 
   const handleDescriptionChange = (description: string) => {
-    setFormData(prev => ({ ...prev, description }));
+    setProviderFormData(prev => ({ ...prev, description }));
   };
 
   const handlePhotosChange = (photos: string[]) => {
-    setFormData(prev => ({ ...prev, photos }));
+    setProviderFormData(prev => ({ ...prev, photos }));
   };
 
   const handleAddressServiceChange = (addressService: string) => {
-    setFormData(prev => ({ ...prev, addressService }));
+    setProviderFormData(prev => ({ ...prev, addressService }));
   };
 
   const handlePricePerHourChange = (pricePerHour: number) => {
-    setFormData(prev => ({ ...prev, pricePerHour }));
+    setProviderFormData(prev => ({ ...prev, pricePerHour }));
   };
 
   // Handlers de validación para cada paso
@@ -134,18 +210,21 @@ export const ProvModeScreen = () => {
       height: "99%",
       component: (
         <InfoMain 
+          onTitleChange={handleTitleChange}
           onPhoneChange={handlePhoneChange}
           onCityChange={handleCityChange}
           onAddressChange={handleAddressChange}
           onSelectedServicesChange={handleSelectedServicesChange}
           onValidationChange={handleStep1Validation}
+          categories={categories} 
+          isCategoriesLoading={isCategoriesLoading} 
           initialValues={{
-            title: formData.title,
-            phone: formData.phone,
-            city: formData.city,
-            address: formData.address,
-            selectedServices: formData.selectedServices,
-            selectedServiceOptions: formData.selectedServiceOptions
+            title: providerFormData.title,
+            phone: providerFormData.phone,
+            city: providerFormData.city,
+            address: providerFormData.address,
+            selectedServices: providerFormData.selectedServices,
+            selectedServiceOptions: providerFormData.selectedServiceOptions
           }}
         />
       ),
@@ -161,10 +240,10 @@ export const ProvModeScreen = () => {
           onPhotosChange={handlePhotosChange}
           onValidationChange={handleStep2Validation}
           initialValues={{
-            selectedServices: formData.selectedServices,
-            selectedServiceOptions: formData.selectedServiceOptions,
-            description: formData.description,
-            photos: formData.photos
+            selectedServices: providerFormData.selectedServices,
+            selectedServiceOptions: providerFormData.selectedServiceOptions,
+            description: providerFormData.description,
+            photos: providerFormData.photos
           }}
         />
       ),
@@ -180,10 +259,10 @@ export const ProvModeScreen = () => {
           onPricePerHourChange={handlePricePerHourChange}
           onValidationChange={handleStep3Validation}
           initialValues={{
-            selectedServices: formData.selectedServices,
-            selectedServiceOptions: formData.selectedServiceOptions,
-            addressService: formData.addressService,
-            pricePerHour: formData.pricePerHour
+            selectedServices: providerFormData.selectedServices,
+            selectedServiceOptions: providerFormData.selectedServiceOptions,
+            addressService: providerFormData.addressService,
+            pricePerHour: providerFormData.pricePerHour
           }}
         />
       ),
@@ -236,8 +315,10 @@ export const ProvModeScreen = () => {
         steps={providerSteps}
         confirmationStep={confirmationStep}
         onSubmit={handleProviderSubmit}
-        formData={formData}
-        setFormData={setFormData}
+        formData={providerFormData}
+        setFormData={setProviderFormData}
+        primaryButtonDisabled={isLoadingCreateAccountProvService}
+        secondaryButtonDisabled={isLoadingCreateAccountProvService}
       />
     </>
   );
