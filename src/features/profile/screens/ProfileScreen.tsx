@@ -453,7 +453,6 @@ export const ProfileScreen = () => {
   };
 
   const { section } = useLocalSearchParams<{ section?: string }>();
-  console.log(section);
   const [selectedItemDetail, setSelectedItemDetail] = useState(['myprofile']);
 
   const itemsDetail = user?.role === 'publisher' || user?.role === 'both' ? [
