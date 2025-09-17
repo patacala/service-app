@@ -1,7 +1,8 @@
+import { AuthUser } from "@/features/auth/store";
 import { CardPost } from "@/features/wall";
 import { ImageSourcePropType } from "react-native";
-// Services TYPES
 
+// Services TYPES
 export interface CreateServiceRequest {
   title: string;
   description: string;
@@ -63,6 +64,12 @@ export interface GetServicesParams {
   radius?: string;
   page?: number;
   limit?: number;
+}
+
+export interface ServicesAccountProvResponse {
+  user: AuthUser;
+  token: string;
+  service: Service
 }
 
 // BookServices TYPES

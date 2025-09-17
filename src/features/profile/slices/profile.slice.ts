@@ -1,3 +1,4 @@
+import { ChipOption } from '@/design-system';
 import {createSlice, PayloadAction} from '@reduxjs/toolkit';
 
 export interface Profile {
@@ -25,6 +26,19 @@ const initialState: ProfileState = {
   isLoading: false,
   error: null,
 };
+
+export interface ServiceFormData {
+  id: string;
+  title: string;
+  city: string;
+  address: string;
+  selectedServices: string[];
+  selectedServiceOptions: ChipOption[];
+  description: string;
+  photos: string[];
+  addressService: string;
+  pricePerHour: number;
+}
 
 const profileSlice = createSlice({
   name: 'profile',
