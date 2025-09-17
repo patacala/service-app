@@ -210,7 +210,6 @@ export const ServicesScreen = () => {
         return null;
     };
 
-
     return (
         <>
             <Box height="100%">
@@ -272,15 +271,6 @@ export const ServicesScreen = () => {
                                         );
                                         
                                     })}
-                                    </Box>
-                                )}
-
-                                {/* Mensaje si no hay servicios */}
-                                {bookings.length === 0 && !isLoadBookServices && (
-                                    <Box alignItems="center" justifyContent="center" padding="xl">
-                                    <Typography variant="bodyLarge" color={theme.colors.colorGrey200}>
-                                        {t("services.notfoundservices")}
-                                    </Typography>
                                     </Box>
                                 )}
                             </Box>

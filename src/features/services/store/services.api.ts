@@ -12,14 +12,6 @@ import type {
 
 export const servicesApi = apiSlice.injectEndpoints({
   endpoints: (builder) => ({
-    /* getServices: builder.query<ServicesResponse, { page?: number; limit?: number; category?: string }>({
-      query: (params) => ({
-        url: '/services',
-        method: 'GET',
-        params,
-      }),
-      providesTags: ['Service'],
-    }), */
     createAccountProvService: builder.mutation<ServicesAccountProvResponse, CreateServiceRequest>({
       query: (serviceData) => ({
         url: '/services/provider-account',
