@@ -41,19 +41,8 @@ import { useCreateServiceMutation, useUpdateServiceMutation, useGetMyServicesQue
 import { getWallStyles } from '@/features/wall/screens/wall/wall.style';
 import { ServiceOffer } from '@/features/services/components/ServiceOffer';
 import { getDeviceLanguage } from '@/assembler/config/i18n';
-
-interface ServiceFormData {
-  id: string;
-  title: string;
-  city: string;
-  address: string;
-  selectedServices: string[];
-  selectedServiceOptions: ChipOption[];
-  description: string;
-  photos: string[];
-  addressService: string;
-  pricePerHour: number;
-}
+import { ServiceFormData } from '../slices/profile.slice';
+import { useLocalSearchParams } from 'expo-router';
 
 // Validation Schema
 const profileSchema = z.object({
@@ -161,18 +150,6 @@ export const ProfileScreen = () => {
     };
   }, [categories]);
 
-  // Función para obtener el nombre de una categoría por su ID
-  /* const getCategoryName = useMemo(() => {
-  return (id: string): string => {
-    if (!categories || categories.length === 0) {
-      return id;
-    }
-    
-    const category = categories.find((cat: ChipOption) => cat.id === id);
-    return category?.label || id;
-  };
-  }, [categories]); */
-
   const getPhoneDetail = (phoneNumber: string) => {
       if (typeof phoneNumber !== 'string' || phoneNumber.trim() === '') {
           return null;
@@ -267,7 +244,7 @@ export const ProfileScreen = () => {
         avatar: profileImage,
       };
 
-      const response = await updateProfile(updatedProfileData).unwrap();
+      await updateProfile(updatedProfileData).unwrap();
       reset({
         name: data.name,
         email: data.email,
@@ -411,8 +388,6 @@ export const ProfileScreen = () => {
       });
       return true;
     } catch (error: any) {
-      console.error(error);
-
       Toast.show({
         type: 'error',
         text1: 'Error',
@@ -477,6 +452,10 @@ export const ProfileScreen = () => {
     setStep3Valid(isValid);
   };
 
+  const { section } = useLocalSearchParams<{ section?: string }>();
+  console.log(section);
+  const [selectedItemDetail, setSelectedItemDetail] = useState(['myprofile']);
+
   const itemsDetail = user?.role === 'publisher' || user?.role === 'both' ? [
     { id: 'myprofile', label: t("profile.myprofile")},
     { id: 'portfolio', label: t("profile.portfolio")},
@@ -485,8 +464,6 @@ export const ProfileScreen = () => {
   ]:[
     { id: 'myprofile', label: t("profile.myprofile")},
   ];
-
-  const [selectedItemDetail, setSelectedItemDetail] = useState(['myprofile']);
 
   // Función para cambiar la sección seleccionada
   const handleSectionChange = (selectedIds: string[]) => {
@@ -510,6 +487,12 @@ export const ProfileScreen = () => {
         return renderMyProfileContent();
     }
   };
+
+  useEffect(() => {
+    if (section && typeof section === 'string') {
+      setSelectedItemDetail([section]);
+    }
+  }, [section]);
 
   // Contenido de My Profile
   const renderMyProfileContent = () => (

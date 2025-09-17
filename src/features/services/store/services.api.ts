@@ -7,6 +7,7 @@ import type {
   GetServicesParams,
   CreateBookServiceRequest,
   BookService,
+  ServicesAccountProvResponse,
 } from './services.types';
 
 export const servicesApi = apiSlice.injectEndpoints({
@@ -19,6 +20,14 @@ export const servicesApi = apiSlice.injectEndpoints({
       }),
       providesTags: ['Service'],
     }), */
+    createAccountProvService: builder.mutation<ServicesAccountProvResponse, CreateServiceRequest>({
+      query: (serviceData) => ({
+        url: '/services/provider-account',
+        method: 'POST',
+        data: serviceData,
+      }),
+      invalidatesTags: ['Service', 'MyServices'],
+    }),
     getServices: builder.query<ServicesResponse, GetServicesParams>({
       query: (params) => ({
         url: '/services',
@@ -84,6 +93,7 @@ export const {
   useGetServicesQuery,
   useGetServiceByIdQuery,
   useGetMyServicesQuery,
+  useCreateAccountProvServiceMutation,
   useCreateServiceMutation,
   useUpdateServiceMutation,
   useDeleteServiceMutation,
