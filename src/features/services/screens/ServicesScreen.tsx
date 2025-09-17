@@ -13,7 +13,6 @@ import { BookService } from "../store";
 import { getWallStyles } from "@/features/wall/screens/wall/wall.style";
 import { getDeviceLanguage } from "@/assembler/config/i18n";
 import { useRouter } from "expo-router";
-import { t } from "i18next";
 import { useTranslation } from "react-i18next";
 
 interface Location {
@@ -112,7 +111,7 @@ export const ServicesScreen = () => {
         refetchOnFocus: true,
         refetchOnReconnect: true
     });
-    const { data: bookServices = [], isLoading: isLoadBookServices, error: bookServicesError } = useGetMyBookServicesQuery(undefined, {
+    const { data: bookServices = [], isLoading: isLoadBookServices, isFetching: isFetchingBookServices, error: bookServicesError } = useGetMyBookServicesQuery(undefined, {
         refetchOnMountOrArgChange: true,
         refetchOnFocus: true,
         refetchOnReconnect: true
@@ -163,8 +162,13 @@ export const ServicesScreen = () => {
     }, [bookServicesError]);
 
     // Filtrar servicios por estado
-    const pendingServices = bookings.filter(service => service.status === 'pending');
-    const completedServices = bookings.filter(service => service.status === 'completed');
+    const pendingServices = (isLoadBookServices || isFetchingBookServices)
+    ? []
+    : bookings.filter(service => service.status === 'pending');
+
+    const completedServices = (isLoadBookServices || isFetchingBookServices)
+    ? []
+    : bookings.filter(service => service.status === 'completed');
 
     const handleSelectLocation = (location: Location) => {
         setCurrentLocation(location);
@@ -195,6 +199,18 @@ export const ServicesScreen = () => {
         </Box>
     );
 
+    const renderLoadSection = () => {
+        if (isLoadBookServices || isFetchingBookServices) {
+            return (
+            <Box marginTop="lg" style={getWallStyles.loadingContainer}>
+                <ActivityIndicator size="large" color={theme.colors.colorBrandPrimary} />
+            </Box>
+            );
+        }
+        return null;
+    };
+
+
     return (
         <>
             <Box height="100%">
@@ -208,9 +224,11 @@ export const ServicesScreen = () => {
                         <View>
                             <Box gap="md">
                                 {/* Servicios pendientes */}
+                                {renderSectionHeader(t("services.pendingservices") + ':')}
+                                {renderLoadSection()}
+
                                 {pendingServices.length > 0 && !isLoadBookServices && (
                                     <Box gap="md">
-                                        {renderSectionHeader(t("services.pendingservices"))}
                                         {pendingServices.map(service => {
                                             const serviceOptions = getCategoryOptions(service.categories || []);
 
@@ -225,13 +243,21 @@ export const ServicesScreen = () => {
                                                 </Box>
                                             );
                                         })}
+
+                                        { isLoadBookServices || isFetchingBookServices && (
+                                            <Box marginTop="lg" style={getWallStyles.loadingContainer}>
+                                                <ActivityIndicator size="large" color={theme.colors.colorBrandPrimary} />
+                                            </Box>
+                                        )}
                                     </Box>
                                 )}
 
                                 {/* Servicios completados */}
+                                {renderSectionHeader(t("services.servicescompleted") + ':')}
+                                {renderLoadSection()}
+                                
                                 {completedServices.length > 0 && !isLoadBookServices && (
                                     <Box gap="md">
-                                    {renderSectionHeader(t("services.servicescompleted"))}
                                     {completedServices.map(service => {
                                         const serviceOptions = getCategoryOptions(service.categories || []);
 
@@ -255,15 +281,6 @@ export const ServicesScreen = () => {
                                     <Typography variant="bodyLarge" color={theme.colors.colorGrey200}>
                                         {t("services.notfoundservices")}
                                     </Typography>
-                                    </Box>
-                                )}
-                                
-                                { isLoadBookServices && (
-                                    <Box marginTop="lg" style={getWallStyles.loadingContainer}>
-                                        <ActivityIndicator size="large" color={theme.colors.colorBrandPrimary} />
-                                        <Typography variant="bodyMedium" color="white" style={getWallStyles.loadingText}>
-                                            {t("services.loadservices")}
-                                        </Typography>
                                     </Box>
                                 )}
                             </Box>

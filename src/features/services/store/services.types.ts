@@ -76,6 +76,11 @@ export interface BookService {
     id: string;
     name: string;
   };
+  client: {
+    id: string,
+    name: string,
+    role: string
+  },
   dateTime: string;     // ISO original
   dateShort: string;    // 21 Apr
   timeShort: string;    // 2:00 PM EST

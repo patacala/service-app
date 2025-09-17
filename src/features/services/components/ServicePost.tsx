@@ -60,7 +60,7 @@ export const ServicePost: React.FC<ServicePostProps> = ({
               {bookService.role === 'provider' ? 'User' : bookService.serviceName}
             </Typography>
             <Typography variant="bodyLarge" color="white" truncate>
-              {bookService.provider.name}
+              {bookService.role === 'seeker' ? bookService.provider.name:bookService.client.name}
             </Typography>
           </Box>
         </Row>
