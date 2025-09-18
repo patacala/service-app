@@ -15,16 +15,17 @@ import { Box, Button, Input, SafeContainer, Typography, theme } from "@/design-s
 import { getChatStyles } from './chat/chat.styles';
 import images from "@/assets/images/images";
 import { Row } from "@/design-system/components/layout/Row/Row";
-import { AuthStackParamList } from "@/assembler/navigation/types";
-import { ServiceData } from "@/features/services/slices/services.slice";
+import { BookService } from "@/features/services/store";
 import { Messages } from "../components/Messages";
 import { Notification } from "../components/Notification";
 import { ChatMessage, ChatScreenProps } from "../slices/chat.slice";
-type ChatScreenRouteProp = RouteProp<AuthStackParamList, 'Chat'>;
+import { useLocalSearchParams, useRouter } from "expo-router";
 
 export const ChatScreen = (service: ChatScreenProps) => {
-    const navigation = useNavigation();
-    const route = useRoute<ChatScreenRouteProp>();
+    const router = useRouter();
+    const { post } = useLocalSearchParams<{ post?: string }>();
+    const servicePost: BookService | null = post ? JSON.parse(post) : null;
+
     const [isAccepted, setIsAccepted] = useState(false);
     const [isRejected, setIsRejected] = useState(false);
     const [message, setMessage] = useState('');
@@ -34,9 +35,6 @@ export const ChatScreen = (service: ChatScreenProps) => {
     // Animaciones para los botones
     const buttonsOpacity = useRef(new Animated.Value(1)).current;
     
-    // Recuperamos el servicio de los props o de la ruta
-    const servicePost = (route.params?.service as ServiceData);
-
     // Detectar cuando se activa/desactiva el teclado
     useEffect(() => {
         const keyboardDidShowListener = Keyboard.addListener(
@@ -60,8 +58,7 @@ export const ChatScreen = (service: ChatScreenProps) => {
         }, 100);
     };
 
-    const handleGoBackPress = () => navigation.goBack();
-
+    const handleGoBackPress = () => router.back();
     const dismissKeyboard = () => {
         Keyboard.dismiss();
     };
@@ -160,10 +157,10 @@ export const ChatScreen = (service: ChatScreenProps) => {
     
                 <Box justifyContent="center" alignItems="center">
                     <Typography variant="bodyMedium" color={theme.colors.colorBaseWhite}>
-                        {servicePost?.role === 'provider' ? 'User' : servicePost.category}
+                        {servicePost?.role === 'both' ? 'User' : 'Provider'}
                     </Typography>
                     <Typography variant="bodyMedium" color={theme.colors.colorGrey100}>
-                        {servicePost.name}
+                        {servicePost?.client.name}
                     </Typography>
                 </Box>
                 
@@ -207,20 +204,20 @@ export const ChatScreen = (service: ChatScreenProps) => {
                             <Box>
                                 <Box marginBottom="md">
                                     <Typography variant="bodyRegular" color="white">
-                                        New request for <Typography variant="bodyBold" color="white">{servicePost.name}!</Typography>
+                                        New request for <Typography variant="bodyBold" color="white">{servicePost?.client.name}!</Typography>
                                     </Typography>
                                 </Box>
                                 
                                 <Box paddingLeft="sm">
-                                    <Typography variant="bodyRegular" color="white">• Service: {servicePost.category}</Typography>
-                                    <Typography variant="bodyRegular" color="white">• Date: {servicePost.date}</Typography>
-                                    <Typography variant="bodyRegular" color="white">• Time: {servicePost.time}</Typography>
-                                    <Typography variant="bodyRegular" color="white">• Place: {servicePost.address}</Typography>
-                                    <Typography variant="bodyRegular" color="white">• Contact number: {servicePost.phone}</Typography>
+                                    <Typography variant="bodyRegular" color="white">• Service: {servicePost?.serviceName}</Typography>
+                                    <Typography variant="bodyRegular" color="white">• Date: {servicePost?.dateShort}</Typography>
+                                    <Typography variant="bodyRegular" color="white">• Time: {servicePost?.timeShort}</Typography>
+                                    <Typography variant="bodyRegular" color="white">• Place: {servicePost?.address}</Typography>
+                                    <Typography variant="bodyRegular" color="white">• Contact number: {servicePost?.phoneNumber}</Typography>
                                     <Typography variant="bodyRegular" color="white">• Description:</Typography>
                                     <Box marginTop="sm">
                                         <Typography variant="bodyRegular" color="white">
-                                            {servicePost?.description}
+                                            {servicePost?.comments}
                                         </Typography>
                                     </Box>
                                 </Box>
@@ -280,7 +277,7 @@ export const ChatScreen = (service: ChatScreenProps) => {
                                         isReceived={msg.isReceived}
                                         image={
                                         msg.isReceived
-                                            ? servicePost.image as ImageSourcePropType
+                                            ? servicePost?.image as ImageSourcePropType
                                             : images.profile1 as ImageSourcePropType
                                         }
                                     />
