@@ -94,7 +94,7 @@ export const ProfileScreen = () => {
   const [updateProfile, { isLoading }] = useUpdateProfileMutation();
   const [createService, { isLoading: isLoadingCreateService }] = useCreateServiceMutation();
   const [updateService, { isLoading: isLoadingUpdateService }] = useUpdateServiceMutation();
-  const { data: services, isLoading: isLoadingServices } = useGetMyServicesQuery(undefined, {
+  const { data: services, isLoading: isLoadingServices, isFetching: isFetchingServices } = useGetMyServicesQuery(undefined, {
     refetchOnMountOrArgChange: true,
     refetchOnFocus: true,
     refetchOnReconnect: true
@@ -718,69 +718,71 @@ export const ProfileScreen = () => {
   );
 
   // Contenido de Portfolio
-  const renderPortfolioContent = () => (
-    <Box flex={1}>
-      <FlatList
-        data={services ?? []}
-        keyExtractor={(item: any) => item.id}
-        style={{ flex: 1 }}
-        contentContainerStyle={{ paddingBottom: 70 }}
-        ListHeaderComponent={
-          <Box>
-            <Row marginTop="md" gap="sm">
-              <Icon name="tag" color="colorBaseWhite" />
-              <Typography variant="bodyLarge" color="white">
-                {t("profile.offerservices")}
-              </Typography>
-            </Row>
-
-            {/* Loading de categorías */}
-            {isCategoriesLoading && (
-              <Typography variant="bodyMedium" color={theme.colors.colorBaseWhite}>
-                Loading categories...
-              </Typography>
-            )}
-
-            {/* Loading de servicios */}
-            {isLoadingServices && (
-              <Box style={getWallStyles.loadingContainer}>
-                <ActivityIndicator size="large" color={theme.colors.colorBrandPrimary} />
-                <Typography variant="bodyMedium" color="white" style={getWallStyles.loadingText}>
-                  {t("profile.loadportfolio")}
-                </Typography>
-              </Box>
-            )}
+  const renderTitlePortfolio = () => {
+    return (
+      <Row marginTop="md" gap="sm">
+        <Icon name="tag" color="colorBaseWhite" />
+        <Typography variant="bodyLarge" color="white">
+          {t("profile.offerservices")}
+        </Typography>
+      </Row>
+    );
+  }
+  const renderPortfolioContent = () => {
+    if (isCategoriesLoading || isLoadingServices || isFetchingServices) {
+      return (
+        <Box>
+          {renderTitlePortfolio()}
+          <Box style={getWallStyles.loadingContainer} marginTop='lg'>
+            <ActivityIndicator size="large" color={theme.colors.colorBrandPrimary} />
+            <Typography variant="bodyMedium" color="white" style={getWallStyles.loadingText}>
+              {t("profile.loadportfolio")}
+            </Typography>
           </Box>
-        }
-        renderItem={({ item: service, index }) => {
-          const serviceOptions = getCategoryOptions(service.categories || []);
-          return (
-            <TouchableWithoutFeedback onPress={() => {}}>
-              <ServiceOffer
-                key={service.id}
-                service={service}
-                serviceOptions={serviceOptions}
-                onEditPress={handleEditService}
+        </Box>
+      );
+    }
+
+    return (
+      <Box flex={1}>
+        <FlatList
+          data={services ?? []}
+          keyExtractor={(item: any) => item.id}
+          style={{ flex: 1 }}
+          contentContainerStyle={{ paddingBottom: 70 }}
+          ListHeaderComponent={
+            renderTitlePortfolio()
+          }
+          renderItem={({ item: service, index }) => {
+            const serviceOptions = getCategoryOptions(service.categories || []);
+            return (
+              <TouchableWithoutFeedback onPress={() => {}}>
+                <ServiceOffer
+                  key={service.id}
+                  service={service}
+                  serviceOptions={serviceOptions}
+                  onEditPress={handleEditService}
+                />
+              </TouchableWithoutFeedback>
+            );
+          }}
+          ListFooterComponent={
+            <Box marginTop="xl">
+              <Button
+                variant="secondary"
+                label={t("profile.addnewservice")}
+                onPress={handleAddNewService}
+                disabled={isCategoriesLoading}
               />
-            </TouchableWithoutFeedback>
-          );
-        }}
-        ListFooterComponent={
-          <Box marginTop="xl">
-            <Button
-              variant="secondary"
-              label={t("profile.addnewservice")}
-              onPress={handleAddNewService}
-              disabled={isCategoriesLoading}
-            />
-          </Box>
-        }
-        showsVerticalScrollIndicator={false}
-        nestedScrollEnabled
-        keyboardShouldPersistTaps="handled"
-      />
-    </Box>
-  );
+            </Box>
+          }
+          showsVerticalScrollIndicator={false}
+          nestedScrollEnabled
+          keyboardShouldPersistTaps="handled"
+        />
+      </Box>
+    );
+  };
 
   // Contenido de User Reviews
   const reviews = [
