@@ -98,6 +98,7 @@ export const WallScreen: React.FC<WallScreenProps> = () => {
   }, [isErrorServices]);
 
   const posts = data?.data || [];
+  console.log({ images: posts[0]?.images })
   const getCategoryNames = (categoryIds: string[]) => {
     if (!categoryIds || categoryIds.length === 0 || !categories) return t("messages.msg27");
     
