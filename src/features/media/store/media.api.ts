@@ -7,7 +7,6 @@ import type {
   UploadImageRequest,
 } from './media.types';
 
-// Helper to build FormData for React Native file uploads
 const buildFormData = (file: RNFileLike) => {
   const form = new FormData();
   // @ts-ignore React Native types for FormData accept file object
@@ -21,11 +20,9 @@ const buildFormData = (file: RNFileLike) => {
 
 export const mediaApi = apiSlice.injectEndpoints({
   endpoints: (builder) => ({
-    // POST /media/images – Subir imagen
     uploadImage: builder.mutation<ImageObject, UploadImageRequest>({
       query: ({ file, params }) => {
         const formData = buildFormData(file);
-        // metadata debe ir como JSON string en query string
         const queryParams: Record<string, any> = {};
         if (typeof params?.requireSignedURLs === 'boolean') {
           queryParams.requireSignedURLs = params.requireSignedURLs;
@@ -39,7 +36,6 @@ export const mediaApi = apiSlice.injectEndpoints({
           data: formData,
           params: queryParams,
           headers: {
-            // No fijar boundary manualmente; Axios lo hace
             'Content-Type': 'multipart/form-data',
           },
         };
@@ -47,7 +43,6 @@ export const mediaApi = apiSlice.injectEndpoints({
       invalidatesTags: ['Media'],
     }),
 
-    // GET /media/images – Listar
     listImages: builder.query<ImageObject[], ListImagesParams | void>({
       query: (params) => ({
         url: '/media/images',
@@ -55,11 +50,8 @@ export const mediaApi = apiSlice.injectEndpoints({
         params,
       }),
       providesTags: ['Media'],
-      // Si el backend regresa un objeto con items, podríamos transformar aquí.
-      // transformResponse: (response: any) => response.items ?? response,
     }),
 
-    // GET /media/images/:id – Detalle
     getImageById: builder.query<ImageObject, string>({
       query: (id) => ({
         url: `/media/images/${id}`,
@@ -68,7 +60,6 @@ export const mediaApi = apiSlice.injectEndpoints({
       providesTags: ['Media'],
     }),
 
-    // PATCH /media/images/:id – Actualizar metadata o requireSignedURLs
     updateImage: builder.mutation<ImageObject, UpdateImageRequest>({
       query: ({ id, data }) => ({
         url: `/media/images/${id}`,
@@ -78,7 +69,6 @@ export const mediaApi = apiSlice.injectEndpoints({
       invalidatesTags: ['Media'],
     }),
 
-    // DELETE /media/images/:id – Eliminar
     deleteImage: builder.mutation<void, string>({
       query: (id) => ({
         url: `/media/images/${id}`,

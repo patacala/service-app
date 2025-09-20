@@ -10,7 +10,7 @@ const httpClient: AxiosInstance = axios.create({
   timeout: 15000,
 });
 
-// Interceptor para agregar token si existe
+
 httpClient.interceptors.request.use(async (config) => {
   const session = SessionManager.getInstance();
 
@@ -21,10 +21,10 @@ httpClient.interceptors.request.use(async (config) => {
   if (session.token) {
     config.headers.Authorization = `Bearer ${session.token}`;
   }
-  // Ajustar Content-Type según el payload
+
   const isFormData = typeof FormData !== 'undefined' && config.data instanceof FormData;
   if (isFormData) {
-    // Deja que Axios establezca el boundary automáticamente
+
     delete (config.headers as any)['Content-Type'];
   } else {
     (config.headers as any)['Content-Type'] = (config.headers as any)['Content-Type'] || 'application/json';
@@ -32,7 +32,6 @@ httpClient.interceptors.request.use(async (config) => {
   return config;
 });
 
-// Interceptor para manejo de errores globales
 httpClient.interceptors.response.use(
   (response) => response,
   async (error) => {

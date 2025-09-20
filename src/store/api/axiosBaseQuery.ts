@@ -13,7 +13,6 @@ export const axiosBaseQuery = () => async ({ url, method, data, params, headers 
   try {
     const config: AxiosRequestConfig = { url, method, data, params, headers };
     const result = await httpClient(config);
-    // Normalize envelope: { success, result, errors }
     const payload = result?.data;
     const normalized = payload && typeof payload === 'object' && 'result' in payload ? payload.result : payload;
     return { data: normalized };
