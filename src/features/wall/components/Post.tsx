@@ -21,8 +21,9 @@ export const Post = ({
       <Box style={styles.card}>
         <Box style={styles.images}>
           <Image 
-            source={images.cardImage1 as ImageSourcePropType} 
-            resizeMode="cover" 
+            style={styles.mainImage}
+            source={{ uri: post.media[0].url } as ImageSourcePropType}
+            resizeMode="cover"
           />
           <Image 
             style={styles.linearGradientBlack}
@@ -87,6 +88,10 @@ const styles = StyleSheet.create({
     },
     images: {
         position: 'absolute',
+    },
+    mainImage: {
+      width: 392,
+      height: 227,
     },
     linearGradientBlack: {
         position: 'absolute',

@@ -5,7 +5,6 @@ import { proceedLogout } from '@/infrastructure/auth/proceedLogout';
 const httpClient: AxiosInstance = axios.create({
   baseURL: process.env.EXPO_PUBLIC_API_URL,
   headers: {
-    'Content-Type': 'application/json',
     'Accept': 'application/json',
   },
   timeout: 15000,
@@ -21,6 +20,14 @@ httpClient.interceptors.request.use(async (config) => {
 
   if (session.token) {
     config.headers.Authorization = `Bearer ${session.token}`;
+  }
+  // Ajustar Content-Type según el payload
+  const isFormData = typeof FormData !== 'undefined' && config.data instanceof FormData;
+  if (isFormData) {
+    // Deja que Axios establezca el boundary automáticamente
+    delete (config.headers as any)['Content-Type'];
+  } else {
+    (config.headers as any)['Content-Type'] = (config.headers as any)['Content-Type'] || 'application/json';
   }
   return config;
 });
