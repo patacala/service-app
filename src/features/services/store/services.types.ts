@@ -41,6 +41,7 @@ export interface Service {
   createdAt: string;         
   updatedAt: string;           
   isFavorite: boolean;
+  media: Media[]
 }
 
 export interface ServicesResponse {
@@ -72,6 +73,15 @@ export interface ServicesAccountProvResponse {
   service: Service
 }
 
+export interface Media{
+  id: string,
+  url: string,
+  kind: string,
+  provider: string,
+  created_at: string,
+}
+
+
 // BookServices TYPES
 export interface BookService {
   id: string;
@@ -99,6 +109,7 @@ export interface BookService {
   categories: string[];
   description?: string;
   image?: ImageSourcePropType
+  media: Media[];
 }
 
 export interface CreateBookServiceRequest {
