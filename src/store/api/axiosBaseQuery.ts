@@ -13,13 +13,21 @@ export const axiosBaseQuery = () => async ({ url, method, data, params, headers 
   try {
     const config: AxiosRequestConfig = { url, method, data, params, headers };
     const result = await httpClient(config);
-    return { data: result.data };
+    // Normalize envelope: { success, result, errors }
+    const payload = result?.data;
+    const normalized = payload && typeof payload === 'object' && 'result' in payload ? payload.result : payload;
+    return { data: normalized };
   } catch (error: any) {
+    const status = error?.response?.status;
+    const responseData = error?.response?.data;
+    const envelopeMessage = typeof responseData === 'object' ? (responseData?.message || responseData?.error) : undefined;
+    const envelopeErrors = typeof responseData === 'object' ? (responseData?.errors || responseData?.error) : undefined;
     return {
       error: {
-        status: error.response?.status,
-        data: error.response?.data || error.message,
-        message: error.message,
+        status,
+        data: responseData ?? error.message,
+        message: envelopeMessage || error.message,
+        errors: envelopeErrors,
       },
     };
   }
