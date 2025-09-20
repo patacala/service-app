@@ -7,7 +7,6 @@ export interface ImageObject {
   metadata?: Record<string, any> | null;
   requireSignedURLs?: boolean;
   variants?: ImageVariant[];
-  // Allow arbitrary fields coming from backend
   [key: string]: any;
 }
 
@@ -23,7 +22,7 @@ export interface RNFileLike {
 }
 
 export interface UploadImageRequest {
-  file: RNFileLike; // React Native file-like object
+  file: RNFileLike;
   params?: UploadImageQueryParams;
 }
 
