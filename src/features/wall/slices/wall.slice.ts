@@ -3,6 +3,14 @@ import { ImageSourcePropType } from 'react-native';
 import { Float } from 'react-native/Libraries/Types/CodegenTypes';
 import { IconName } from '@/design-system/components/layout/Icon';
 
+
+export interface Media{
+  id: string,
+  url: string,
+  kind: string,
+  provider: string,
+  created_at: string,
+}
 export interface CardPost {
   id: string;
   title: string;
@@ -29,6 +37,7 @@ export interface CardPost {
   miniImage: ImageSourcePropType;
   image: ImageSourcePropType;
   isFavorite: boolean;
+  media: Media[];
 }
 
 export interface Post {
