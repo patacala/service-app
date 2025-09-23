@@ -139,6 +139,17 @@ export const ServicePost: React.FC<ServicePostProps> = ({
             />
           )}
 
+          {bookService.status === 'cancelled' && (
+            <Box paddingRight="sm">
+              <Typography
+                variant="bodyLarge"
+                color={theme.colors.colorFeedbackError}
+              >
+                {t("services.cancelledservice")}
+              </Typography>
+            </Box>
+          )}
+
           {bookService.status === 'accepted' && (
             <Button
               variant="transparent"
