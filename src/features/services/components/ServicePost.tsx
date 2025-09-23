@@ -138,6 +138,17 @@ export const ServicePost: React.FC<ServicePostProps> = ({
               onPress={handleDetail}
             />
           )}
+
+          {bookService.status === 'accepted' && (
+            <Button
+              variant="transparent"
+              label={t("services.acceptedservice")}
+              iconWidth={18}
+              iconHeight={18}
+              rightIcon={images.rightArrow as ImageSourcePropType}
+              onPress={handleDetail}
+            />
+          )}
         </Box>
       </Row>
     </Box>
