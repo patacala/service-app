@@ -266,6 +266,7 @@ export const ServicesScreen = () => {
                                                     bookService={service}
                                                     serviceOptions={serviceOptions}
                                                     onRate={handleRateServicePress}
+                                                    onDetail={() => navigateToChat(service)}
                                                 />
                                             </Box>
                                         );
