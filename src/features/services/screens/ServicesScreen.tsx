@@ -7,7 +7,7 @@ import { ServicePost } from "../components/ServicePost";
 import { CancelService } from "../components/CancelService";
 import { RateService } from "../components/RateService";
 import { useGetCategoriesQuery } from "@/infrastructure/services/api";
-import { useGetMyBookServicesQuery } from "../store/services.api";
+import { useGetMyBookServicesQuery, useUpdateBookServiceStatusMutation } from "../store/services.api";
 import { BookService } from "../store";
 import { getWallStyles } from "@/features/wall/screens/wall/wall.style";
 import { getDeviceLanguage } from "@/assembler/config/i18n";
@@ -21,86 +21,6 @@ interface Location {
     name: string;
 }
 
-// Datos mock para servicios
-/* const mockServices: ServiceData[] = [
-    {
-        id: "1",
-        category: "Painter",
-        name: "Darius Robinson",
-        role: 'user',
-        date: "21 Apr",
-        time: "2:00 PM EST",
-        image: images.profile1 as ImageSourcePropType,
-        address: "S Miami Ave Miami, FL 33129 3251",
-        status: 'pending',
-        chipOption: {
-            id: "painter",
-            label: "Painter",
-            icon: "painter" as IconName
-        },
-        selectedChipId: "painter",
-        phone: "408 234 7654",
-        description: "I need to paint three rooms with different colors. I have all the paints ready."
-    },
-    {
-        id: "2",
-        category: "Babysister",
-        name: "Alexa Jonasson",
-        role: 'user',
-        date: "10 Mar",
-        time: "2:00 PM EST",
-        image: images.profile3 as ImageSourcePropType,
-        address: "S Miami Ave Miami, FL 33129 3251",
-        status: 'completed',
-        chipOption: {
-            id: "babysister",
-            label: "Babysister",
-            icon: "smile" as IconName
-        },
-        selectedChipId: "babysister",
-        phone: "305 123 4567",
-        description: "Childcare for two kids for 4 hours. They are 3 and 5 years old."
-    },
-    {
-        id: "3",
-        category: "Painter",
-        name: "Garry Calvin",
-        role: 'provider',
-        date: "10 Mar",
-        time: "8:00 AM EST",
-        image: images.profile2 as ImageSourcePropType,
-        address: "S Miami Ave Miami, FL 33129 3251",
-        status: 'pending',
-        chipOption: {
-            id: "babysister",
-            label: "Babysister",
-            icon: "smile" as IconName
-        },
-        selectedChipId: "babysister",
-        phone: "786 987 6543",
-        description: "Request to watch my children while I'm in an important meeting."
-    },
-    {
-        id: "4",
-        category: "Babysister",
-        name: "Daniela Calvin",
-        role: 'provider',
-        date: "10 Mar",
-        time: "8:00 AM EST",
-        image: images.profile3 as ImageSourcePropType,
-        address: "S Miami Ave Miami, FL 33129 3251",
-        status: 'completed',
-        chipOption: {
-            id: "babysister",
-            label: "Babysister",
-            icon: "smile" as IconName
-        },
-        selectedChipId: "babysister",
-        phone: "305 555 1234",
-        description: "Pet sitting services needed during the weekend."
-    },
-]; */
-
 export const ServicesScreen = () => {
     const { t } = useTranslation('auth');
     const router = useRouter();
@@ -108,6 +28,10 @@ export const ServicesScreen = () => {
     const [locationPanelVisible, setLocationPanelVisible] = useState(false);
     const [cancelServiceVisible, setCancelServiceVisible] = useState(false);
     const [rateServiceVisible, setRateServiceVisible] = useState(false);
+    const [selectedServiceToCancel, setSelectedServiceToCancel] = useState<BookService | null>(null);
+    
+    const [updateBookServiceStatus, {isLoading: isLoadBookServiceUpdate}] = useUpdateBookServiceStatusMutation();
+    
     const { data: categoriesData, error: categoriesError } = useGetCategoriesQuery({ language: getDeviceLanguage() }, {
         refetchOnMountOrArgChange: true,
         refetchOnFocus: true,
@@ -176,9 +100,44 @@ export const ServicesScreen = () => {
         setCurrentLocation(location);
     };
 
-    const handleCancelServicePress = () => {
+    const handleCancelServicePress = (service: BookService) => {
+        setSelectedServiceToCancel(service);
         setCancelServiceVisible(true);
     }
+
+    const handleConfirmCancel = async () => {
+        if (!selectedServiceToCancel?.id) {
+            Toast.show({
+                type: 'error',
+                text1: t("services.error"),
+                text2: t("services.servicecanerror"),
+            });
+            return;
+        }
+
+        try {
+            await updateBookServiceStatus({
+                id: selectedServiceToCancel.id,
+                status: 'cancelled'
+            }).unwrap();
+
+            Toast.show({
+                type: 'success',
+                text1: t("messages.msg22"),
+                text2: t("services.servicecancelled"),
+            });
+
+            setCancelServiceVisible(false);
+            setSelectedServiceToCancel(null);
+        } catch (error) {
+            console.error('Error cancelling service:', error);
+            Toast.show({
+                type: 'error',
+                text1: t("services.error"),
+                text2: t("services.failedtocancel"),
+            });
+        }
+    };
 
     const handleRateServicePress = () => {
         setRateServiceVisible(true);
@@ -240,7 +199,7 @@ export const ServicesScreen = () => {
                                             <ServicePost
                                                 bookService={service}
                                                 serviceOptions={serviceOptions}
-                                                onCancel={handleCancelServicePress}
+                                                onCancel={() => handleCancelServicePress(service)}
                                                 onDetail={() => navigateToChat(service)}
                                             />
                                             </Box>
@@ -275,6 +234,7 @@ export const ServicesScreen = () => {
                                                     bookService={service}
                                                     serviceOptions={serviceOptions}
                                                     onRate={handleRateServicePress}
+                                                    onCancel={() => handleCancelServicePress(service)}
                                                     onDetail={() => navigateToChat(service)}
                                                 />
                                             </Box>
@@ -298,7 +258,12 @@ export const ServicesScreen = () => {
 
             <CancelService
                 visible={cancelServiceVisible}
-                onClose={() => setCancelServiceVisible(false)}
+                onClose={() => {
+                    setCancelServiceVisible(false);
+                    setSelectedServiceToCancel(null);
+                }}
+                onCancel={handleConfirmCancel}
+                isLoading={isLoadBookServiceUpdate}
             />
 
             <RateService
