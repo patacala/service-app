@@ -116,7 +116,6 @@ export const ServicesScreen = () => {
         refetchOnFocus: true,
         refetchOnReconnect: true
     });
-
     const [currentLocation, setCurrentLocation] = useState<Location>({ id: '1', name: 'Miami, FL' });
 
     const categories: ChipOption[] =
