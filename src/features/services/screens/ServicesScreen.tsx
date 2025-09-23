@@ -9,7 +9,7 @@ import { RateService } from "../components/RateService";
 import Toast from "react-native-toast-message";
 import { useGetCategoriesQuery } from "@/infrastructure/services/api";
 import { useGetMyBookServicesQuery } from "../store/services.api";
-import { BookService } from "../store";
+import { BookService, BookServicesAll } from "../store";
 import { getWallStyles } from "@/features/wall/screens/wall/wall.style";
 import { getDeviceLanguage } from "@/assembler/config/i18n";
 import { useRouter } from "expo-router";
@@ -111,14 +111,13 @@ export const ServicesScreen = () => {
         refetchOnFocus: true,
         refetchOnReconnect: true
     });
-    const { data: bookServices = [], isLoading: isLoadBookServices, isFetching: isFetchingBookServices, error: bookServicesError } = useGetMyBookServicesQuery(undefined, {
+    const { data: bookServices, isLoading: isLoadBookServices, isFetching: isFetchingBookServices, error: bookServicesError } = useGetMyBookServicesQuery(undefined, {
         refetchOnMountOrArgChange: true,
         refetchOnFocus: true,
         refetchOnReconnect: true
     });
 
     const [currentLocation, setCurrentLocation] = useState<Location>({ id: '1', name: 'Miami, FL' });
-    const bookings: BookService[] = bookServices;
 
     const categories: ChipOption[] =
     categoriesData?.categories?.map((c: any) => ({
@@ -161,14 +160,16 @@ export const ServicesScreen = () => {
         }
     }, [bookServicesError]);
 
-    // Filtrar servicios por estado
-    const pendingServices = (isLoadBookServices || isFetchingBookServices)
-    ? []
-    : bookings.filter(service => service.status === 'pending');
+    // Filtrar servicios por tipo de usuario
+    const otherBookings: BookService[] =
+    isLoadBookServices || isFetchingBookServices
+        ? []
+        : bookServices?.otherBookings ?? [];
 
-    const completedServices = (isLoadBookServices || isFetchingBookServices)
-    ? []
-    : bookings.filter(service => service.status === 'completed');
+    const myBookings: BookService[] =
+    isLoadBookServices || isFetchingBookServices
+        ? []
+        : bookServices?.myBookings ?? [];
 
     const handleSelectLocation = (location: Location) => {
         setCurrentLocation(location);
@@ -226,9 +227,9 @@ export const ServicesScreen = () => {
                                 {renderSectionHeader(t("services.pendingservices") + ':')}
                                 {renderLoadSection()}
 
-                                {pendingServices.length > 0 && !isLoadBookServices && (
+                                {otherBookings.length > 0 && !isLoadBookServices && (
                                     <Box gap="md">
-                                        {pendingServices.map(service => {
+                                        {otherBookings.map(service => {
                                             const serviceOptions = getCategoryOptions(service.categories || []);
 
                                             return (
@@ -252,12 +253,12 @@ export const ServicesScreen = () => {
                                 )}
 
                                 {/* Servicios completados */}
-                                {renderSectionHeader(t("services.servicescompleted") + ':')}
+                                {renderSectionHeader(t("services.servicesrequest") + ':')}
                                 {renderLoadSection()}
                                 
-                                {completedServices.length > 0 && !isLoadBookServices && (
+                                {myBookings.length > 0 && !isLoadBookServices && (
                                     <Box gap="md">
-                                    {completedServices.map(service => {
+                                    {myBookings.map(service => {
                                         const serviceOptions = getCategoryOptions(service.categories || []);
 
                                         return (
