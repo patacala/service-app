@@ -40,7 +40,8 @@ export const ServicesScreen = () => {
     const { data: bookServices, isLoading: isLoadBookServices, isFetching: isFetchingBookServices, error: bookServicesError } = useGetMyBookServicesQuery(undefined, {
         refetchOnMountOrArgChange: true,
         refetchOnFocus: true,
-        refetchOnReconnect: true
+        refetchOnReconnect: true,
+        pollingInterval: 60000,
     });
     const [currentLocation, setCurrentLocation] = useState<Location>({ id: '1', name: 'Miami, FL' });
 
