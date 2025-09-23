@@ -81,7 +81,6 @@ export const Button: React.FC<ButtonProps> = ({
   // Determinar color del icono según la variante
   const getIconColor = (): IconColorType => {
     if (textColor) {
-      console.log('Ingreso acá');
       return textColor;
     }
 
