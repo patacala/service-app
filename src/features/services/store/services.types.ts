@@ -89,6 +89,7 @@ export interface BookService {
   serviceName: string;
   userId: string;
   role: string;
+  bookingType: string;
   provider: {
     id: string;
     name: string;
@@ -112,6 +113,11 @@ export interface BookService {
   media: Media[];
 }
 
+export interface BookServicesAll {
+  myBookings: BookService[],
+  otherBookings: BookService[]
+}
+
 export interface CreateBookServiceRequest {
   serviceId: string;
   serviceName: string;
@@ -120,4 +126,9 @@ export interface CreateBookServiceRequest {
   comments?: string;
   responsibleName: string;
   phoneNumber: string;
+}
+
+export interface UpdateBookServiceStatusRequest {
+  id: string;
+  status: 'pending' | 'accepted' | 'rejected' | 'completed' | 'cancelled';
 }

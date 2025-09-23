@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { AuthenticationCard } from '../components/AuthenticationCard/AuthenticationCard';
 import { useDataManager } from '@/infrastructure/dataManager/DataManager';
 import Toast from 'react-native-toast-message';
-import { useGetCategoriesQuery } from '@/infrastructure/services/api/endpoints/category/store';
+import { useGetCategoriesQuery } from '@/features/categories/store';
 import { useRegisterMutation } from '../store';
 import { useAuth } from '@/infrastructure/auth/AuthContext';
 import { ActivityIndicator } from 'react-native';
