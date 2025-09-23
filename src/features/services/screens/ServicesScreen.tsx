@@ -6,14 +6,15 @@ import { LocationPanel } from "@/features/wall/components/LocationPanel";
 import { ServicePost } from "../components/ServicePost";
 import { CancelService } from "../components/CancelService";
 import { RateService } from "../components/RateService";
-import Toast from "react-native-toast-message";
 import { useGetCategoriesQuery } from "@/infrastructure/services/api";
 import { useGetMyBookServicesQuery } from "../store/services.api";
-import { BookService, BookServicesAll } from "../store";
+import { BookService } from "../store";
 import { getWallStyles } from "@/features/wall/screens/wall/wall.style";
 import { getDeviceLanguage } from "@/assembler/config/i18n";
 import { useRouter } from "expo-router";
 import { useTranslation } from "react-i18next";
+import Toast from "react-native-toast-message";
+import { useAuth } from "@/infrastructure/auth/AuthContext";
 
 interface Location {
     id: string;
@@ -103,6 +104,7 @@ interface Location {
 export const ServicesScreen = () => {
     const { t } = useTranslation('auth');
     const router = useRouter();
+    const { user } = useAuth();
     const [locationPanelVisible, setLocationPanelVisible] = useState(false);
     const [cancelServiceVisible, setCancelServiceVisible] = useState(false);
     const [rateServiceVisible, setRateServiceVisible] = useState(false);
@@ -223,32 +225,39 @@ export const ServicesScreen = () => {
                         <View>
                             <Box gap="md">
                                 {/* Solicitudes de Mis Servicios */}
-                                {renderSectionHeader(t("services.servicerequests") + ':')}
-                                {renderLoadSection()}
+                                {user?.role === "both" && (
+                                    <>
+                                    {renderSectionHeader(t("services.servicerequests") + ':')}
+                                    {renderLoadSection()}
 
-                                {otherBookings.length > 0 && !isLoadBookServices && (
+                                    {otherBookings.length > 0 && !isLoadBookServices && (
                                     <Box gap="md">
                                         {otherBookings.map(service => {
-                                            const serviceOptions = getCategoryOptions(service.categories || []);
+                                        const serviceOptions = getCategoryOptions(service.categories || []);
 
-                                            return (
-                                                <Box key={service.id}>
-                                                    <ServicePost
-                                                        bookService={service}
-                                                        serviceOptions={serviceOptions}
-                                                        onCancel={handleCancelServicePress}
-                                                        onDetail={() => navigateToChat(service)}
-                                                    />
-                                                </Box>
-                                            );
+                                        return (
+                                            <Box key={service.id}>
+                                            <ServicePost
+                                                bookService={service}
+                                                serviceOptions={serviceOptions}
+                                                onCancel={handleCancelServicePress}
+                                                onDetail={() => navigateToChat(service)}
+                                            />
+                                            </Box>
+                                        );
                                         })}
 
-                                        { isLoadBookServices || isFetchingBookServices && (
-                                            <Box marginTop="lg" style={getWallStyles.loadingContainer}>
-                                                <ActivityIndicator size="large" color={theme.colors.colorBrandPrimary} />
-                                            </Box>
+                                        {(isLoadBookServices || isFetchingBookServices) && (
+                                        <Box marginTop="lg" style={getWallStyles.loadingContainer}>
+                                            <ActivityIndicator
+                                            size="large"
+                                            color={theme.colors.colorBrandPrimary}
+                                            />
+                                        </Box>
                                         )}
                                     </Box>
+                                    )}
+                                </>
                                 )}
 
                                 {/* Servicios Contratados */}
