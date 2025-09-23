@@ -97,7 +97,7 @@ export const ServicePost: React.FC<ServicePostProps> = ({
           {bookService.status === 'completed' && (
             <Button
               variant="transparent"
-              label={bookService.role === 'seeker' ? t("services.btnrateservice"):t("services.btnrateuser")}
+              label={bookService.bookingType === 'client' ? t("services.btnrateservice"):t("services.btnrateuser")}
               iconWidth={20}
               iconHeight={19}
               leftIcon={images.starOutline as ImageSourcePropType}
