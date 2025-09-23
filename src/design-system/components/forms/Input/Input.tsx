@@ -3,12 +3,10 @@ import {
   TextInput, 
   TouchableOpacity, 
   Animated, 
-  NativeSyntheticEvent, 
-  TextInputFocusEventData, 
   TouchableWithoutFeedback, 
   Platform,
   Modal,
-  View,
+  View
 } from 'react-native';
 import {Box} from '../../layout/Box';
 import {Typography} from '../../foundation/Typography';
@@ -223,12 +221,12 @@ export const Input = forwardRef<TextInput, ExpandableInputProps>(({
       case 'textarea':
         // Configuraciones específicas para textarea
         if (initialRightIcon === undefined) {
-          setIcon(undefined); // No icono por defecto en textarea
+          setIcon(undefined);
         }
         break;
       case 'disabled':
-        // Configuración específica para disabled - no es necesario hacer nada especial aquí
         break;
+      
     }
   }, [variant, initialRightIcon, initialSecureTextEntry, props.keyboardType, hasText, selectedDate, dateMode]);
 
@@ -312,25 +310,19 @@ export const Input = forwardRef<TextInput, ExpandableInputProps>(({
     }
   };
 
-  const handleFocus = (e: NativeSyntheticEvent<TextInputFocusEventData>) => {
+  const handleFocus = (e: any) => {
     if (isDisabled) return;
-    
     setIsFocused(true);
-    if (props.onFocus) {
-      props.onFocus(e);
-    }
-    
-    // Si es variante date, mostrar el DatePicker al enfocar
+    props.onFocus?.(e);
+
     if (variant === 'date') {
       showDatePickerModal();
     }
   };
 
-  const handleBlur = (e: NativeSyntheticEvent<TextInputFocusEventData>) => {
+  const handleBlur = (e: any) => {
     setIsFocused(false);
-    if (props.onBlur) {
-      props.onBlur(e);
-    }
+    props.onBlur?.(e);
   };
 
   // Nueva función para manejar el cambio de contenido en el input expandible
@@ -524,6 +516,20 @@ export const Input = forwardRef<TextInput, ExpandableInputProps>(({
         </TouchableOpacity>
       );
     }
+
+    if (variant === 'chat') {
+      return (
+        <TouchableOpacity 
+          onPress={isDisabled ? undefined : onIconPress} 
+          disabled={isDisabled}
+        >
+          <Icon 
+            name="send" 
+            color={isDisabled ? "colorGrey400" : "colorBaseWhite"}
+          />
+        </TouchableOpacity>
+      );
+    }
     
     // Cambiar el icono dependiendo si está en modo multilinea o no
     if (expandable && icon === 'send') {
@@ -588,6 +594,8 @@ export const Input = forwardRef<TextInput, ExpandableInputProps>(({
         return styles.variantDate || styles.varianDefault;
       case 'textarea':
         return styles.variantTextarea || styles.varianDefault;
+      case 'chat':
+        return styles.varianDefault;
       case 'disabled':
         return styles.variantDisabled || styles.varianDefault;
       case 'default':

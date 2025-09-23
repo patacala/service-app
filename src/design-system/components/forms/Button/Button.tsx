@@ -363,7 +363,7 @@ export const Button: React.FC<ButtonProps> = ({
               {renderLeftIcon()}
               <Typography 
                 variant="bodyRegular" 
-                color={textColor ? theme.colors[textColor as keyof typeof theme.colors]:theme.colors[buttonStyles.text.color as keyof typeof theme.colors]}
+                color={textColor ? theme.colors[textColor as keyof typeof theme.colors]:theme.colors.colorBaseWhite}
                 style={[
                   { flexShrink: 1 }
                 ]}

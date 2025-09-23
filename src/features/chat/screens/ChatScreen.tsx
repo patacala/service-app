@@ -329,13 +329,13 @@ export const ChatScreen = () => {
                     </ScrollView>
                 </Box>
                 
-                <Box marginBottom="md">
+                <Box marginBottom="xl">
                     <Input
                         icon="send"
                         label="Write your message"
                         value={message}
                         onChangeText={setMessage}
-                        variant={isAccepted ? "default" : "disabled"}
+                        variant={isAccepted ? "chat" : "disabled"}
                         editable={isAccepted}
                         expandable={true} 
                         maxHeight={120}

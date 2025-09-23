@@ -1,8 +1,6 @@
 import React, { createContext, useEffect, useState, ReactNode, useContext } from 'react';
 import { SessionManager } from '@/infrastructure/session';
 import { useRouter } from 'expo-router';
-import { store } from '@/store';
-import { apiSlice } from '@/store/api/apiSlice';
 
 interface BackendUser {
   id: string;
