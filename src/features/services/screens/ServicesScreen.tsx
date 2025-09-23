@@ -222,8 +222,8 @@ export const ServicesScreen = () => {
                     <TouchableWithoutFeedback onPress={() => {}}>
                         <View>
                             <Box gap="md">
-                                {/* Servicios pendientes */}
-                                {renderSectionHeader(t("services.pendingservices") + ':')}
+                                {/* Solicitudes de Mis Servicios */}
+                                {renderSectionHeader(t("services.servicerequests") + ':')}
                                 {renderLoadSection()}
 
                                 {otherBookings.length > 0 && !isLoadBookServices && (
@@ -251,8 +251,8 @@ export const ServicesScreen = () => {
                                     </Box>
                                 )}
 
-                                {/* Servicios completados */}
-                                {renderSectionHeader(t("services.servicesrequest") + ':')}
+                                {/* Servicios Contratados */}
+                                {renderSectionHeader(t("services.serviceshired") + ':')}
                                 {renderLoadSection()}
                                 
                                 {myBookings.length > 0 && !isLoadBookServices && (
