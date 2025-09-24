@@ -38,11 +38,13 @@ import { useAuth } from '@/infrastructure/auth/AuthContext';
 import { ProfilePartial, useGetCurrentUserQuery, useUpdateProfileMutation } from '@/features/auth/store';
 import { useGetCategoriesQuery } from '@/infrastructure/services/api';
 import { useCreateServiceMutation, useUpdateServiceMutation, useGetMyServicesQuery } from '@/features/services/store';
+import { useDeleteImageMutation, useUploadImageMutation } from '@/features/media/store/media.api';
 import { getWallStyles } from '@/features/wall/screens/wall/wall.style';
 import { ServiceOffer } from '@/features/services/components/ServiceOffer';
 import { getDeviceLanguage } from '@/assembler/config/i18n';
 import { ServiceFormData } from '../slices/profile.slice';
 import { useLocalSearchParams } from 'expo-router';
+
 
 // Validation Schema
 const profileSchema = z.object({
@@ -91,7 +93,7 @@ export const ProfileScreen = () => {
     refetchOnReconnect: true
   });
 
-  const [updateProfile, { isLoading }] = useUpdateProfileMutation();
+  const [updateProfile] = useUpdateProfileMutation();
   const [createService, { isLoading: isLoadingCreateService }] = useCreateServiceMutation();
   const [updateService, { isLoading: isLoadingUpdateService }] = useUpdateServiceMutation();
   const { data: services, isLoading: isLoadingServices, isFetching: isFetchingServices } = useGetMyServicesQuery(undefined, {
@@ -99,6 +101,11 @@ export const ProfileScreen = () => {
     refetchOnFocus: true,
     refetchOnReconnect: true
   });
+  const [uploadImage] = useUploadImageMutation();
+  const [deleteImage] = useDeleteImageMutation();
+  
+  const [isAvatarDirty, setIsAvatarDirty] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
 
   // Estado para la imagen de perfil
   const [profileImage, setProfileImage] = useState<string>('');
@@ -226,7 +233,9 @@ export const ProfileScreen = () => {
       });
 
       if (!result.canceled && result.assets && result.assets.length > 0) {
-        setProfileImage(result.assets[0].uri);
+        const selectedFile = result.assets[0];
+        setProfileImage(selectedFile.uri);
+        setIsAvatarDirty(true);
       }
     } catch (error) {
       Alert.alert('Error', t("messages.msg36"));
@@ -234,14 +243,31 @@ export const ProfileScreen = () => {
   };
 
   const onSubmit = async (data: ProfileFormData) => {
+    let uploadedImageId: string | null = null;
+
     try {
       if (!profile) return;
+
+      setIsSaving(true);
+      let avatarId = '';
+
+      if (profileImage && !profileImage.startsWith('http')) {
+        const file = {
+          uri: profileImage,
+          name: 'avatar.jpg',
+          type: 'image/jpeg',
+        };
+
+        const response = await uploadImage({ file }).unwrap();
+        avatarId = response.id;
+        uploadedImageId = response.id;
+      }
 
       const updatedProfileData: ProfilePartial = {
         name: data.name,
         city: data.city,
         address: data.address,
-        avatar: profileImage,
+        avatar: avatarId,
       };
 
       await updateProfile(updatedProfileData).unwrap();
@@ -252,6 +278,7 @@ export const ProfileScreen = () => {
         city: data.city,
         address: data.address,
       });
+      setIsAvatarDirty(false);
 
       Toast.show({
         type: 'success',
@@ -259,12 +286,22 @@ export const ProfileScreen = () => {
         text2: t("messages.msg37"),
       });
     } catch (error: any) {
+      if (uploadedImageId) {
+        try {
+          await deleteImage(uploadedImageId).unwrap();
+          return true;
+        } catch (deleteError) {
+          return false;
+        }
+      }
 
       Toast.show({
         type: 'error',
         text1: t("messages.msg24"),
         text2: t("messages.msg9"),
       });
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -519,7 +556,7 @@ export const ProfileScreen = () => {
                   resizeMode="contain"
                   style={getProfileStyles.image}
                 />
-                <Box 
+                {/* <Box 
                   position="absolute"
                   bottom={0}
                   left={0}
@@ -527,7 +564,7 @@ export const ProfileScreen = () => {
                   backgroundColor="colorBaseBlack"
                 >
                   <Icon name="picture" color="colorBaseWhite" size={16} />
-                </Box>
+                </Box> */}
               </Box>
             </TouchableOpacity>
             <Typography variant="bodyMedium" color={theme.colors.colorBaseWhite}>
@@ -677,7 +714,6 @@ export const ProfileScreen = () => {
                 </Box>
               )}
             />
-
           </Box>
 
           {/* Actions */}
@@ -685,9 +721,13 @@ export const ProfileScreen = () => {
             <Box width="100%">
               <Button
                 variant="secondary"
-                label="Save"
+                label={t("profile.profilesave")}
                 onPress={handleSubmit(onSubmit, onError)}
-                disabled={!isValid || !isDirty || isLoading}
+                disabled={
+                  (!isValid && !isAvatarDirty) || 
+                  (!isDirty && !isAvatarDirty) || 
+                  isSaving 
+                }
               />
             </Box>
             
