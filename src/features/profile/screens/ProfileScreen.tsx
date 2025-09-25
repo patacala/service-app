@@ -264,7 +264,7 @@ export const ProfileScreen = () => {
         uploadedMedia = response;
         uploadedImageId = response.id;
       }
-
+      
       const updatedProfileData: ProfilePartial = {
         name: data.name,
         city: data.city,
@@ -385,20 +385,20 @@ export const ProfileScreen = () => {
     try {
       if (editingServiceId) {
         await updateService({
-          id: data.id,
-          data: {
-            title: data.title,
-            description: data.description,
-            price: data.pricePerHour,
-            categoryIds: data.selectedServices,
-            images: data.photos,
-            currency: 'USD',
-            city: profile?.city ?? '',
-            lat: undefined,
-            lon: undefined,
-            coverMediaId: undefined,
-          },
-      }).unwrap();
+            id: data.id,
+            data: {
+              title: data.title,
+              description: data.description,
+              price: data.pricePerHour,
+              categoryIds: data.selectedServices,
+              images: data.photos,
+              currency: 'USD',
+              city: profile?.city ?? '',
+              lat: undefined,
+              lon: undefined,
+              coverMediaId: undefined,
+            },
+        }).unwrap();
       } else {
         // Crear servicio en backend
         await createService({
