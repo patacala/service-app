@@ -4,13 +4,17 @@ import { Float } from 'react-native/Libraries/Types/CodegenTypes';
 import { IconName } from '@/design-system/components/layout/Icon';
 
 
-export interface Media{
-  id: string,
-  url: string,
-  kind: string,
-  provider: string,
-  created_at: string,
+export interface MediaVariant {
+  name: string;
+  url: string;
 }
+
+export interface Media {
+  id: string;
+  providerRef: string;
+  variants: MediaVariant[];
+}
+
 export interface CardPost {
   id: string;
   title: string;
