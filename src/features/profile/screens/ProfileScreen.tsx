@@ -38,12 +38,13 @@ import { useAuth } from '@/infrastructure/auth/AuthContext';
 import { ProfilePartial, useGetCurrentUserQuery, useUpdateProfileMutation } from '@/features/auth/store';
 import { useGetCategoriesQuery } from '@/infrastructure/services/api';
 import { useCreateServiceMutation, useUpdateServiceMutation, useGetMyServicesQuery } from '@/features/services/store';
-import { useDeleteImageMutation, useUploadImageMutation } from '@/features/media/store/media.api';
+import { useDeleteImageMutation, useUpdateImageMutation, useUploadImageMutation } from '@/features/media/store/media.api';
 import { getWallStyles } from '@/features/wall/screens/wall/wall.style';
 import { ServiceOffer } from '@/features/services/components/ServiceOffer';
 import { getDeviceLanguage } from '@/assembler/config/i18n';
 import { ServiceFormData } from '../slices/profile.slice';
 import { useLocalSearchParams } from 'expo-router';
+import { ImageObject } from '@/features/media/store/media.types';
 
 
 // Validation Schema
@@ -103,6 +104,7 @@ export const ProfileScreen = () => {
   });
   const [uploadImage] = useUploadImageMutation();
   const [deleteImage] = useDeleteImageMutation();
+  const [updateImage] = useUpdateImageMutation();
   
   const [isAvatarDirty, setIsAvatarDirty] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
@@ -249,17 +251,17 @@ export const ProfileScreen = () => {
       if (!profile) return;
 
       setIsSaving(true);
-      let avatarId = '';
+      let uploadedMedia: ImageObject | undefined;
 
       if (profileImage && !profileImage.startsWith('http')) {
         const file = {
           uri: profileImage,
-          name: 'avatar.jpg',
+          name: `avatar-${user?.id}.jpg`,
           type: 'image/jpeg',
         };
 
         const response = await uploadImage({ file }).unwrap();
-        avatarId = response.id;
+        uploadedMedia = response;
         uploadedImageId = response.id;
       }
 
@@ -267,10 +269,15 @@ export const ProfileScreen = () => {
         name: data.name,
         city: data.city,
         address: data.address,
-        avatar: avatarId,
+        media: uploadedMedia,
       };
 
       await updateProfile(updatedProfileData).unwrap();
+      if (profile.media && profile.media.length > 0) {
+        const currentMedia = profile.media[0];
+        await deleteImage(currentMedia.providerRef).unwrap();
+      } 
+
       reset({
         name: data.name,
         email: data.email,
@@ -282,26 +289,24 @@ export const ProfileScreen = () => {
 
       Toast.show({
         type: 'success',
-        text1: t("messages.msg22"),
-        text2: t("messages.msg37"),
+        text1: t('messages.msg22'),
+        text2: t('messages.msg37'),
       });
     } catch (error: any) {
       if (uploadedImageId) {
         try {
           await deleteImage(uploadedImageId).unwrap();
-          return true;
-        } catch (deleteError) {
-          return false;
-        }
+        } catch {}
       }
 
       Toast.show({
         type: 'error',
-        text1: t("messages.msg24"),
-        text2: t("messages.msg9"),
+        text1: t('messages.msg24'),
+        text2: t('messages.msg9'),
       });
     } finally {
       setIsSaving(false);
+
     }
   };
 
@@ -548,11 +553,12 @@ export const ProfileScreen = () => {
             <TouchableOpacity onPress={pickImage} activeOpacity={0.8}>
               <Box style={getProfileStyles.profileImage} position="relative">
                 <Image
-                  source={
-                    profileImage 
-                      ? { uri: profileImage } 
-                      : images.profileLarge1 as ImageSourcePropType
-                  }
+                  source={{
+                    uri: profileImage
+                      ? profileImage
+                      : profile?.media?.[0]?.variants?.[0]?.url ?? 
+                      'https://imagedelivery.net/uusH4IRLf6yhlCMhPld_6A/d6201e99-87ce-450d-e6c1-91e3463f3600/profileThumbnail',
+                  }}
                   resizeMode="contain"
                   style={getProfileStyles.image}
                 />
