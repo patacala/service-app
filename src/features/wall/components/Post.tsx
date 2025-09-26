@@ -16,15 +16,13 @@ export const Post = ({
   post,
   onPress,
 }: PostProps) => {
-  console.log(post.media);
-
   return (
     <TouchableOpacity onPress={onPress}>
       <Box style={styles.card}>
         <Box style={styles.images}>
           <Image 
             style={styles.mainImage}
-            source={{ uri: post.media[0]?.variants[0]?.url ?? images.cardImage1 as ImageSourcePropType } as ImageSourcePropType}
+            source={{ uri: post.media[0]?.variants[1]?.url ?? images.cardImage1 as ImageSourcePropType } as ImageSourcePropType}
             resizeMode="cover"
           />
           <Image 
