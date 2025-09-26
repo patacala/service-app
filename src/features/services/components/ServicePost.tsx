@@ -57,10 +57,10 @@ export const ServicePost: React.FC<ServicePostProps> = ({
           />
           <Box marginLeft="sm" width="100%" maxWidth={170}>
             <Typography variant="bodyMedium" color={theme.colors.colorGrey200} truncate>
-              {bookService.role === 'provider' ? 'User' : bookService.serviceName}
+              {bookService.serviceName}
             </Typography>
             <Typography variant="bodyLarge" color="white" truncate>
-              {bookService.role === 'seeker' ? bookService.provider.name:bookService.client.name}
+              {bookService.bookingType === 'provider' ? bookService.client.name:bookService.provider.name}
             </Typography>
           </Box>
         </Row>
@@ -97,7 +97,7 @@ export const ServicePost: React.FC<ServicePostProps> = ({
           {bookService.status === 'completed' && (
             <Button
               variant="transparent"
-              label={bookService.role === 'seeker' ? t("services.btnrateservice"):t("services.btnrateuser")}
+              label={bookService.bookingType === 'client' ? t("services.btnrateservice"):t("services.btnrateuser")}
               iconWidth={20}
               iconHeight={19}
               leftIcon={images.starOutline as ImageSourcePropType}
@@ -105,7 +105,7 @@ export const ServicePost: React.FC<ServicePostProps> = ({
             />
           )}
 
-          {bookService.status === 'pending' && bookService.role === 'seeker' && (
+          {bookService.status === 'pending' && bookService.bookingType === 'client' && (
             <Button
               variant="transparent"
               label={t("services.cancel")}
@@ -116,10 +116,44 @@ export const ServicePost: React.FC<ServicePostProps> = ({
             />
           )}
 
-          {bookService.status === 'pending' && bookService.role === 'both' && (
+          {bookService.status === 'pending' && bookService.bookingType === 'provider' && (
             <Button
               variant="transparent"
               label={t("services.detailservice")}
+              iconWidth={18}
+              iconHeight={18}
+              rightIcon={images.rightArrow as ImageSourcePropType}
+              onPress={handleDetail}
+            />
+          )}
+
+          {bookService.status === 'rejected' && (
+            <Button
+              variant="transparent"
+              label={t("services.rejectedservice")}
+              iconWidth={18}
+              iconHeight={18}
+              textColor="colorFeedbackError"
+              rightIcon={images.rightArrow as ImageSourcePropType}
+              onPress={handleDetail}
+            />
+          )}
+
+          {bookService.status === 'cancelled' && (
+            <Box paddingRight="sm">
+              <Typography
+                variant="bodyLarge"
+                color={theme.colors.colorFeedbackError}
+              >
+                {t("services.cancelledservice")}
+              </Typography>
+            </Box>
+          )}
+
+          {bookService.status === 'accepted' && (
+            <Button
+              variant="transparent"
+              label={t("services.acceptedservice")}
               iconWidth={18}
               iconHeight={18}
               rightIcon={images.rightArrow as ImageSourcePropType}

@@ -1,1 +1,1 @@
-export * from './endpoints/category/store/category.api';
+export * from '../../../features/categories/store/category.api';

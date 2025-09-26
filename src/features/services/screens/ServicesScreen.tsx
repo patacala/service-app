@@ -6,119 +6,44 @@ import { LocationPanel } from "@/features/wall/components/LocationPanel";
 import { ServicePost } from "../components/ServicePost";
 import { CancelService } from "../components/CancelService";
 import { RateService } from "../components/RateService";
-import Toast from "react-native-toast-message";
 import { useGetCategoriesQuery } from "@/infrastructure/services/api";
-import { useGetMyBookServicesQuery } from "../store/services.api";
+import { useGetMyBookServicesQuery, useUpdateBookServiceStatusMutation } from "../store/services.api";
 import { BookService } from "../store";
 import { getWallStyles } from "@/features/wall/screens/wall/wall.style";
 import { getDeviceLanguage } from "@/assembler/config/i18n";
 import { useRouter } from "expo-router";
 import { useTranslation } from "react-i18next";
+import Toast from "react-native-toast-message";
+import { useAuth } from "@/infrastructure/auth/AuthContext";
 
 interface Location {
     id: string;
     name: string;
 }
 
-// Datos mock para servicios
-/* const mockServices: ServiceData[] = [
-    {
-        id: "1",
-        category: "Painter",
-        name: "Darius Robinson",
-        role: 'user',
-        date: "21 Apr",
-        time: "2:00 PM EST",
-        image: images.profile1 as ImageSourcePropType,
-        address: "S Miami Ave Miami, FL 33129 3251",
-        status: 'pending',
-        chipOption: {
-            id: "painter",
-            label: "Painter",
-            icon: "painter" as IconName
-        },
-        selectedChipId: "painter",
-        phone: "408 234 7654",
-        description: "I need to paint three rooms with different colors. I have all the paints ready."
-    },
-    {
-        id: "2",
-        category: "Babysister",
-        name: "Alexa Jonasson",
-        role: 'user',
-        date: "10 Mar",
-        time: "2:00 PM EST",
-        image: images.profile3 as ImageSourcePropType,
-        address: "S Miami Ave Miami, FL 33129 3251",
-        status: 'completed',
-        chipOption: {
-            id: "babysister",
-            label: "Babysister",
-            icon: "smile" as IconName
-        },
-        selectedChipId: "babysister",
-        phone: "305 123 4567",
-        description: "Childcare for two kids for 4 hours. They are 3 and 5 years old."
-    },
-    {
-        id: "3",
-        category: "Painter",
-        name: "Garry Calvin",
-        role: 'provider',
-        date: "10 Mar",
-        time: "8:00 AM EST",
-        image: images.profile2 as ImageSourcePropType,
-        address: "S Miami Ave Miami, FL 33129 3251",
-        status: 'pending',
-        chipOption: {
-            id: "babysister",
-            label: "Babysister",
-            icon: "smile" as IconName
-        },
-        selectedChipId: "babysister",
-        phone: "786 987 6543",
-        description: "Request to watch my children while I'm in an important meeting."
-    },
-    {
-        id: "4",
-        category: "Babysister",
-        name: "Daniela Calvin",
-        role: 'provider',
-        date: "10 Mar",
-        time: "8:00 AM EST",
-        image: images.profile3 as ImageSourcePropType,
-        address: "S Miami Ave Miami, FL 33129 3251",
-        status: 'completed',
-        chipOption: {
-            id: "babysister",
-            label: "Babysister",
-            icon: "smile" as IconName
-        },
-        selectedChipId: "babysister",
-        phone: "305 555 1234",
-        description: "Pet sitting services needed during the weekend."
-    },
-]; */
-
 export const ServicesScreen = () => {
     const { t } = useTranslation('auth');
     const router = useRouter();
+    const { user } = useAuth();
     const [locationPanelVisible, setLocationPanelVisible] = useState(false);
     const [cancelServiceVisible, setCancelServiceVisible] = useState(false);
     const [rateServiceVisible, setRateServiceVisible] = useState(false);
+    const [selectedServiceToCancel, setSelectedServiceToCancel] = useState<BookService | null>(null);
+    
+    const [updateBookServiceStatus, {isLoading: isLoadBookServiceUpdate}] = useUpdateBookServiceStatusMutation();
+    
     const { data: categoriesData, error: categoriesError } = useGetCategoriesQuery({ language: getDeviceLanguage() }, {
         refetchOnMountOrArgChange: true,
         refetchOnFocus: true,
         refetchOnReconnect: true
     });
-    const { data: bookServices = [], isLoading: isLoadBookServices, isFetching: isFetchingBookServices, error: bookServicesError } = useGetMyBookServicesQuery(undefined, {
+    const { data: bookServices, isLoading: isLoadBookServices, isFetching: isFetchingBookServices, error: bookServicesError } = useGetMyBookServicesQuery(undefined, {
         refetchOnMountOrArgChange: true,
         refetchOnFocus: true,
-        refetchOnReconnect: true
+        refetchOnReconnect: true,
+        pollingInterval: 60000,
     });
-
     const [currentLocation, setCurrentLocation] = useState<Location>({ id: '1', name: 'Miami, FL' });
-    const bookings: BookService[] = bookServices;
 
     const categories: ChipOption[] =
     categoriesData?.categories?.map((c: any) => ({
@@ -161,22 +86,59 @@ export const ServicesScreen = () => {
         }
     }, [bookServicesError]);
 
-    // Filtrar servicios por estado
-    const pendingServices = (isLoadBookServices || isFetchingBookServices)
-    ? []
-    : bookings.filter(service => service.status === 'pending');
+    // Filtrar servicios por tipo de usuario
+    const otherBookings: BookService[] =
+    isLoadBookServices || isFetchingBookServices
+        ? []
+        : bookServices?.otherBookings ?? [];
 
-    const completedServices = (isLoadBookServices || isFetchingBookServices)
-    ? []
-    : bookings.filter(service => service.status === 'completed');
+    const myBookings: BookService[] =
+    isLoadBookServices || isFetchingBookServices
+        ? []
+        : bookServices?.myBookings ?? [];
 
     const handleSelectLocation = (location: Location) => {
         setCurrentLocation(location);
     };
 
-    const handleCancelServicePress = () => {
+    const handleCancelServicePress = (service: BookService) => {
+        setSelectedServiceToCancel(service);
         setCancelServiceVisible(true);
     }
+
+    const handleConfirmCancel = async () => {
+        if (!selectedServiceToCancel?.id) {
+            Toast.show({
+                type: 'error',
+                text1: t("services.error"),
+                text2: t("services.servicecanerror"),
+            });
+            return;
+        }
+
+        try {
+            await updateBookServiceStatus({
+                id: selectedServiceToCancel.id,
+                status: 'cancelled'
+            }).unwrap();
+
+            Toast.show({
+                type: 'success',
+                text1: t("messages.msg22"),
+                text2: t("services.servicecancelled"),
+            });
+
+            setCancelServiceVisible(false);
+            setSelectedServiceToCancel(null);
+        } catch (error) {
+            console.error('Error cancelling service:', error);
+            Toast.show({
+                type: 'error',
+                text1: t("services.error"),
+                text2: t("services.failedtocancel"),
+            });
+        }
+    };
 
     const handleRateServicePress = () => {
         setRateServiceVisible(true);
@@ -222,42 +184,49 @@ export const ServicesScreen = () => {
                     <TouchableWithoutFeedback onPress={() => {}}>
                         <View>
                             <Box gap="md">
-                                {/* Servicios pendientes */}
-                                {renderSectionHeader(t("services.pendingservices") + ':')}
-                                {renderLoadSection()}
+                                {/* Solicitudes de Mis Servicios */}
+                                {user?.role === "both" && (
+                                    <>
+                                    {renderSectionHeader(t("services.servicerequests") + ':')}
+                                    {renderLoadSection()}
 
-                                {pendingServices.length > 0 && !isLoadBookServices && (
+                                    {otherBookings.length > 0 && !isLoadBookServices && (
                                     <Box gap="md">
-                                        {pendingServices.map(service => {
-                                            const serviceOptions = getCategoryOptions(service.categories || []);
+                                        {otherBookings.map(service => {
+                                        const serviceOptions = getCategoryOptions(service.categories || []);
 
-                                            return (
-                                                <Box key={service.id}>
-                                                    <ServicePost
-                                                        bookService={service}
-                                                        serviceOptions={serviceOptions}
-                                                        onCancel={handleCancelServicePress}
-                                                        onDetail={() => navigateToChat(service)}
-                                                    />
-                                                </Box>
-                                            );
+                                        return (
+                                            <Box key={service.id}>
+                                            <ServicePost
+                                                bookService={service}
+                                                serviceOptions={serviceOptions}
+                                                onCancel={() => handleCancelServicePress(service)}
+                                                onDetail={() => navigateToChat(service)}
+                                            />
+                                            </Box>
+                                        );
                                         })}
 
-                                        { isLoadBookServices || isFetchingBookServices && (
-                                            <Box marginTop="lg" style={getWallStyles.loadingContainer}>
-                                                <ActivityIndicator size="large" color={theme.colors.colorBrandPrimary} />
-                                            </Box>
+                                        {(isLoadBookServices || isFetchingBookServices) && (
+                                        <Box marginTop="lg" style={getWallStyles.loadingContainer}>
+                                            <ActivityIndicator
+                                            size="large"
+                                            color={theme.colors.colorBrandPrimary}
+                                            />
+                                        </Box>
                                         )}
                                     </Box>
+                                    )}
+                                </>
                                 )}
 
-                                {/* Servicios completados */}
-                                {renderSectionHeader(t("services.servicescompleted") + ':')}
+                                {/* Servicios Contratados */}
+                                {renderSectionHeader(t("services.serviceshired") + ':')}
                                 {renderLoadSection()}
                                 
-                                {completedServices.length > 0 && !isLoadBookServices && (
+                                {myBookings.length > 0 && !isLoadBookServices && (
                                     <Box gap="md">
-                                    {completedServices.map(service => {
+                                    {myBookings.map(service => {
                                         const serviceOptions = getCategoryOptions(service.categories || []);
 
                                         return (
@@ -266,6 +235,8 @@ export const ServicesScreen = () => {
                                                     bookService={service}
                                                     serviceOptions={serviceOptions}
                                                     onRate={handleRateServicePress}
+                                                    onCancel={() => handleCancelServicePress(service)}
+                                                    onDetail={() => navigateToChat(service)}
                                                 />
                                             </Box>
                                         );
@@ -288,7 +259,12 @@ export const ServicesScreen = () => {
 
             <CancelService
                 visible={cancelServiceVisible}
-                onClose={() => setCancelServiceVisible(false)}
+                onClose={() => {
+                    setCancelServiceVisible(false);
+                    setSelectedServiceToCancel(null);
+                }}
+                onCancel={handleConfirmCancel}
+                isLoading={isLoadBookServiceUpdate}
             />
 
             <RateService

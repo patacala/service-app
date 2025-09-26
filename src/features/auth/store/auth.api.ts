@@ -1,5 +1,5 @@
 import { apiSlice } from '@/store/api/apiSlice';
-import type { AuthResponse, RegisterRequest, AuthUser, RegisterResponse, Profile, ProfilePartial } from './auth.types';
+import type { AuthResponse, RegisterRequest, RegisterResponse, Profile, ProfilePartial } from './auth.types';
 
 export const authApi = apiSlice.injectEndpoints({
   endpoints: (builder) => ({
