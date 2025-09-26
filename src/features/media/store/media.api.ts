@@ -5,6 +5,10 @@ import type {
   RNFileLike,
   UpdateImageRequest,
   UploadImageRequest,
+  DirectUploadVideoRequest,
+  DirectUploadVideoResponse,
+  UploadVideoToDirectUrlRequest,
+  DirectUploadPerformResponse,
 } from './media.types';
 
 const buildFormData = (file: RNFileLike) => {
@@ -76,6 +80,31 @@ export const mediaApi = apiSlice.injectEndpoints({
       }),
       invalidatesTags: ['Media'],
     }),
+    // Cloudflare Stream: request a direct upload URL for videos
+    createVideoDirectUploadUrl: builder.mutation<DirectUploadVideoResponse, DirectUploadVideoRequest | void>({
+      query: (body) => ({
+        url: '/media/videos/direct-upload-url',
+        method: 'POST',
+        data: body ?? {},
+      }),
+    }),
+
+    // Upload the video file directly to Cloudflare using the obtained uploadURL
+    uploadVideoToDirectUrl: builder.mutation<DirectUploadPerformResponse, UploadVideoToDirectUrlRequest>({
+      query: ({ uploadURL, file }) => {
+        const formData = buildFormData(file);
+        return {
+          url: uploadURL, // absolute URL to Cloudflare, bypasses baseURL
+          method: 'POST',
+          data: formData,
+          headers: {
+            'Content-Type': 'multipart/form-data',
+          },
+          // Large uploads can take time; allow up to 10 minutes
+          timeout: 600000,
+        };
+      },
+    }),
   }),
 });
 
@@ -85,4 +114,6 @@ export const {
   useGetImageByIdQuery,
   useUpdateImageMutation,
   useDeleteImageMutation,
+  useCreateVideoDirectUploadUrlMutation,
+  useUploadVideoToDirectUrlMutation,
 } = mediaApi;

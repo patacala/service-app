@@ -38,3 +38,36 @@ export interface ListImagesParams {
   page?: number;
   limit?: number;
 }
+
+// Video: Direct upload URL request/response types
+export interface DirectUploadVideoRequest {
+  maxDurationSeconds?: number;
+  creator?: string;
+  allowedOrigins?: string[];
+  requireSignedURLs?: boolean;
+  thumbnailTimestampPct?: number; // between 0 and 1
+  watermark?: { uid: string } | null;
+  meta?: Record<string, any>;
+}
+
+export interface DirectUploadVideoResponse {
+  uploadURL: string;
+  uid: string;
+  // Keep the raw provider payload if backend includes it
+  result?: {
+    uploadURL: string;
+    uid: string;
+    [key: string]: any;
+  };
+}
+
+// Perform the actual upload to Cloudflare using the direct upload URL
+export interface UploadVideoToDirectUrlRequest {
+  uploadURL: string;
+  file: RNFileLike;
+}
+
+export interface DirectUploadPerformResponse {
+  uid?: string;
+  [key: string]: any; // Cloudflare response fields vary; keep it flexible
+}
