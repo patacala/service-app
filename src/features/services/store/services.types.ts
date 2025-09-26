@@ -1,4 +1,5 @@
 import { AuthUser } from "@/features/auth/store";
+import { ImageObject } from "@/features/media/store/media.types";
 import { CardPost } from "@/features/wall";
 import { ImageSourcePropType } from "react-native";
 
@@ -8,12 +9,11 @@ export interface CreateServiceRequest {
   description: string;
   price: number;            
   categoryIds: string[];    
-  images?: string[];        
+  media?: ImageObject[];        
   currency?: string;      
   city?: string;
   lat?: number;
   lon?: number;
-  coverMediaId?: string;
 }
 
 export interface UpdateServiceRequest {

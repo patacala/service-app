@@ -1,5 +1,8 @@
 import { useEffect, useState } from "react";
 import { ImageSourcePropType } from "react-native";
+import Toast from "react-native-toast-message";
+import { useTranslation } from "react-i18next";
+
 import { Box, Button, PremiumCard, ChipOption } from "@/design-system";
 import images from "@/assets/images/images";
 import { LocationPanel } from "@/features/wall/components/LocationPanel";
@@ -13,8 +16,8 @@ import { getDeviceLanguage } from "@/assembler/config/i18n";
 import { useGetCategoriesQuery } from "@/infrastructure/services/api";
 import { useGetCurrentUserQuery } from "@/features/auth/store";
 import { useCreateAccountProvServiceMutation } from '@/features/services/store';
-import Toast from "react-native-toast-message";
-import { useTranslation } from "react-i18next";
+import { useDeleteImageMutation, useUploadImageMutation } from '@/features/media/store/media.api';
+import { ImageObject } from '@/features/media/store/media.types';
 import { useAuth } from "@/infrastructure/auth/AuthContext";
 import { router } from "expo-router";
 
@@ -38,6 +41,10 @@ export const ProvModeScreen = () => {
       refetchOnReconnect: true
   });
   const [createAccountProvService, { isLoading: isLoadingCreateAccountProvService }] = useCreateAccountProvServiceMutation();
+  
+  // Mutations para manejo de imágenes
+  const [uploadImage] = useUploadImageMutation();
+  const [deleteImage] = useDeleteImageMutation();
 
   const [locationPanelVisible, setLocationPanelVisible] = useState(false);
   const [currentLocation, setCurrentLocation] = useState<Location>({ id: '1', name: 'Miami, FL' });
@@ -48,6 +55,10 @@ export const ProvModeScreen = () => {
   const [step1Valid, setStep1Valid] = useState(false);
   const [step2Valid, setStep2Valid] = useState(false);
   const [step3Valid, setStep3Valid] = useState(false);
+
+  // Estado para imágenes subidas (para el cleanup en caso de error)
+  const [uploadedImages, setUploadedImages] = useState<ImageObject[]>([]);
+  const [isUploadingImages, setIsUploadingImages] = useState(false);
 
   const categories: ChipOption[] =
   categoriesData?.categories?.map((c: any) => ({
@@ -89,6 +100,54 @@ export const ProvModeScreen = () => {
     }
   }, [profileError]);
 
+  // Función para subir imágenes cuando se envía el formulario
+  const uploadPhotosFromFormData = async (photoUris: string[]): Promise<ImageObject[]> => {
+    if (photoUris.length === 0) return [];
+
+    setIsUploadingImages(true);
+    const uploadPromises: Promise<ImageObject>[] = [];
+    const uploadedImageIds: string[] = [];
+
+    try {
+      for (let i = 0; i < photoUris.length; i++) {
+        const imageUri = photoUris[i];
+        
+        const file = {
+          uri: imageUri,
+          name: `service-${i}.jpg`,
+          type: 'image/jpeg',
+        };
+
+        const uploadPromise = uploadImage({ file }).unwrap();
+        uploadPromises.push(uploadPromise);
+      }
+
+      const results = await Promise.all(uploadPromises);
+      setUploadedImages(results);
+      
+      // Guardar los IDs para posible rollback
+      results.forEach(result => uploadedImageIds.push(result.id));
+      return results;
+    } catch (error: any) {
+      // En caso de error, intentar eliminar las imágenes que sí se subieron
+      for (const imageId of uploadedImageIds) {
+        try {
+          await deleteImage(imageId).unwrap();
+        } catch {}
+      }
+
+      Toast.show({
+        type: 'error',
+        text1: 'Error',
+        text2: 'Error al subir las imágenes',
+      });
+      
+      return [];
+    } finally {
+      setIsUploadingImages(false);
+    }
+  };
+
   const handleSelectLocation = (location: Location) => {
     setCurrentLocation(location);
   };
@@ -102,21 +161,33 @@ export const ProvModeScreen = () => {
   };
 
   const handleProviderSubmit = async (data: ProviderFormData) => {
+    let finalUploadedImages: ImageObject[] = [];
+
     try {
+      // Primero subir las imágenes si hay alguna en el formulario
+      if (data.photos && data.photos.length > 0) {
+        finalUploadedImages = await uploadPhotosFromFormData(data.photos);
+        if (finalUploadedImages.length === 0 && data.photos.length > 0) {
+          return false;
+        }
+      }
+
+      // Crear el servicio con las imágenes subidas
       const { user, token } = await createAccountProvService({
         title: data.title,
         description: data.description,
         price: data.pricePerHour,   
         categoryIds: data.selectedServices,
-        images: data.photos,
+        media: finalUploadedImages,
         currency: 'USD',
         city: profile?.city ?? '',
         lat: undefined,
         lon: undefined,
-        coverMediaId: undefined
       }).unwrap();
+
       await login(token, user);
 
+      // Limpiar estados
       setProviderFormData({
         title: '',
         phone: '',
@@ -129,16 +200,26 @@ export const ProvModeScreen = () => {
         addressService: '',
         pricePerHour: 62
       });
+      setUploadedImages([]);
+
       router.replace({ pathname: '/profile', params: { section: 'portfolio' } });
       
       return true;
     } catch (error: any) {
+      console.log(error);
+      
       Toast.show({
         type: 'error',
         text1: 'Error',
         text2: error?.data?.message || 'Failed to create account',
       });
 
+      // En caso de error en la creación del servicio, eliminar las imágenes subidas
+      for (const uploadedImage of finalUploadedImages) {
+        try {
+          await deleteImage(uploadedImage.id).unwrap();
+        } catch {}
+      }
       return false;
     }
   };
@@ -172,6 +253,7 @@ export const ProvModeScreen = () => {
     setProviderFormData(prev => ({ ...prev, description }));
   };
 
+  // Handler para actualizar las fotos desde DetailInfo
   const handlePhotosChange = (photos: string[]) => {
     setProviderFormData(prev => ({ ...prev, photos }));
   };
@@ -239,6 +321,7 @@ export const ProvModeScreen = () => {
           onDescriptionChange={handleDescriptionChange}
           onPhotosChange={handlePhotosChange}
           onValidationChange={handleStep2Validation}
+          maxPhotos={6}
           initialValues={{
             selectedServices: providerFormData.selectedServices,
             selectedServiceOptions: providerFormData.selectedServiceOptions,
@@ -317,8 +400,8 @@ export const ProvModeScreen = () => {
         onSubmit={handleProviderSubmit}
         formData={providerFormData}
         setFormData={setProviderFormData}
-        primaryButtonDisabled={isLoadingCreateAccountProvService}
-        secondaryButtonDisabled={isLoadingCreateAccountProvService}
+        primaryButtonDisabled={isLoadingCreateAccountProvService || isUploadingImages}
+        secondaryButtonDisabled={isLoadingCreateAccountProvService || isUploadingImages}
       />
     </>
   );
