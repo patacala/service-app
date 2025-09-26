@@ -2,7 +2,7 @@ import {ReactNode} from 'react';
 import {TextInputProps, ViewStyle} from 'react-native';
 import {IconName} from '../../layout/Icon/types';
 
-export type InputVariant = 'default' | 'search' | 'password' | 'numeric' | 'otp' | 'date' | 'textarea' | 'disabled';
+export type InputVariant = 'default' | 'search' | 'password' | 'numeric' | 'otp' | 'date' | 'textarea' | 'disabled' | 'chat';
 export type DateMode = 'date' | 'time' | 'datetime';
 
 export interface InputProps extends Omit<TextInputProps, 'style'> {

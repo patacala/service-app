@@ -38,11 +38,14 @@ import { useAuth } from '@/infrastructure/auth/AuthContext';
 import { ProfilePartial, useGetCurrentUserQuery, useUpdateProfileMutation } from '@/features/auth/store';
 import { useGetCategoriesQuery } from '@/infrastructure/services/api';
 import { useCreateServiceMutation, useUpdateServiceMutation, useGetMyServicesQuery } from '@/features/services/store';
+import { useDeleteImageMutation, useUpdateImageMutation, useUploadImageMutation } from '@/features/media/store/media.api';
 import { getWallStyles } from '@/features/wall/screens/wall/wall.style';
 import { ServiceOffer } from '@/features/services/components/ServiceOffer';
 import { getDeviceLanguage } from '@/assembler/config/i18n';
 import { ServiceFormData } from '../slices/profile.slice';
 import { useLocalSearchParams } from 'expo-router';
+import { ImageObject } from '@/features/media/store/media.types';
+
 
 // Validation Schema
 const profileSchema = z.object({
@@ -91,7 +94,7 @@ export const ProfileScreen = () => {
     refetchOnReconnect: true
   });
 
-  const [updateProfile, { isLoading }] = useUpdateProfileMutation();
+  const [updateProfile] = useUpdateProfileMutation();
   const [createService, { isLoading: isLoadingCreateService }] = useCreateServiceMutation();
   const [updateService, { isLoading: isLoadingUpdateService }] = useUpdateServiceMutation();
   const { data: services, isLoading: isLoadingServices, isFetching: isFetchingServices } = useGetMyServicesQuery(undefined, {
@@ -99,6 +102,12 @@ export const ProfileScreen = () => {
     refetchOnFocus: true,
     refetchOnReconnect: true
   });
+  const [uploadImage] = useUploadImageMutation();
+  const [deleteImage] = useDeleteImageMutation();
+  const [updateImage] = useUpdateImageMutation();
+  
+  const [isAvatarDirty, setIsAvatarDirty] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
 
   // Estado para la imagen de perfil
   const [profileImage, setProfileImage] = useState<string>('');
@@ -226,7 +235,9 @@ export const ProfileScreen = () => {
       });
 
       if (!result.canceled && result.assets && result.assets.length > 0) {
-        setProfileImage(result.assets[0].uri);
+        const selectedFile = result.assets[0];
+        setProfileImage(selectedFile.uri);
+        setIsAvatarDirty(true);
       }
     } catch (error) {
       Alert.alert('Error', t("messages.msg36"));
@@ -234,17 +245,39 @@ export const ProfileScreen = () => {
   };
 
   const onSubmit = async (data: ProfileFormData) => {
+    let uploadedImageId: string | null = null;
+
     try {
       if (!profile) return;
 
+      setIsSaving(true);
+      let uploadedMedia: ImageObject | undefined;
+
+      if (profileImage && !profileImage.startsWith('http')) {
+        const file = {
+          uri: profileImage,
+          name: `avatar-${user?.id}.jpg`,
+          type: 'image/jpeg',
+        };
+
+        const response = await uploadImage({ file }).unwrap();
+        uploadedMedia = response;
+        uploadedImageId = response.id;
+      }
+      
       const updatedProfileData: ProfilePartial = {
         name: data.name,
         city: data.city,
         address: data.address,
-        avatar: profileImage,
+        media: uploadedMedia,
       };
 
       await updateProfile(updatedProfileData).unwrap();
+      if (profile.media && profile.media.length > 0) {
+        const currentMedia = profile.media[0];
+        await deleteImage(currentMedia.providerRef).unwrap();
+      } 
+
       reset({
         name: data.name,
         email: data.email,
@@ -252,19 +285,28 @@ export const ProfileScreen = () => {
         city: data.city,
         address: data.address,
       });
+      setIsAvatarDirty(false);
 
       Toast.show({
         type: 'success',
-        text1: t("messages.msg22"),
-        text2: t("messages.msg37"),
+        text1: t('messages.msg22'),
+        text2: t('messages.msg37'),
       });
     } catch (error: any) {
+      if (uploadedImageId) {
+        try {
+          await deleteImage(uploadedImageId).unwrap();
+        } catch {}
+      }
 
       Toast.show({
         type: 'error',
-        text1: t("messages.msg24"),
-        text2: t("messages.msg9"),
+        text1: t('messages.msg24'),
+        text2: t('messages.msg9'),
       });
+    } finally {
+      setIsSaving(false);
+
     }
   };
 
@@ -343,20 +385,20 @@ export const ProfileScreen = () => {
     try {
       if (editingServiceId) {
         await updateService({
-          id: data.id,
-          data: {
-            title: data.title,
-            description: data.description,
-            price: data.pricePerHour,
-            categoryIds: data.selectedServices,
-            images: data.photos,
-            currency: 'USD',
-            city: profile?.city ?? '',
-            lat: undefined,
-            lon: undefined,
-            coverMediaId: undefined,
-          },
-      }).unwrap();
+            id: data.id,
+            data: {
+              title: data.title,
+              description: data.description,
+              price: data.pricePerHour,
+              categoryIds: data.selectedServices,
+              images: data.photos,
+              currency: 'USD',
+              city: profile?.city ?? '',
+              lat: undefined,
+              lon: undefined,
+              coverMediaId: undefined,
+            },
+        }).unwrap();
       } else {
         // Crear servicio en backend
         await createService({
@@ -511,15 +553,16 @@ export const ProfileScreen = () => {
             <TouchableOpacity onPress={pickImage} activeOpacity={0.8}>
               <Box style={getProfileStyles.profileImage} position="relative">
                 <Image
-                  source={
-                    profileImage 
-                      ? { uri: profileImage } 
-                      : images.profileLarge1 as ImageSourcePropType
-                  }
+                  source={{
+                    uri: profileImage
+                      ? profileImage
+                      : profile?.media?.[0]?.variants?.[0]?.url ?? 
+                      'https://imagedelivery.net/uusH4IRLf6yhlCMhPld_6A/d6201e99-87ce-450d-e6c1-91e3463f3600/profileThumbnail',
+                  }}
                   resizeMode="contain"
                   style={getProfileStyles.image}
                 />
-                <Box 
+                {/* <Box 
                   position="absolute"
                   bottom={0}
                   left={0}
@@ -527,7 +570,7 @@ export const ProfileScreen = () => {
                   backgroundColor="colorBaseBlack"
                 >
                   <Icon name="picture" color="colorBaseWhite" size={16} />
-                </Box>
+                </Box> */}
               </Box>
             </TouchableOpacity>
             <Typography variant="bodyMedium" color={theme.colors.colorBaseWhite}>
@@ -677,7 +720,6 @@ export const ProfileScreen = () => {
                 </Box>
               )}
             />
-
           </Box>
 
           {/* Actions */}
@@ -685,9 +727,13 @@ export const ProfileScreen = () => {
             <Box width="100%">
               <Button
                 variant="secondary"
-                label="Save"
+                label={t("profile.profilesave")}
                 onPress={handleSubmit(onSubmit, onError)}
-                disabled={!isValid || !isDirty || isLoading}
+                disabled={
+                  (!isValid && !isAvatarDirty) || 
+                  (!isDirty && !isAvatarDirty) || 
+                  isSaving 
+                }
               />
             </Box>
             
