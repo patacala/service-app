@@ -7,11 +7,12 @@ export interface BaseQueryArgs {
   data?: any;
   params?: any;
   headers?: any;
+  timeout?: number;
 }
 
-export const axiosBaseQuery = () => async ({ url, method, data, params, headers }: BaseQueryArgs) => {
+export const axiosBaseQuery = () => async ({ url, method, data, params, headers, timeout }: BaseQueryArgs) => {
   try {
-    const config: AxiosRequestConfig = { url, method, data, params, headers };
+    const config: AxiosRequestConfig = { url, method, data, params, headers, timeout };
     const result = await httpClient(config);
     const payload = result?.data;
     const normalized = payload && typeof payload === 'object' && 'result' in payload ? payload.result : payload;
