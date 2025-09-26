@@ -2,18 +2,7 @@ import {createSlice, PayloadAction, createAsyncThunk} from '@reduxjs/toolkit';
 import { ImageSourcePropType } from 'react-native';
 import { Float } from 'react-native/Libraries/Types/CodegenTypes';
 import { IconName } from '@/design-system/components/layout/Icon';
-
-
-export interface MediaVariant {
-  name: string;
-  url: string;
-}
-
-export interface Media {
-  id: string;
-  providerRef: string;
-  variants: MediaVariant[];
-}
+import { Media } from '@/features/media/store/media.types';
 
 export interface CardPost {
   id: string;
@@ -23,7 +12,6 @@ export interface CardPost {
   currency: string;
   categories: string[];
   category: string;
-  images: string[];
   name: string;
   provider: {
     id: string;
@@ -38,8 +26,6 @@ export interface CardPost {
   rating: number;
   distance: number;
   location: string;
-  miniImage: ImageSourcePropType;
-  image: ImageSourcePropType;
   isFavorite: boolean;
   media: Media[];
 }
