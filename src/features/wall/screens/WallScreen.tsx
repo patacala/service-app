@@ -9,7 +9,7 @@ import images from '@/assets/images/images';
 import { Post } from '../components/Post';
 import { FilterActionSheet } from '../components/FilterActionSheet';
 import { getWallStyles } from './wall/wall.style';
-import { useGetServicesQuery } from '@/features/services/store';
+import { Service, useGetServicesQuery } from '@/features/services/store';
 import { useGetCategoriesQuery } from '@/infrastructure/services/api';
 import Toast from 'react-native-toast-message';
 import { useRouter } from 'expo-router';
@@ -140,7 +140,7 @@ export const WallScreen: React.FC<WallScreenProps> = () => {
     }
   };
 
-  const handlePostDetail = (item: CardPost) => {
+  const handlePostDetail = (item: Service) => {
     router.push({
       pathname: '/service-detail',
       params: { 
@@ -149,12 +149,9 @@ export const WallScreen: React.FC<WallScreenProps> = () => {
     });
   };
 
-  const renderItem: ListRenderItem<CardPost> = ({ item }) => (
+  const renderItem: ListRenderItem<Service> = ({ item }) => (
     <Post
-      post={{
-        ...item,
-        category: getCategoryNames(item.categories)
-      }}
+      post={item}
       onPress={() => handlePostDetail(item)}
     />
   );
@@ -203,7 +200,7 @@ export const WallScreen: React.FC<WallScreenProps> = () => {
       ) : (
         <FlatList
           data={posts}
-          keyExtractor={(item: CardPost) => item.id}
+          keyExtractor={(item: Service) => item.id}
           renderItem={renderItem}
           contentContainerStyle={[
             getWallStyles.listContainer,

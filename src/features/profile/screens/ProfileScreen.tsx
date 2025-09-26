@@ -556,7 +556,7 @@ export const ProfileScreen = () => {
                   source={{
                     uri: profileImage
                       ? profileImage
-                      : profile?.media?.[0]?.variants?.[0]?.url ?? 
+                      : profile?.media?.[0]?.variants?.profileThumbnail?.url ?? 
                       'https://imagedelivery.net/uusH4IRLf6yhlCMhPld_6A/d6201e99-87ce-450d-e6c1-91e3463f3600/profileThumbnail',
                   }}
                   resizeMode="contain"
