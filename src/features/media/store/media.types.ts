@@ -1,4 +1,17 @@
 export type ImageVariant = string;
+export type MediaVariant = "thumbnail" | "profileThumbnail" | "cover" | "public";
+
+export interface Media{
+  id: string;
+  providerRef: string;
+  variants: Partial<Record<MediaVariant, { url: string }>>;
+}
+
+export interface MediaProfile {
+  profileThumbnail?: {
+    url: string;
+  }
+}
 
 export interface ImageObject {
   id: string;

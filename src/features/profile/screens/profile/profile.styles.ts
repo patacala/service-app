@@ -35,4 +35,10 @@ export const getProfileStyles = StyleSheet.create({
         bottom: 0,
         opacity: 0.9
     },
+    profileImageAll: {
+        width: 50,
+        height: 50,
+        borderRadius: "50%",
+        overflow: "hidden"
+    }
 });

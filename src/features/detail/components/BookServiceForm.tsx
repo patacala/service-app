@@ -3,15 +3,14 @@ import { BottomModal } from '@/design-system/components/forms/BottomModal/Bottom
 import { FormService } from './FormService';
 import { FormResponsible } from './FormResponsible';
 import { ContactProvider } from './ContactProvider';
-import { CardPost } from '@/features/wall/slices/wall.slice';
-import { useNavigation, useRouter } from 'expo-router';
-import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { useRouter } from 'expo-router';
+import { Service } from '@/features/services/store';
 
 interface BookServiceFormProps {
   visible: boolean;
   disabled?: boolean;
   onClose: () => void;
-  service: CardPost; 
+  service: Service; 
   onSubmit?: (data: {
     serviceId: string;
     serviceName: string;
