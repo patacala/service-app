@@ -1,14 +1,15 @@
 import {TouchableOpacity, StyleSheet, Image, ImageSourcePropType} from 'react-native';
 import {Box} from '../../../design-system/components/layout/Box';
 import {Typography} from '../../../design-system/components/foundation/Typography';
-import {CardPost} from '../slices/wall.slice';
 import {theme} from '@/design-system';
 import { Row } from '@/design-system/components/layout/Row/Row';
 import images from '@/assets/images/images';
 import { Icon } from '@/design-system/components/layout/Icon';
+import { Service } from '@/features/services/store';
+import { getProfileStyles } from '@/features/profile/screens/profile/profile.styles';
 
 interface PostProps {
-  post: CardPost;
+  post: Service;
   onPress?: () => void;
 }
 
@@ -22,7 +23,7 @@ export const Post = ({
         <Box style={styles.images}>
           <Image 
             style={styles.mainImage}
-            source={{ uri: post.media[0]?.variants[1]?.url ?? images.cardImage1 as ImageSourcePropType } as ImageSourcePropType}
+            source={{ uri: post.media[0]?.variants.cover?.url } as ImageSourcePropType}
             resizeMode="cover"
           />
           <Image 
@@ -42,7 +43,10 @@ export const Post = ({
         <Row style={styles.footerCard} justifyContent="space-between">
             <Row>
                 <Box>
-                    <Image source={images.profile1 as ImageSourcePropType} />
+                    <Image source={{ uri: post.provider.media?.profileThumbnail?.url }} 
+                      resizeMode="contain"
+                      style={getProfileStyles.profileImageAll}
+                    />
                     <Box paddingLeft="sm" flexDirection="row" justifyContent="center" alignItems="center" style={styles.rating}>
                       <Box paddingRight="xs">
                         <Icon name="star" size={13} color="colorBaseWhite" />

@@ -16,20 +16,18 @@ import {
 } from 'react-native';
 import images from '@/assets/images/images';
 import Toast from 'react-native-toast-message';
-import { useRoute, useNavigation } from '@react-navigation/native';
 import { Box } from '@/design-system/components/layout/Box';
 import { Typography } from '@/design-system/components/foundation/Typography';
 import { Row } from '@/design-system/components/layout/Row/Row';
 import { Button, theme, SafeContainer, GroupChipSelector } from '@/design-system';
-import { CardPost } from '@/features/wall/slices/wall.slice';
 import { Icon } from '@/design-system/components/layout/Icon';
 import { RatingReview } from '../components/RatingReview';
 import { useCreateBookServiceMutation } from '@/features/services/store/services.api';
 import { useCreateFavoriteMutation, useDeleteFavoriteMutation } from '@/features/favorites/store/favorites.api';
 import { BookServiceForm } from '../components/BookServiceForm';
-import { CreateBookServiceRequest } from '@/features/services/store';
+import { CreateBookServiceRequest, Service } from '@/features/services/store';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-
+import { getProfileStyles } from '@/features/profile/screens/profile/profile.styles';
 const { width } = Dimensions.get('window');
 
 export const ServicesDetailScreen = () => {
@@ -42,7 +40,7 @@ export const ServicesDetailScreen = () => {
     bookingdetail: 0,
     userreviews: 0
   });
-  const post: CardPost = JSON.parse(params.post as string);
+  const post: Service = JSON.parse(params.post as string);
   const [createBookService, { isLoading: isLoadBookingService}] = useCreateBookServiceMutation();
   const [createFavorite, {isLoading: isLoadingCreaFav}] = useCreateFavoriteMutation();
   const [deleteFavorite, {isLoading: isLoadingDelFav}] = useDeleteFavoriteMutation();
@@ -96,14 +94,7 @@ export const ServicesDetailScreen = () => {
     },
   ];
 
-  const imageGallery: ImageSourcePropType[] = [
-    images.cardImage1 as ImageSourcePropType, 
-    images.cardImage2 as ImageSourcePropType, 
-    images.cardImage3 as ImageSourcePropType, 
-    images.cardImage2 as ImageSourcePropType, 
-    post.image,
-  ];
-  
+  const imageGallery = post.media;
   const slideWidth = width - theme.spacing.md * 2;
   const animatedOpacity = useRef(new Animated.Value(1)).current;
 
@@ -401,7 +392,7 @@ export const ServicesDetailScreen = () => {
                       >
                         {imageGallery.map((image, index) => (
                           <Box key={index} width={slideWidth} height={230}>
-                            <Image source={image} style={styles.carouselImage} resizeMode="cover" />
+                            <Image source={{uri: image.variants.public?.url }} style={styles.carouselImage} resizeMode="cover" />
                           </Box>
                         ))}
                       </ScrollView>
@@ -483,7 +474,10 @@ export const ServicesDetailScreen = () => {
             <View onLayout={handleBookingDetailLayout}>
               <Box>
                 <Row spacing="sm">
-                  <Image source={images.profile1 as ImageSourcePropType} />
+                  <Image source={{ uri: post.provider.media?.profileThumbnail?.url }} 
+                    resizeMode="contain"
+                    style={getProfileStyles.profileImageAll} 
+                  />
                   <Box marginLeft="sm">
                     <Typography variant="bodySmall" color={theme.colors.colorGrey200}>{post.title}</Typography>
                     <Typography variant="bodyLarge" color="white">{post.provider.name}</Typography>
