@@ -1,3 +1,5 @@
+import { ImageObject } from "@/features/media/store/media.types";
+
 // Request
 export interface RegisterRequest {
   userId: string;
@@ -23,14 +25,23 @@ export interface Profile {
   phone: string;
   city: string;
   address: string;
+  media: {
+    id: string;
+    providerRef: string;
+    variants: {
+      name: string;
+      url: string;
+    }[];
+  }[];
 }
+
 
 // Request
 export interface ProfilePartial {
   name: string;
   city: string;
   address: string;
-  avatar: string;
+  media?: ImageObject;
 }
 
 // Response

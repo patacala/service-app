@@ -22,7 +22,7 @@ export const Post = ({
         <Box style={styles.images}>
           <Image 
             style={styles.mainImage}
-            source={{ uri: post.media[0].url } as ImageSourcePropType}
+            source={{ uri: post.media[0]?.variants[1]?.url ?? images.cardImage1 as ImageSourcePropType } as ImageSourcePropType}
             resizeMode="cover"
           />
           <Image 
