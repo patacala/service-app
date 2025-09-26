@@ -8,6 +8,8 @@ import type {
   CreateBookServiceRequest,
   BookService,
   ServicesAccountProvResponse,
+  BookServicesAll,
+  UpdateBookServiceStatusRequest,
 } from './services.types';
 
 export const servicesApi = apiSlice.injectEndpoints({
@@ -71,12 +73,20 @@ export const servicesApi = apiSlice.injectEndpoints({
       }),
       invalidatesTags: ['MyBookServices'],
     }),
-    getMyBookServices: builder.query<BookService[], void>({
+    getMyBookServices: builder.query<BookServicesAll, void>({
       query: () => ({
         url: '/book-services/me',
         method: 'GET',
       }),
       providesTags: ['MyBookServices'],
+    }),
+    updateBookServiceStatus: builder.mutation<BookService, UpdateBookServiceStatusRequest>({
+      query: ({ id, status }) => ({
+        url: `/book-services/${id}/status`,
+        method: 'PATCH',
+        data: { status },
+      }),
+      invalidatesTags: ['MyBookServices'],
     }),
   }),
 });
@@ -90,5 +100,6 @@ export const {
   useUpdateServiceMutation,
   useDeleteServiceMutation,
   useGetMyBookServicesQuery,
-  useCreateBookServiceMutation
+  useCreateBookServiceMutation,
+  useUpdateBookServiceStatusMutation
 } = servicesApi;

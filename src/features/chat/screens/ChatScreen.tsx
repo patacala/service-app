@@ -8,9 +8,9 @@ import {
     Platform,
     Keyboard,
     View,
-    TouchableWithoutFeedback
+    TouchableWithoutFeedback,
+    Alert
 } from "react-native";
-import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { Box, Button, Input, SafeContainer, Typography, theme } from "@/design-system";
 import { getChatStyles } from './chat/chat.styles';
 import images from "@/assets/images/images";
@@ -18,16 +18,19 @@ import { Row } from "@/design-system/components/layout/Row/Row";
 import { BookService } from "@/features/services/store";
 import { Messages } from "../components/Messages";
 import { Notification } from "../components/Notification";
-import { ChatMessage, ChatScreenProps } from "../slices/chat.slice";
+import { ChatMessage } from "../slices/chat.slice";
 import { useLocalSearchParams, useRouter } from "expo-router";
+import { useUpdateBookServiceStatusMutation } from "@/features/services/store/services.api";
 
-export const ChatScreen = (service: ChatScreenProps) => {
+export const ChatScreen = () => {
     const router = useRouter();
     const { post } = useLocalSearchParams<{ post?: string }>();
     const servicePost: BookService | null = post ? JSON.parse(post) : null;
 
-    const [isAccepted, setIsAccepted] = useState(false);
-    const [isRejected, setIsRejected] = useState(false);
+    const [updateBookServiceStatus, { isLoading: isLoadUpdateBookServiceSta }] = useUpdateBookServiceStatusMutation();
+
+    const [isAccepted, setIsAccepted] = useState(servicePost?.status === 'accepted');
+    const [isRejected, setIsRejected] = useState(servicePost?.status === 'rejected');
     const [message, setMessage] = useState('');
     const [messages, setMessages] = useState<ChatMessage[]>([]);
     const scrollViewRef = useRef<ScrollView>(null);
@@ -63,36 +66,66 @@ export const ChatScreen = (service: ChatScreenProps) => {
         Keyboard.dismiss();
     };
 
-    const handleAccept = () => {
-        console.log('Acción Accept para servicio ID:', servicePost?.id);
-        
-        // Animación para ocultar botones
-        Animated.parallel([
-            Animated.timing(buttonsOpacity, {
-                toValue: 0,
-                duration: 300,
-                useNativeDriver: false,
-            }),
-        ]).start(() => {
-            setIsAccepted(true);
+    const handleAccept = async () => {
+        if (!servicePost?.id) {
+            Alert.alert('Error', 'Service ID not found');
+            return;
+        }
+
+        try {
+            console.log('Aceptando servicio ID:', servicePost.id);
             
-            scrollToBottom();
-        });
+            await updateBookServiceStatus({
+                id: servicePost.id,
+                status: 'accepted'
+            }).unwrap();
+            
+            // Animación para ocultar botones
+            Animated.parallel([
+                Animated.timing(buttonsOpacity, {
+                    toValue: 0,
+                    duration: 300,
+                    useNativeDriver: false,
+                }),
+            ]).start(() => {
+                setIsAccepted(true);
+                scrollToBottom();
+            });
+            
+        } catch (error) {
+            console.error('Error accepting service:', error);
+            Alert.alert('Error', 'Failed to accept the service. Please try again.');
+        }
     };
 
-    const handleReject = () => {
-        console.log('Acción Reject para servicio ID:', servicePost?.id);
-        
-        // Animación para ocultar botones
-        Animated.parallel([
-            Animated.timing(buttonsOpacity, {
-                toValue: 0,
-                duration: 300,
-                useNativeDriver: false,
-            }),
-        ]).start(() => {
-            setIsRejected(true);
-        });
+    const handleReject = async () => {
+        if (!servicePost?.id) {
+            Alert.alert('Error', 'Service ID not found');
+            return;
+        }
+
+        try {
+            console.log('Rechazando servicio ID:', servicePost.id);
+            
+            await updateBookServiceStatus({
+                id: servicePost.id,
+                status: 'rejected'
+            }).unwrap();
+            
+            // Animación para ocultar botones
+            Animated.parallel([
+                Animated.timing(buttonsOpacity, {
+                    toValue: 0,
+                    duration: 300,
+                    useNativeDriver: false,
+                }),
+            ]).start(() => {
+                setIsRejected(true);
+            });
+            
+        } catch (error) {
+            Alert.alert('Error', 'Failed to reject the service. Please try again.');
+        }
     };
 
     const handleSendMessage = () => {
@@ -135,6 +168,9 @@ export const ChatScreen = (service: ChatScreenProps) => {
         }
     };
 
+    // Mostrar los botones solo si el estado es 'pending' y el usuario es el proveedor
+    const showActionButtons = servicePost?.status === 'pending' && servicePost?.bookingType === 'provider';
+
     return (
         <SafeContainer fluid backgroundColor="colorBaseBlack" paddingHorizontal="md">
             <Box style={getChatStyles.backgroundImageContainer}>
@@ -157,7 +193,7 @@ export const ChatScreen = (service: ChatScreenProps) => {
     
                 <Box justifyContent="center" alignItems="center">
                     <Typography variant="bodyMedium" color={theme.colors.colorBaseWhite}>
-                        {servicePost?.role === 'both' ? 'User' : 'Provider'}
+                        {servicePost?.bookingType === 'provider' ? 'User' : 'Provider'}
                     </Typography>
                     <Typography variant="bodyMedium" color={theme.colors.colorGrey100}>
                         {servicePost?.client.name}
@@ -183,21 +219,19 @@ export const ChatScreen = (service: ChatScreenProps) => {
                 style={{ flex: 1, justifyContent: 'flex-end', backgroundColor: 'black' }}
                 keyboardVerticalOffset={Platform.OS === "ios" ? 10 : 0}
             >
-                {/* El problema es que TouchableWithoutFeedback captura los eventos de toque y no permite el scroll */}
-                {/* Usaremos un enfoque diferente para permitir scroll solo cuando isAccepted es true */}
                 <Box flex={1}>
                     <ScrollView 
                         ref={scrollViewRef}
                         style={getChatStyles.scrollView}
                         contentContainerStyle={[
                             getChatStyles.scrollContent,
-                            isAccepted ? { paddingBottom: 30 } : {} // Añadir padding extra solo si está aceptado
+                            isAccepted ? { paddingBottom: 30 } : {}
                         ]}
                         showsVerticalScrollIndicator={isAccepted}
-                        scrollEnabled={isAccepted} // Solo habilitado cuando se acepta la solicitud
+                        scrollEnabled={isAccepted}
                         keyboardShouldPersistTaps="handled"
-                        keyboardDismissMode="on-drag" // Mejor experiencia de usuario
-                        onScrollBeginDrag={isAccepted ? dismissKeyboard : undefined} // Solo si está aceptado
+                        keyboardDismissMode="on-drag"
+                        onScrollBeginDrag={isAccepted ? dismissKeyboard : undefined}
                     >
                         {/* Notification for service details */}
                         <Notification title="¡Notificación!">
@@ -224,36 +258,43 @@ export const ChatScreen = (service: ChatScreenProps) => {
                             </Box>
                         </Notification>
                         
-                        <Animated.View 
-                            style={{
-                                opacity: buttonsOpacity,
-                                position: isAccepted || isRejected ? 'absolute':'relative',
-                                top: 40,
-                                overflow: 'hidden',
-                                marginBottom: theme.spacing.sm,
-                            }}
-                        >
-                            <Box width="100%" gap="lg">
-                                <Button
-                                    variant="secondary"
-                                    label="Accept Request"
-                                    onPress={handleAccept}
-                                />
+                        {/* Botones de Accept/Reject - Solo mostrar si está pending y es proveedor */}
+                        {showActionButtons && (
+                            <Animated.View 
+                                style={{
+                                    opacity: buttonsOpacity,
+                                    position: isAccepted || isRejected ? 'absolute':'relative',
+                                    top: 40,
+                                    overflow: 'hidden',
+                                    marginBottom: theme.spacing.sm,
+                                }}
+                            >
+                                <Box width="100%" gap="lg">
+                                    <Button
+                                        variant="secondary"
+                                        label={isLoadUpdateBookServiceSta ? "Processing..." : "Accept Request"}
+                                        onPress={handleAccept}
+                                        disabled={isLoadUpdateBookServiceSta}
+                                    />
 
-                                <Button
-                                    variant="slide"
-                                    label="Reject"
-                                    leftIcon="clear"
-                                    onPress={handleReject}
-                                />
-                            </Box>
-                        </Animated.View>
+                                    <Button
+                                        variant="slide"
+                                        label={isLoadUpdateBookServiceSta ? "Processing..." : "Reject"}
+                                        leftIcon="clear"
+                                        onPress={handleReject}
+                                        disabled={isLoadUpdateBookServiceSta}
+                                    />
+                                </Box>
+                            </Animated.View>
+                        )}
                         
                         {/* Mensaje de aceptación */}
                         {isAccepted && (
                             <Notification title="¡Notificación!">
                                 <Typography variant="bodyRegular" color="white">
-                                    You have accepted this request. You can now chat with the user.
+                                    {servicePost?.bookingType === "client"
+                                    ? "Your request has been accepted by the provider. You can now chat with them."
+                                    : "You have accepted this request. You can now chat with the user." }
                                 </Typography>
                             </Notification>
                         )}
@@ -262,12 +303,13 @@ export const ChatScreen = (service: ChatScreenProps) => {
                         {isRejected && (
                             <Notification title="¡Notificación!">
                                 <Typography variant="bodyRegular" color="white">
-                                    Sorry, the service has been rejected by the provider, we recommend you try another provider!
+                                    {servicePost?.bookingType === "client"
+                                    ? "Sorry, the service has been rejected by the provider, we recommend you try another provider!"
+                                    : "You have rejected this service request."}
                                 </Typography>
                             </Notification>
                         )}
                         
-                        {/* Agregar un TouchableWithoutFeedback dentro del ScrollView para manejar toques */}
                         <TouchableWithoutFeedback onPress={dismissKeyboard}>
                             <View>
                                 {messages.map((msg, index) => (
@@ -287,13 +329,13 @@ export const ChatScreen = (service: ChatScreenProps) => {
                     </ScrollView>
                 </Box>
                 
-                <Box marginBottom="md">
+                <Box marginBottom="xl">
                     <Input
                         icon="send"
                         label="Write your message"
                         value={message}
                         onChangeText={setMessage}
-                        variant={isAccepted ? "default" : "disabled"}
+                        variant={isAccepted ? "chat" : "disabled"}
                         editable={isAccepted}
                         expandable={true} 
                         maxHeight={120}
