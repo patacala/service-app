@@ -1,5 +1,5 @@
 import { AuthUser } from "@/features/auth/store";
-import { ImageObject, Media, MediaProfile, MediaVariant } from "@/features/media/store/media.types";
+import { ImageObject, Media, MediaProfile } from "@/features/media/store/media.types";
 import { ImageSourcePropType } from "react-native";
 
 // Services TYPES
@@ -32,6 +32,24 @@ export interface Service {
     name: string;
     media: MediaProfile | null;
   };
+  rating: number;
+  reviewsCount: number;
+  city?: string;
+  lat?: number;
+  lon?: number;
+  createdAt: string;
+  updatedAt: string;
+  isFavorite: boolean;
+  media: Media[];
+}
+
+export interface MyService {
+  id: string;
+  title: string;
+  description: string;
+  price: number;
+  currency: string;
+  categories: string[];
   rating: number;
   reviewsCount: number;
   city?: string;
