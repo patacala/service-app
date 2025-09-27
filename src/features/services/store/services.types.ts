@@ -1,6 +1,5 @@
 import { AuthUser } from "@/features/auth/store";
-import { ImageObject } from "@/features/media/store/media.types";
-import { CardPost } from "@/features/wall";
+import { ImageObject, Media, MediaProfile } from "@/features/media/store/media.types";
 import { ImageSourcePropType } from "react-native";
 
 // Services TYPES
@@ -25,27 +24,45 @@ export interface Service {
   id: string;
   title: string;
   description: string;
-  price: number;              
+  price: number;
   currency: string;
-  categories: string[];        
-  images: string[];            
+  categories: string[];
   provider: {
     id: string;
     name: string;
+    media: MediaProfile | null;
   };
-  rating: number;             
-  reviewsCount: number;        
-  city?: string;               
+  rating: number;
+  reviewsCount: number;
+  city?: string;
   lat?: number;
   lon?: number;
-  createdAt: string;         
-  updatedAt: string;           
+  createdAt: string;
+  updatedAt: string;
   isFavorite: boolean;
-  media: Media[]
+  media: Media[];
+}
+
+export interface MyService {
+  id: string;
+  title: string;
+  description: string;
+  price: number;
+  currency: string;
+  categories: string[];
+  rating: number;
+  reviewsCount: number;
+  city?: string;
+  lat?: number;
+  lon?: number;
+  createdAt: string;
+  updatedAt: string;
+  isFavorite: boolean;
+  media: Media[];
 }
 
 export interface ServicesResponse {
-  data: CardPost[];
+  data: Service[];
   meta: {
     total: number;
     page: number;
@@ -72,15 +89,6 @@ export interface ServicesAccountProvResponse {
   token: string;
   service: Service
 }
-
-export interface Media{
-  id: string,
-  url: string,
-  kind: string,
-  provider: string,
-  created_at: string,
-}
-
 
 // BookServices TYPES
 export interface BookService {
