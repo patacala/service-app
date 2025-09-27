@@ -1,7 +1,7 @@
 {
   "expo": {
     "name": "awesome-app-expo",
-    "slug": "awesome-app-expo",
+    "slug": "contact-my-app",
     "version": "1.0.0",
     "runtimeVersion": "1.0.0",
     "orientation": "portrait",
@@ -11,20 +11,24 @@
     "newArchEnabled": true,
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.anonymous.wordsearchpicspuzzle",
+      "bundleIdentifier": "com.pbarranco.contactmyapp",
       "googleServicesFile": "./GoogleService-Info.plist",
-      "buildNumber": "1"
+      "buildNumber": "1",
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
+      }
     },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/adaptive-icon.png",
         "backgroundColor": "#ffffff"
       },
-      "package": "com.anonymous.wordsearchpicspuzzle",
+      "package": "com.pbarranco.contactmyapp",
       "versionCode": 1,
       "googleServicesFile": "./google-services.json",
       "permissions": [
-        "android.permission.CAMERA"
+        "android.permission.CAMERA",
+        "android.permission.RECORD_AUDIO"
       ]
     },
     "web": {
@@ -81,9 +85,9 @@
       },
       "router": {},
       "eas": {
-        "projectId": "3c0022d0-a0f0-4fa0-984a-dfc9630babee"
+        "projectId": "0d04ce60-cc7e-4d93-80b4-f6322141ad93"
       }
     },
-    "owner": "ajcndev"
+    "owner": "pbarranco"
   }
 }

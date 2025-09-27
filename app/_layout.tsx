@@ -12,6 +12,7 @@ import Toast from 'react-native-toast-message';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { DataManagerProvider } from '@/infrastructure/dataManager/DataManager';
 import { toastConfig } from '@/design-system/components/customToast/CustomToast';
+import { NetworkStatusProvider } from '@/components/NetworkStatus/NetworkStatusProvider';
 import '@/assembler/config/i18n';
 
 SplashScreen.preventAutoHideAsync();
@@ -99,12 +100,14 @@ export default function RootLayout() {
       <SafeAreaProvider>
         <Provider store={store}>
           <ThemeProvider>
-            <AuthProvider>
-              <DataManagerProvider>
-                <RootLayoutNav />
-                <Toast config={toastConfig} />
-              </DataManagerProvider>
-            </AuthProvider>
+            <NetworkStatusProvider>
+              <AuthProvider>
+                <DataManagerProvider>
+                  <RootLayoutNav />
+                  <Toast config={toastConfig} />
+                </DataManagerProvider>
+              </AuthProvider>
+            </NetworkStatusProvider>
           </ThemeProvider>
         </Provider>
       </SafeAreaProvider>
