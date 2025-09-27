@@ -10,7 +10,8 @@ module.exports = {
         alias: {
           '@': './src',
           '@/design-system': './src/design-system',
-          '@/assets/images': './src/assets/images'
+          '@/assets/images': './src/assets/images',
+          '@/hooks': './src/hooks'
         },
       },
     ],
