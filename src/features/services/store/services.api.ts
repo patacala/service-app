@@ -10,6 +10,7 @@ import type {
   ServicesAccountProvResponse,
   BookServicesAll,
   UpdateBookServiceStatusRequest,
+  MyService,
 } from './services.types';
 
 export const servicesApi = apiSlice.injectEndpoints({
@@ -36,7 +37,7 @@ export const servicesApi = apiSlice.injectEndpoints({
         method: 'GET',
       }),
     }),
-    getMyServices: builder.query<Service[], void>({ 
+    getMyServices: builder.query<MyService[], void>({ 
       query: () => ({
         url: '/services/me',
         method: 'GET',
