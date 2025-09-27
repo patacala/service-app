@@ -1,13 +1,15 @@
 import axios, { AxiosInstance } from 'axios';
 import { SessionManager } from '@/infrastructure/session';
 import { proceedLogout } from '@/infrastructure/auth/proceedLogout';
+import NetworkConfig from '@/config/network';
+import { setupRetryInterceptor } from '../interceptors/retryInterceptor';
 
 const httpClient: AxiosInstance = axios.create({
   baseURL: process.env.EXPO_PUBLIC_API_URL,
   headers: {
     'Accept': 'application/json',
   },
-  timeout: 15000,
+  timeout: NetworkConfig.REQUEST_TIMEOUT, // Configurado desde NetworkConfig
 });
 
 
@@ -45,5 +47,8 @@ httpClient.interceptors.response.use(
     return Promise.reject(error);
   }
 );
+
+// Configurar el interceptor de reintentos
+setupRetryInterceptor(httpClient);
 
 export default httpClient;

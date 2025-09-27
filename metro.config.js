@@ -3,7 +3,15 @@ const { getDefaultConfig } = require('expo/metro-config');
 /** @type {import('expo/metro-config').MetroConfig} */
 const config = getDefaultConfig(__dirname);
 
-// Add support for .cjs files
 config.resolver.sourceExts.push('cjs');
+
+config.server = {
+  ...config.server,
+  timeoutForConnecting: 30000,
+};
+
+config.cacheStores = [
+  ...(config.cacheStores || []),
+];
 
 module.exports = config;
