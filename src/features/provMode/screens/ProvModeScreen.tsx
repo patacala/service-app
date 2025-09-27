@@ -57,7 +57,6 @@ export const ProvModeScreen = () => {
   const [step3Valid, setStep3Valid] = useState(false);
 
   // Estado para imágenes subidas (para el cleanup en caso de error)
-  const [uploadedImages, setUploadedImages] = useState<ImageObject[]>([]);
   const [isUploadingImages, setIsUploadingImages] = useState(false);
 
   const categories: ChipOption[] =
@@ -100,7 +99,6 @@ export const ProvModeScreen = () => {
     }
   }, [profileError]);
 
-  // Función para subir imágenes cuando se envía el formulario
   const uploadPhotosFromFormData = async (photoUris: string[]): Promise<ImageObject[]> => {
     if (photoUris.length === 0) return [];
 
@@ -114,7 +112,7 @@ export const ProvModeScreen = () => {
         
         const file = {
           uri: imageUri,
-          name: `service-${i}.jpg`,
+          name: `service-${Date.now()}-${i}.jpg`,
           type: 'image/jpeg',
         };
 
@@ -123,8 +121,7 @@ export const ProvModeScreen = () => {
       }
 
       const results = await Promise.all(uploadPromises);
-      setUploadedImages(results);
-      
+
       // Guardar los IDs para posible rollback
       results.forEach(result => uploadedImageIds.push(result.id));
       return results;
@@ -200,10 +197,8 @@ export const ProvModeScreen = () => {
         addressService: '',
         pricePerHour: 62
       });
-      setUploadedImages([]);
 
       router.replace({ pathname: '/profile', params: { section: 'portfolio' } });
-      
       return true;
     } catch (error: any) {
       console.log(error);

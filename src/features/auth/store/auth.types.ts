@@ -1,4 +1,4 @@
-import { ImageObject } from "@/features/media/store/media.types";
+import { ImageObject, MediaVariant } from "@/features/media/store/media.types";
 
 // Request
 export interface RegisterRequest {
@@ -28,13 +28,9 @@ export interface Profile {
   media: {
     id: string;
     providerRef: string;
-    variants: {
-      name: string;
-      url: string;
-    }[];
+    variants: Partial<Record<MediaVariant, { url: string }>>;
   }[];
 }
-
 
 // Request
 export interface ProfilePartial {
