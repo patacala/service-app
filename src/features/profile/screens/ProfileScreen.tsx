@@ -121,6 +121,8 @@ export const ProfileScreen = () => {
   const [step2Valid, setStep2Valid] = useState(false);
   const [step3Valid, setStep3Valid] = useState(false);
 
+  const [isUploadingImages, setIsUploadingImages] = useState(false);
+
   // Estado para los datos del formulario de servicios
   const [serviceFormData, setServiceFormData] = useState<ServiceFormData>({
     id: '',
@@ -358,87 +360,165 @@ export const ProfileScreen = () => {
 
   const handleEditService = (serviceId: string) => {
     const service = services?.find(s => s.id === serviceId);
+    if (!service) return;
 
-    if (service) {
-      setEditingServiceId(serviceId);
-      
-      // Convertir los IDs de categorías a ChipOptions
-      const serviceOptions = getCategoryOptions(service.categories || []);
-      
-      setServiceFormData({
-        id: service.id,
-        title: service.title,
-        city: service.city || '',
-        address: service.city || '',
-        selectedServices: service.categories || [],
-        selectedServiceOptions: serviceOptions,
-        description: service.description,
-        photos: service.images || [],
-        addressService: service.city || '',
-        pricePerHour: service.price || 0
+    const serviceOptions = getCategoryOptions(service.categories || []);
+    const photoUrls = service.media
+      ?.map(m => m.variants?.thumbnail?.url)
+      .filter(Boolean) as string[];
+
+    setEditingServiceId(service.id);
+    setServiceFormData({
+      id: service.id,
+      title: service.title,
+      city: service.city || '',
+      address: service.city || '',
+      selectedServices: service.categories || [],
+      selectedServiceOptions: serviceOptions,
+      description: service.description,
+      photos: photoUrls || [],
+      addressService: service.city || '',
+      pricePerHour: service.price || 0,
+    });
+    setServiceFormVisible(true);
+  };
+
+  const uploadPhotosFromFormData = async (photoUris: string[]): Promise<ImageObject[]> => {
+    if (photoUris.length === 0) return [];
+
+    setIsUploadingImages(true);
+    const uploadPromises: Promise<ImageObject>[] = [];
+    const uploadedImageIds: string[] = [];
+
+    try {
+      for (let i = 0; i < photoUris.length; i++) {
+        const imageUri = photoUris[i];
+        
+        const file = {
+          uri: imageUri,
+          name: `service-${Date.now()}-${i}.jpg`,
+          type: 'image/jpeg',
+        };
+
+        const uploadPromise = uploadImage({ file }).unwrap();
+        uploadPromises.push(uploadPromise);
+      }
+
+      const results = await Promise.all(uploadPromises);
+
+      // Guardar los IDs para posible rollback
+      results.forEach(result => uploadedImageIds.push(result.id));
+      return results;
+    } catch (error: any) {
+      // En caso de error, intentar eliminar las imágenes que sí se subieron
+      for (const imageId of uploadedImageIds) {
+        try {
+          await deleteImage(imageId).unwrap();
+        } catch {}
+      }
+
+      Toast.show({
+        type: 'error',
+        text1: 'Error',
+        text2: 'Error al subir las imágenes',
       });
-      setServiceFormVisible(true);
+      
+      return [];
+    } finally {
+      setIsUploadingImages(false);
     }
   };
 
   const handleServiceSubmit = async (data: ServiceFormData) => {
+    let uploadedImages: ImageObject[] = [];
+
     try {
+      const originalService = editingServiceId
+        ? services?.find(s => s.id === editingServiceId)
+        : null;
+
+      const originalMedia = originalService?.media ?? [];
+      const currentUris = data.photos;
+
+      // 1. Detectar nuevas (URIs que no son providerRef de imágenes existentes)
+      const newUris = currentUris.filter(
+        uri => !originalMedia.some(m => m.providerRef === uri)
+      );
+
+      if (newUris.length > 0) {
+        uploadedImages = await uploadPhotosFromFormData(newUris);
+      }
+
+      // 2. Detectar eliminadas (por providerRef)
+      const removedProviderRefs = originalMedia
+        .filter(m => !currentUris.includes(m.providerRef))
+        .map(m => m.providerRef);
+
       if (editingServiceId) {
         await updateService({
-            id: data.id,
-            data: {
-              title: data.title,
-              description: data.description,
-              price: data.pricePerHour,
-              categoryIds: data.selectedServices,
-              images: data.photos,
-              currency: 'USD',
-              city: profile?.city ?? '',
-              lat: undefined,
-              lon: undefined,
-              coverMediaId: undefined,
-            },
+          id: data.id,
+          data: {
+            title: data.title,
+            description: data.description,
+            price: data.pricePerHour,
+            categoryIds: data.selectedServices,
+            media: uploadedImages,
+            /* removedMedia: removedProviderRefs, */
+            currency: "USD",
+            city: profile?.city ?? "",
+          },
         }).unwrap();
+
+        for (const providerRef of removedProviderRefs) {
+          try {
+            await deleteImage(providerRef).unwrap();
+          } catch (err) {}
+        }
       } else {
-        // Crear servicio en backend
         await createService({
           title: data.title,
           description: data.description,
-          price: data.pricePerHour,   
+          price: data.pricePerHour,
           categoryIds: data.selectedServices,
-          images: data.photos,
-          currency: 'USD',
-          city: profile?.city ?? '',
-          lat: undefined,
-          lon: undefined,
-          coverMediaId: undefined
+          media: uploadedImages,
+          currency: "USD",
+          city: profile?.city ?? "",
         }).unwrap();
       }
 
-      // Resetear formulario
+      // Reset form
       setServiceFormData({
-        id: '',
-        title: '',
-        city: '',
-        address: '',
+        id: "",
+        title: "",
+        city: "",
+        address: "",
         selectedServices: [],
         selectedServiceOptions: [],
-        description: '',
+        description: "",
         photos: [],
-        addressService: '',
+        addressService: "",
         pricePerHour: 62,
       });
+
       return true;
     } catch (error: any) {
+      // Rollback: eliminar las nuevas si falla el guardado
+      for (const img of uploadedImages) {
+        try {
+          await deleteImage(img.id).unwrap();
+        } catch {}
+      }
+
       Toast.show({
-        type: 'error',
-        text1: 'Error',
-        text2: error?.data?.message || 'Failed to create service',
+        type: "error",
+        text1: "Error",
+        text2: error?.data?.message || "Failed to save service",
       });
 
       return false;
     }
   };
+
 
   // Handlers para el formulario de servicios
   const handleTitleChange = (title: string) => {
@@ -556,7 +636,7 @@ export const ProfileScreen = () => {
                   source={{
                     uri: profileImage
                       ? profileImage
-                      : profile?.media?.[0]?.variants?.[0]?.url ?? 
+                      : profile?.media?.[0]?.variants?.profileThumbnail?.url ?? 
                       'https://imagedelivery.net/uusH4IRLf6yhlCMhPld_6A/d6201e99-87ce-450d-e6c1-91e3463f3600/profileThumbnail',
                   }}
                   resizeMode="contain"
