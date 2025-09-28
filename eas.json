@@ -1,31 +1,67 @@
 {
   "cli": {
-    "appVersionSource": "local"
+    "appVersionSource": "local",
+    "version": ">= 3.13.0"
   },
   "build": {
     "development": {
       "developmentClient": true,
       "distribution": "internal",
+      "channel": "development",
+      "env": {
+        "APP_ENV": "development"
+      },
       "android": {
-        "buildType": "apk"
+        "buildType": "apk",
+        "gradleCommand": ":app:assembleDebug",
+        "withoutCredentials": true,
+        "image": "latest",
+        "env": {
+          "EXPO_ANDROID_EXTRA_PROPERTIES": "org.gradle.jvmargs=-Xmx2048m\nandroid.enableJetifier=true"
+        }
       },
       "ios": {
-        "simulator": true
+        "simulator": true,
+        "resourceClass": "m-medium"
       }
     },
     "preview": {
       "distribution": "internal",
+      "channel": "preview",
+      "env": {
+        "APP_ENV": "staging"
+      },
       "android": {
-        "buildType": "apk"
+        "buildType": "apk",
+        "image": "latest",
+        "env": {
+          "EXPO_ANDROID_EXTRA_PROPERTIES": "org.gradle.jvmargs=-Xmx2048m\nandroid.enableJetifier=true"
+        }
+      },
+      "ios": {
+        "resourceClass": "m-medium"
       }
     },
     "production": {
+      "autoIncrement": true,
+      "channel": "production",
+      "env": {
+        "APP_ENV": "production"
+      },
       "android": {
-        "buildType": "apk"
+        "buildType": "apk",
+        "image": "latest",
+        "env": {
+          "EXPO_ANDROID_EXTRA_PROPERTIES": "org.gradle.jvmargs=-Xmx2048m\nandroid.enableJetifier=true"
+        }
       },
       "ios": {
-        "simulator": false
+        "simulator": false,
+        "resourceClass": "m-medium"
       }
     }
+  },
+  "submit": {
+    "production": {}
   }
 }
