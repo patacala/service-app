@@ -26,23 +26,23 @@ interface InitialValues {
   selectedServices?: string[];
   selectedServiceOptions?: ChipOption[];
   description?: string;
-  photos?: string[];
+  media?: string[];
 }
 
 interface DetailInfoProps {
   onDescriptionChange?: (description: string) => void;
-  onPhotosChange?: (photos: string[]) => void;
+  onMediaChange?: (media: string[]) => void;
   onValidationChange?: (isValid: boolean) => void;
   initialValues?: InitialValues;
-  maxPhotos?: number;
+  maxMedia?: number;
 }
 
 export const DetailInfo: React.FC<DetailInfoProps> = ({
   onDescriptionChange,
-  onPhotosChange,
+  onMediaChange,
   onValidationChange,
   initialValues = {},
-  maxPhotos = 10,
+  maxMedia = 10,
 }) => {
   const theme = useTheme<Theme>();
   const { t } = useTranslation('auth');
@@ -61,9 +61,9 @@ export const DetailInfo: React.FC<DetailInfoProps> = ({
   });
 
   // Estados para fotos
-  const [photos, setPhotos] = useState<string[]>(() => {
-    const initialPhotos = initialValues.photos || [];
-    return initialPhotos;
+  const [media, setMedia] = useState<string[]>(() => {
+    const initialMedia = initialValues.media || [];
+    return initialMedia;
   });
   
   // Obtener servicios seleccionados desde initialValues únicamente
@@ -75,15 +75,15 @@ export const DetailInfo: React.FC<DetailInfoProps> = ({
 
   // Efecto para validación general (form + fotos)
   useEffect(() => {
-    const validPhotos = photos.filter(photo => photo.trim() !== '');
-    const hasEnoughPhotos = validPhotos.length >= 3;
+    const validMedia = media.filter(media => media.trim() !== '');
+    const hasEnoughMedia = validMedia.length >= 3;
     const formIsValid = isValid;
-    const overallValid = formIsValid && hasEnoughPhotos;
+    const overallValid = formIsValid && hasEnoughMedia;
 
     if (onValidationChange) {
       onValidationChange(overallValid);
     }
-  }, [isValid, photos, onValidationChange]);
+  }, [isValid, media, onValidationChange]);
 
   // Efecto para notificar cambio de descripción
   useEffect(() => {
@@ -94,16 +94,16 @@ export const DetailInfo: React.FC<DetailInfoProps> = ({
 
   // Efecto para actualizar estados si cambian los valores iniciales
   useEffect(() => {
-    if (initialValues.photos !== undefined && initialValues.photos !== photos) {
-      setPhotos(initialValues.photos);
+    if (initialValues.media !== undefined && initialValues.media !== media) {
+      setMedia(initialValues.media);
     }
-  }, [initialValues.photos]);
+  }, [initialValues.media]);
 
   // Notificar cambios de fotos al componente padre
-  const notifyPhotosChange = (newPhotos: string[]) => {
-    const validPhotos = newPhotos.filter(photo => photo.trim() !== '');
-    if (onPhotosChange) {
-      onPhotosChange(validPhotos);
+  const notifyMediaChange = (newMedia: string[]) => {
+    const validMedia = newMedia.filter(media => media.trim() !== '');
+    if (onMediaChange) {
+      onMediaChange(validMedia);
     }
   };
 
@@ -138,23 +138,23 @@ export const DetailInfo: React.FC<DetailInfoProps> = ({
   };
 
   // Manejar selección de foto - CON SCROLL AL FINAL
-  const handlePhotoSelect = async (index: number) => {
+  const handleMediaelect = async (index: number) => {
     try {
       const imageUri = await selectImageFromLibrary();
       
       if (imageUri) {
-        const newPhotos = [...photos];
+        const newMedia = [...media];
         
-        if (index >= newPhotos.length) {
+        if (index >= newMedia.length) {
           // Agregar nueva foto al final
-          newPhotos.push(imageUri);
+          newMedia.push(imageUri);
         } else {
           // Reemplazar foto existente o slot vacío
-          newPhotos[index] = imageUri;
+          newMedia[index] = imageUri;
         }
         
-        setPhotos(newPhotos);
-        notifyPhotosChange(newPhotos);
+        setMedia(newMedia);
+        notifyMediaChange(newMedia);
         
         // Auto-scroll al final cuando se agrega una nueva foto
         scrollToEnd();
@@ -179,10 +179,10 @@ export const DetailInfo: React.FC<DetailInfoProps> = ({
           text: 'Delete',
           style: 'destructive',
           onPress: () => {
-            const newPhotos = [...photos];
-            newPhotos.splice(index, 1);
-            setPhotos(newPhotos);
-            notifyPhotosChange(newPhotos);
+            const newMedia = [...media];
+            newMedia.splice(index, 1);
+            setMedia(newMedia);
+            notifyMediaChange(newMedia);
           },
         },
       ]
@@ -192,10 +192,10 @@ export const DetailInfo: React.FC<DetailInfoProps> = ({
   // Función para renderizar todas las cajas
   const renderAllPhotoBoxes = () => {
     const boxes = [];
-    const validPhotosCount = photos.filter(photo => photo.trim() !== '').length;
+    const validMediaCount = media.filter(media => media.trim() !== '').length;
     
     // Si no hay fotos, mostrar solo 3 cajas vacías
-    if (photos.length === 0) {
+    if (media.length === 0) {
       for (let i = 0; i < 3; i++) {
         boxes.push(renderPhotoBox('', i, false));
       }
@@ -203,18 +203,18 @@ export const DetailInfo: React.FC<DetailInfoProps> = ({
     }
     
     // Renderizar todas las fotos existentes (mínimo 3 cajas)
-    const totalBoxesToShow = Math.max(3, photos.length);
+    const totalBoxesToShow = Math.max(3, media.length);
     
     for (let i = 0; i < totalBoxesToShow; i++) {
-      const photo = i < photos.length ? photos[i] : '';
+      const photo = i < media.length ? media[i] : '';
       boxes.push(renderPhotoBox(photo, i, false));
     }
     
     // Solo agregar caja adicional si TODAS las cajas actuales tienen foto Y no hemos alcanzado el máximo
-    const allBoxesFilled = photos.length >= 3 && photos.every(photo => photo.trim() !== '');
+    const allBoxesFilled = media.length >= 3 && media.every(media => media.trim() !== '');
     
-    if (allBoxesFilled && validPhotosCount < maxPhotos) {
-      boxes.push(renderPhotoBox('', photos.length, true));
+    if (allBoxesFilled && validMediaCount < maxMedia) {
+      boxes.push(renderPhotoBox('', media.length, true));
     }
     
     return boxes;
@@ -227,7 +227,7 @@ export const DetailInfo: React.FC<DetailInfoProps> = ({
     return (
       <TouchableOpacity
         key={isAddButton ? `add-${index}` : index}
-        onPress={() => hasPhoto ? handlePhotoRemove(index) : handlePhotoSelect(index)}
+        onPress={() => hasPhoto ? handlePhotoRemove(index) : handleMediaelect(index)}
       >
         <Box 
           justifyContent="center" 
@@ -286,8 +286,8 @@ export const DetailInfo: React.FC<DetailInfoProps> = ({
   };
 
   // Verificar si hay suficientes fotos
-  const validPhotosCount = photos.filter(photo => photo.trim() !== '').length;
-  const hasEnoughPhotos = validPhotosCount >= 3;
+  const validMediaCount = media.filter(media => media.trim() !== '').length;
+  const hasEnoughMedia = validMediaCount >= 3;
 
   return (
     <>
@@ -372,14 +372,14 @@ export const DetailInfo: React.FC<DetailInfoProps> = ({
             {/* Info del estado actual y error de validación */}
             <Box marginTop="sm">
                 <Typography variant="bodySmall" color={theme.colors.colorGrey300}>
-                    {validPhotosCount} de {maxPhotos} fotos
+                    {validMediaCount} of {maxMedia} Photos/Videos
                 </Typography>
                 
                 {/* Error message para fotos */}
-                {!hasEnoughPhotos && (
+                {!hasEnoughMedia && (
                   <Box marginTop="xs">
                     <Typography variant="bodySmall" color={theme.colors.colorFeedbackError}>
-                      Please add at least 3 photos
+                      Please add at least 3 Photos/Videos
                     </Typography>
                   </Box>
                 )}

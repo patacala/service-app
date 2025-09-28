@@ -44,7 +44,7 @@ import { ServiceOffer } from '@/features/services/components/ServiceOffer';
 import { getDeviceLanguage } from '@/assembler/config/i18n';
 import { ServiceFormData } from '../slices/profile.slice';
 import { useLocalSearchParams } from 'expo-router';
-import { ImageObject } from '@/features/media/store/media.types';
+import { ImageObject, Media } from '@/features/media/store/media.types';
 
 
 // Validation Schema
@@ -132,7 +132,7 @@ export const ProfileScreen = () => {
     selectedServices: [],
     selectedServiceOptions: [],
     description: '',
-    photos: [],
+    media: [],
     addressService: '',
     pricePerHour: 62
   });
@@ -351,7 +351,7 @@ export const ProfileScreen = () => {
       selectedServices: [],
       selectedServiceOptions: [],
       description: '',
-      photos: [],
+      media: [],
       addressService: '',
       pricePerHour: 62
     });
@@ -376,41 +376,61 @@ export const ProfileScreen = () => {
       selectedServices: service.categories || [],
       selectedServiceOptions: serviceOptions,
       description: service.description,
-      photos: photoUrls || [],
+      media: photoUrls || [],
       addressService: service.city || '',
       pricePerHour: service.price || 0,
     });
     setServiceFormVisible(true);
   };
 
-  const uploadPhotosFromFormData = async (photoUris: string[]): Promise<ImageObject[]> => {
+  const uploadMediaFromFormData = async (
+    photoUris: string[],
+    existingMedia: Media[]
+  ): Promise<ImageObject[]> => {
     if (photoUris.length === 0) return [];
-
-    setIsUploadingImages(true);
     const uploadPromises: Promise<ImageObject>[] = [];
     const uploadedImageIds: string[] = [];
 
     try {
       for (let i = 0; i < photoUris.length; i++) {
         const imageUri = photoUris[i];
-        
-        const file = {
-          uri: imageUri,
-          name: `service-${Date.now()}-${i}.jpg`,
-          type: 'image/jpeg',
-        };
 
-        const uploadPromise = uploadImage({ file }).unwrap();
-        uploadPromises.push(uploadPromise);
+        if (imageUri.startsWith('http')) {
+          const found = existingMedia.find(m =>
+            Object.values(m.variants ?? {}).some(
+              (variant: any) => variant?.url === imageUri
+            )
+          );
+
+          uploadPromises.push(
+            Promise.resolve({
+              id: found?.providerRef ?? found?.id,
+              downloaded: true,
+            } as ImageObject)
+          );
+        } else {
+          const file = {
+            uri: imageUri,
+            name: `service-${Date.now()}.jpg`,
+            type: 'image/jpeg',
+          };
+
+          const uploadPromise = uploadImage({ file })
+            .unwrap()
+            .then((result: ImageObject) => {
+              uploadedImageIds.push(result.id);
+              return {
+                ...result,
+                downloaded: false,
+              };
+            });
+
+          uploadPromises.push(uploadPromise);
+        }
       }
 
-      const results = await Promise.all(uploadPromises);
-
-      // Guardar los IDs para posible rollback
-      results.forEach(result => uploadedImageIds.push(result.id));
-      return results;
+      return await Promise.all(uploadPromises);
     } catch (error: any) {
-      // En caso de error, intentar eliminar las imágenes que sí se subieron
       for (const imageId of uploadedImageIds) {
         try {
           await deleteImage(imageId).unwrap();
@@ -422,7 +442,7 @@ export const ProfileScreen = () => {
         text1: 'Error',
         text2: 'Error al subir las imágenes',
       });
-      
+
       return [];
     } finally {
       setIsUploadingImages(false);
@@ -430,95 +450,102 @@ export const ProfileScreen = () => {
   };
 
   const handleServiceSubmit = async (data: ServiceFormData) => {
-    let uploadedImages: ImageObject[] = [];
+    let finalUploadedMedia: ImageObject[] = [];
+    let mediaDownloaded: Media[] = []; 
+    setIsUploadingImages(true);
 
     try {
-      const originalService = editingServiceId
-        ? services?.find(s => s.id === editingServiceId)
-        : null;
+      mediaDownloaded = services?.find(s => s.id === data.id)?.media ?? [];
 
-      const originalMedia = originalService?.media ?? [];
-      const currentUris = data.photos;
-
-      // 1. Detectar nuevas (URIs que no son providerRef de imágenes existentes)
-      const newUris = currentUris.filter(
-        uri => !originalMedia.some(m => m.providerRef === uri)
-      );
-
-      if (newUris.length > 0) {
-        uploadedImages = await uploadPhotosFromFormData(newUris);
+      if (data.media && data.media.length > 0) {
+        finalUploadedMedia = await uploadMediaFromFormData(data.media, mediaDownloaded);
+        if (finalUploadedMedia.length === 0 && data.media.length > 0) {
+          return false;
+        }
       }
-
-      // 2. Detectar eliminadas (por providerRef)
-      const removedProviderRefs = originalMedia
-        .filter(m => !currentUris.includes(m.providerRef))
-        .map(m => m.providerRef);
 
       if (editingServiceId) {
         await updateService({
-          id: data.id,
-          data: {
-            title: data.title,
-            description: data.description,
-            price: data.pricePerHour,
-            categoryIds: data.selectedServices,
-            media: uploadedImages,
-            /* removedMedia: removedProviderRefs, */
-            currency: "USD",
-            city: profile?.city ?? "",
-          },
+            id: data.id,
+            data: {
+              title: data.title,
+              description: data.description,
+              price: data.pricePerHour,
+              categoryIds: data.selectedServices,
+              media: finalUploadedMedia,
+              currency: 'USD',
+              city: profile?.city ?? '',
+              lat: undefined,
+              lon: undefined
+            },
         }).unwrap();
-
-        for (const providerRef of removedProviderRefs) {
-          try {
-            await deleteImage(providerRef).unwrap();
-          } catch (err) {}
-        }
+        await deleteRemovedMedia(mediaDownloaded, finalUploadedMedia);
       } else {
         await createService({
           title: data.title,
           description: data.description,
-          price: data.pricePerHour,
+          price: data.pricePerHour,   
           categoryIds: data.selectedServices,
-          media: uploadedImages,
-          currency: "USD",
-          city: profile?.city ?? "",
+          media: finalUploadedMedia,
+          currency: 'USD',
+          city: profile?.city ?? '',
+          lat: undefined,
+          lon: undefined,
         }).unwrap();
       }
 
-      // Reset form
+      // Resetear formulario
       setServiceFormData({
-        id: "",
-        title: "",
-        city: "",
-        address: "",
+        id: '',
+        title: '',
+        city: '',
+        address: '',
         selectedServices: [],
         selectedServiceOptions: [],
-        description: "",
-        photos: [],
-        addressService: "",
+        description: '',
+        media: [],
+        addressService: '',
         pricePerHour: 62,
       });
 
       return true;
     } catch (error: any) {
-      // Rollback: eliminar las nuevas si falla el guardado
-      for (const img of uploadedImages) {
-        try {
-          await deleteImage(img.id).unwrap();
-        } catch {}
-      }
-
       Toast.show({
-        type: "error",
-        text1: "Error",
-        text2: error?.data?.message || "Failed to save service",
+        type: 'error',
+        text1: 'Error',
+        text2: error?.data?.message || 'Failed to create service',
       });
 
+      // En caso de error en la creación del servicio, eliminar las imágenes subidas
+      await deleteNewlyUploadedMedia(finalUploadedMedia);
       return false;
     }
   };
 
+  const deleteRemovedMedia = async (
+    mediaDownloaded: Media[],
+    finalUploadedMedia: ImageObject[]
+  ) => {
+    const finalIds = new Set(finalUploadedMedia.map(m => m.id));
+    for (const downloaded of mediaDownloaded) {
+      const ref = downloaded.providerRef ?? downloaded.id;
+      if (ref && !finalIds.has(ref)) {
+        try {
+          await deleteImage(ref).unwrap();
+        } catch {}
+      }
+    }
+  };
+
+  const deleteNewlyUploadedMedia = async (finalUploadedMedia: ImageObject[]) => {
+    for (const uploadedMedia of finalUploadedMedia) {
+      try {
+        if (!uploadedMedia.downloaded && uploadedMedia.id) {
+          await deleteImage(uploadedMedia.id).unwrap();
+        }
+      } catch {}
+    }
+  };
 
   // Handlers para el formulario de servicios
   const handleTitleChange = (title: string) => {
@@ -549,8 +576,8 @@ export const ProfileScreen = () => {
     setServiceFormData(prev => ({ ...prev, description }));
   };
 
-  const handlePhotosChange = (photos: string[]) => {
-    setServiceFormData(prev => ({ ...prev, photos }));
+  const handleMediaChange = (media: string[]) => {
+    setServiceFormData(prev => ({ ...prev, media }));
   };
 
   const handleAddressServiceChange = (addressService: string) => {
@@ -1081,13 +1108,13 @@ export const ProfileScreen = () => {
       component: (
         <DetailInfo 
           onDescriptionChange={handleDescriptionChange}
-          onPhotosChange={handlePhotosChange}
+          onMediaChange={handleMediaChange}
           onValidationChange={handleStep2Validation}
           initialValues={{
             selectedServices: serviceFormData.selectedServices,
             selectedServiceOptions: serviceFormData.selectedServiceOptions,
             description: serviceFormData.description,
-            photos: serviceFormData.photos
+            media: serviceFormData.media
           }}
         />
       ),
