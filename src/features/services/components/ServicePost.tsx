@@ -48,7 +48,13 @@ export const ServicePost: React.FC<ServicePostProps> = ({
       <Row justifyContent="space-between">
         <Row spacing="none">
           <Image
-            source={bookService.image || images.profile1 as ImageSourcePropType}
+             source={{
+                  uri:
+                    (bookService.bookingType === 'client'
+                      ? bookService.provider.media?.profileThumbnail?.url
+                      : bookService.client.media?.profileThumbnail?.url) ||
+                    'https://imagedelivery.net/uusH4IRLf6yhlCMhPld_6A/d6201e99-87ce-450d-e6c1-91e3463f3600/profileThumbnail',
+                }}
             style={{
               width: 40,
               height: 40,
