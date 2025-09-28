@@ -1,7 +1,7 @@
 {
   "expo": {
     "name": "awesome-app-expo",
-    "slug": "contact-my-app",
+    "slug": "contact-my-app-expo",
     "version": "1.0.0",
     "runtimeVersion": "1.0.0",
     "orientation": "portrait",
@@ -85,9 +85,9 @@
       },
       "router": {},
       "eas": {
-        "projectId": "0d04ce60-cc7e-4d93-80b4-f6322141ad93"
+        "projectId": "18830731-15d4-4e01-b32f-5e1571b65455"
       }
     },
-    "owner": "pbarranco"
+    "owner": "contact-my-app"
   }
 }
