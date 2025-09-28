@@ -21,6 +21,7 @@ export interface ImageObject {
   requireSignedURLs?: boolean;
   variants?: ImageVariant[];
   [key: string]: any;
+  downloaded?: boolean;
 }
 
 export interface UploadImageQueryParams {

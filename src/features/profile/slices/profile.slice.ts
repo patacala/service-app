@@ -35,7 +35,7 @@ export interface ServiceFormData {
   selectedServices: string[];
   selectedServiceOptions: ChipOption[];
   description: string;
-  photos: string[];
+  media: string[];
   addressService: string;
   pricePerHour: number;
 }

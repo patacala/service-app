@@ -17,7 +17,7 @@ import { useGetCategoriesQuery } from "@/infrastructure/services/api";
 import { useGetCurrentUserQuery } from "@/features/auth/store";
 import { useCreateAccountProvServiceMutation } from '@/features/services/store';
 import { useDeleteImageMutation, useUploadImageMutation } from '@/features/media/store/media.api';
-import { ImageObject } from '@/features/media/store/media.types';
+import { ImageObject, Media } from '@/features/media/store/media.types';
 import { useAuth } from "@/infrastructure/auth/AuthContext";
 import { router } from "expo-router";
 
@@ -74,7 +74,7 @@ export const ProvModeScreen = () => {
     selectedServices: [],
     selectedServiceOptions: [],
     description: '',
-    photos: [],
+    media: [],
     addressService: '',
     pricePerHour: 62
   });
@@ -99,34 +99,54 @@ export const ProvModeScreen = () => {
     }
   }, [profileError]);
 
-  const uploadPhotosFromFormData = async (photoUris: string[]): Promise<ImageObject[]> => {
+  const uploadMediaFromFormData = async (
+    photoUris: string[],
+    existingMedia: Media[]
+  ): Promise<ImageObject[]> => {
     if (photoUris.length === 0) return [];
-
-    setIsUploadingImages(true);
     const uploadPromises: Promise<ImageObject>[] = [];
     const uploadedImageIds: string[] = [];
 
     try {
       for (let i = 0; i < photoUris.length; i++) {
         const imageUri = photoUris[i];
-        
-        const file = {
-          uri: imageUri,
-          name: `service-${Date.now()}-${i}.jpg`,
-          type: 'image/jpeg',
-        };
 
-        const uploadPromise = uploadImage({ file }).unwrap();
-        uploadPromises.push(uploadPromise);
+        if (imageUri.startsWith('http')) {
+          const found = existingMedia.find(m =>
+            Object.values(m.variants ?? {}).some(
+              (variant: any) => variant?.url === imageUri
+            )
+          );
+
+          uploadPromises.push(
+            Promise.resolve({
+              id: found?.providerRef ?? found?.id,
+              downloaded: true,
+            } as ImageObject)
+          );
+        } else {
+          const file = {
+            uri: imageUri,
+            name: `service-${Date.now()}.jpg`,
+            type: 'image/jpeg',
+          };
+
+          const uploadPromise = uploadImage({ file })
+            .unwrap()
+            .then((result: ImageObject) => {
+              uploadedImageIds.push(result.id);
+              return {
+                ...result,
+                downloaded: false,
+              };
+            });
+
+          uploadPromises.push(uploadPromise);
+        }
       }
 
-      const results = await Promise.all(uploadPromises);
-
-      // Guardar los IDs para posible rollback
-      results.forEach(result => uploadedImageIds.push(result.id));
-      return results;
+      return await Promise.all(uploadPromises);
     } catch (error: any) {
-      // En caso de error, intentar eliminar las imágenes que sí se subieron
       for (const imageId of uploadedImageIds) {
         try {
           await deleteImage(imageId).unwrap();
@@ -138,7 +158,7 @@ export const ProvModeScreen = () => {
         text1: 'Error',
         text2: 'Error al subir las imágenes',
       });
-      
+
       return [];
     } finally {
       setIsUploadingImages(false);
@@ -158,13 +178,14 @@ export const ProvModeScreen = () => {
   };
 
   const handleProviderSubmit = async (data: ProviderFormData) => {
-    let finalUploadedImages: ImageObject[] = [];
+    let finalUploadedMedia: ImageObject[] = [];
+    let mediaDownloaded: Media[] = []; 
 
     try {
       // Primero subir las imágenes si hay alguna en el formulario
-      if (data.photos && data.photos.length > 0) {
-        finalUploadedImages = await uploadPhotosFromFormData(data.photos);
-        if (finalUploadedImages.length === 0 && data.photos.length > 0) {
+      if (data.media && data.media.length > 0) {
+        finalUploadedMedia = await uploadMediaFromFormData(data.media, mediaDownloaded);
+        if (finalUploadedMedia.length === 0 && data.media.length > 0) {
           return false;
         }
       }
@@ -175,7 +196,7 @@ export const ProvModeScreen = () => {
         description: data.description,
         price: data.pricePerHour,   
         categoryIds: data.selectedServices,
-        media: finalUploadedImages,
+        media: finalUploadedMedia,
         currency: 'USD',
         city: profile?.city ?? '',
         lat: undefined,
@@ -193,7 +214,7 @@ export const ProvModeScreen = () => {
         selectedServices: [],
         selectedServiceOptions: [],
         description: '',
-        photos: [],
+        media: [],
         addressService: '',
         pricePerHour: 62
       });
@@ -210,12 +231,18 @@ export const ProvModeScreen = () => {
       });
 
       // En caso de error en la creación del servicio, eliminar las imágenes subidas
-      for (const uploadedImage of finalUploadedImages) {
-        try {
-          await deleteImage(uploadedImage.id).unwrap();
-        } catch {}
-      }
+      await deleteNewlyUploadedMedia(finalUploadedMedia);
       return false;
+    }
+  };
+
+  const deleteNewlyUploadedMedia = async (finalUploadedMedia: ImageObject[]) => {
+    for (const uploadedMedia of finalUploadedMedia) {
+      try {
+        if (!uploadedMedia.downloaded && uploadedMedia.id) {
+          await deleteImage(uploadedMedia.id).unwrap();
+        }
+      } catch {}
     }
   };
 
@@ -249,8 +276,8 @@ export const ProvModeScreen = () => {
   };
 
   // Handler para actualizar las fotos desde DetailInfo
-  const handlePhotosChange = (photos: string[]) => {
-    setProviderFormData(prev => ({ ...prev, photos }));
+  const handleMediaChange = (media: string[]) => {
+    setProviderFormData(prev => ({ ...prev, media }));
   };
 
   const handleAddressServiceChange = (addressService: string) => {
@@ -314,14 +341,14 @@ export const ProvModeScreen = () => {
       component: (
         <DetailInfo 
           onDescriptionChange={handleDescriptionChange}
-          onPhotosChange={handlePhotosChange}
+          onMediaChange={handleMediaChange}
           onValidationChange={handleStep2Validation}
-          maxPhotos={6}
+          maxMedia={6}
           initialValues={{
             selectedServices: providerFormData.selectedServices,
             selectedServiceOptions: providerFormData.selectedServiceOptions,
             description: providerFormData.description,
-            photos: providerFormData.photos
+            media: providerFormData.media
           }}
         />
       ),
