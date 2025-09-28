@@ -1,6 +1,5 @@
 import { AuthUser } from "@/features/auth/store";
 import { ImageObject, Media, MediaProfile } from "@/features/media/store/media.types";
-import { ImageSourcePropType } from "react-native";
 
 // Services TYPES
 export interface CreateServiceRequest {
@@ -101,11 +100,13 @@ export interface BookService {
   provider: {
     id: string;
     name: string;
+    media: MediaProfile | null;
   };
   client: {
-    id: string,
-    name: string,
-    role: string
+    id: string;
+    name: string;
+    role: string;
+    media: MediaProfile | null;
   },
   dateTime: string;     // ISO original
   dateShort: string;    // 21 Apr
@@ -117,7 +118,6 @@ export interface BookService {
   status: "pending" | "accepted" | "rejected" | "completed" | "cancelled";
   categories: string[];
   description?: string;
-  image?: ImageSourcePropType
   media: Media[];
 }
 
