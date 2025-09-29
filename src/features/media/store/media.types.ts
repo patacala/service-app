@@ -1,9 +1,10 @@
 export type ImageVariant = string;
 export type MediaVariant = "thumbnail" | "profileThumbnail" | "cover" | "public";
 
-export interface Media{
+export interface DownloadedMedia {
   id: string;
   providerRef: string;
+  kind?: string;
   variants: Partial<Record<MediaVariant, { url: string }>>;
 }
 
@@ -13,7 +14,7 @@ export interface MediaProfile {
   }
 }
 
-export interface ImageObject {
+export interface MediaObject {
   id: string;
   filename?: string;
   uploaded?: string | number;

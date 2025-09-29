@@ -18,6 +18,7 @@ import { useTranslation } from 'react-i18next';
 import { useTheme } from '@shopify/restyle';
 import * as ImagePicker from 'expo-image-picker';
 import Toast from 'react-native-toast-message';
+import * as VideoThumbnails from 'expo-video-thumbnails';
 
 // Design System
 import { Box, Button, Input, Typography, Theme, GroupChipSelector, PremiumCard, SubscriptionPlans, SubscriptionPlan, ChipOption } from '@/design-system';
@@ -38,13 +39,13 @@ import { useAuth } from '@/infrastructure/auth/AuthContext';
 import { ProfilePartial, useGetCurrentUserQuery, useUpdateProfileMutation } from '@/features/auth/store';
 import { useGetCategoriesQuery } from '@/infrastructure/services/api';
 import { useCreateServiceMutation, useUpdateServiceMutation, useGetMyServicesQuery } from '@/features/services/store';
-import { useDeleteImageMutation, useUpdateImageMutation, useUploadImageMutation } from '@/features/media/store/media.api';
+import { useCreateVideoDirectUploadUrlMutation, useDeleteImageMutation, useUpdateImageMutation, useUploadImageMutation, useUploadVideoToDirectUrlMutation } from '@/features/media/store/media.api';
 import { getWallStyles } from '@/features/wall/screens/wall/wall.style';
 import { ServiceOffer } from '@/features/services/components/ServiceOffer';
 import { getDeviceLanguage } from '@/assembler/config/i18n';
 import { ServiceFormData } from '../slices/profile.slice';
 import { useLocalSearchParams } from 'expo-router';
-import { ImageObject, Media } from '@/features/media/store/media.types';
+import { MediaObject, DownloadedMedia, RNFileLike } from '@/features/media/store/media.types';
 
 
 // Validation Schema
@@ -95,8 +96,8 @@ export const ProfileScreen = () => {
   });
 
   const [updateProfile] = useUpdateProfileMutation();
-  const [createService, { isLoading: isLoadingCreateService }] = useCreateServiceMutation();
-  const [updateService, { isLoading: isLoadingUpdateService }] = useUpdateServiceMutation();
+  const [createService] = useCreateServiceMutation();
+  const [updateService] = useUpdateServiceMutation();
   const { data: services, isLoading: isLoadingServices, isFetching: isFetchingServices } = useGetMyServicesQuery(undefined, {
     refetchOnMountOrArgChange: true,
     refetchOnFocus: true,
@@ -104,7 +105,8 @@ export const ProfileScreen = () => {
   });
   const [uploadImage] = useUploadImageMutation();
   const [deleteImage] = useDeleteImageMutation();
-  const [updateImage] = useUpdateImageMutation();
+  const [createVideoDirectUploadUrl] = useCreateVideoDirectUploadUrlMutation();
+  const [uploadVideoToDirectUrl] = useUploadVideoToDirectUrlMutation();
   
   const [isAvatarDirty, setIsAvatarDirty] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
@@ -121,7 +123,7 @@ export const ProfileScreen = () => {
   const [step2Valid, setStep2Valid] = useState(false);
   const [step3Valid, setStep3Valid] = useState(false);
 
-  const [isUploadingImages, setIsUploadingImages] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Estado para los datos del formulario de servicios
   const [serviceFormData, setServiceFormData] = useState<ServiceFormData>({
@@ -253,7 +255,7 @@ export const ProfileScreen = () => {
       if (!profile) return;
 
       setIsSaving(true);
-      let uploadedMedia: ImageObject | undefined;
+      let uploadedMedia: MediaObject | undefined;
 
       if (profileImage && !profileImage.startsWith('http')) {
         const file = {
@@ -358,14 +360,29 @@ export const ProfileScreen = () => {
     setServiceFormVisible(true);
   };
 
-  const handleEditService = (serviceId: string) => {
+  const handleEditService = async (serviceId: string) => {
     const service = services?.find(s => s.id === serviceId);
     if (!service) return;
 
     const serviceOptions = getCategoryOptions(service.categories || []);
-    const photoUrls = service.media
-      ?.map(m => m.variants?.thumbnail?.url)
-      .filter(Boolean) as string[];
+    const photoUrls = await Promise.all(
+      service.media?.map(async (m) => {
+        if (m.kind === 'video') {
+          const videoUrl = m.variants?.public?.url;
+          if (videoUrl) {
+            try {
+              return await getVideoThumbnail(videoUrl);
+            } catch (error) {
+              return null;
+            }
+          }
+
+          return null;
+        } else {
+          return m.variants?.thumbnail?.url;
+        }
+      }) || []
+    ).then(urls => urls.filter(Boolean) as string[]);
 
     setEditingServiceId(service.id);
     setServiceFormData({
@@ -383,76 +400,108 @@ export const ProfileScreen = () => {
     setServiceFormVisible(true);
   };
 
+  const getVideoThumbnail = async (uri: string): Promise<string | null> => {
+    try {
+      // Extraer el video ID de la URL
+      const videoIdMatch = uri.match(/\/([a-f0-9]{32})\//);
+      
+      if (!videoIdMatch) {
+        return null;
+      }
+      
+      const videoId = videoIdMatch[1];
+      const customerCode = 'kb0znv13nolt7e8g';
+      const thumbnailUrl = `https://customer-${customerCode}.cloudflarestream.com/${videoId}/thumbnails/thumbnail.jpg`;
+      
+      return thumbnailUrl;
+    } catch (e) {
+      return null;
+    }
+  };
+
   const uploadMediaFromFormData = async (
-    photoUris: string[],
-    existingMedia: Media[]
-  ): Promise<ImageObject[]> => {
-    if (photoUris.length === 0) return [];
-    const uploadPromises: Promise<ImageObject>[] = [];
-    const uploadedImageIds: string[] = [];
+    mediaUris: string[],
+    existingMedia: DownloadedMedia[]
+  ): Promise<MediaObject[]> => {
+    if (mediaUris.length === 0) return [];
+    
+    const uploadPromises: Promise<MediaObject>[] = [];
+    const uploadedMediaForCleanup: MediaObject[] = [];
 
     try {
-      for (let i = 0; i < photoUris.length; i++) {
-        const imageUri = photoUris[i];
-
-        if (imageUri.startsWith('http')) {
+      for (const uri of mediaUris) {
+        if (uri.startsWith('http')) {
           const found = existingMedia.find(m =>
             Object.values(m.variants ?? {}).some(
-              (variant: any) => variant?.url === imageUri
+              (variant: any) => variant?.url === uri
             )
           );
-
           uploadPromises.push(
             Promise.resolve({
               id: found?.providerRef ?? found?.id,
               downloaded: true,
-            } as ImageObject)
+            } as MediaObject)
           );
-        } else {
-          const file = {
-            uri: imageUri,
-            name: `service-${Date.now()}.jpg`,
-            type: 'image/jpeg',
-          };
+        } 
+        else {
+          const isVideo = /\.(mp4|mov|avi|mkv)$/i.test(uri);
 
-          const uploadPromise = uploadImage({ file })
-            .unwrap()
-            .then((result: ImageObject) => {
-              uploadedImageIds.push(result.id);
-              return {
-                ...result,
-                downloaded: false,
+          if (isVideo) {
+            const uploadPromise = (async (): Promise<MediaObject> => {
+              const { uid, uploadURL } = await createVideoDirectUploadUrl({}).unwrap();
+              const videoId = uid;
+              const name = `video-${videoId}.mp4`;
+
+              const file: RNFileLike = {
+                uri: uri,
+                name,
+                type: 'video/mp4',
               };
-            });
+              await uploadVideoToDirectUrl({ uploadURL, file });
 
-          uploadPromises.push(uploadPromise);
+              const uploadedVideo = { id: videoId, filename: name, downloaded: false, kind: 'video' };
+              uploadedMediaForCleanup.push(uploadedVideo);
+              return uploadedVideo;
+            })();
+            uploadPromises.push(uploadPromise);
+
+          } else {
+            const file: RNFileLike = {
+              uri: uri,
+              name: `service-${Date.now()}.jpg`,
+              type: 'image/jpeg',
+            };
+
+            const uploadPromise = uploadImage({ file })
+              .unwrap()
+              .then((result: MediaObject) => {
+                const uploadedImage = { ...result, downloaded: false, kind: 'image'  };
+                uploadedMediaForCleanup.push(uploadedImage);
+                return uploadedImage;
+              });
+            uploadPromises.push(uploadPromise);
+          }
         }
       }
 
       return await Promise.all(uploadPromises);
     } catch (error: any) {
-      for (const imageId of uploadedImageIds) {
-        try {
-          await deleteImage(imageId).unwrap();
-        } catch {}
+      for (const media of uploadedMediaForCleanup) {
+        if (media.id) {
+          try {
+            await deleteImage(media.id).unwrap();
+          } catch {}
+        }
       }
 
-      Toast.show({
-        type: 'error',
-        text1: 'Error',
-        text2: 'Error al subir las imágenes',
-      });
-
       return [];
-    } finally {
-      setIsUploadingImages(false);
     }
   };
 
   const handleServiceSubmit = async (data: ServiceFormData) => {
-    let finalUploadedMedia: ImageObject[] = [];
-    let mediaDownloaded: Media[] = []; 
-    setIsUploadingImages(true);
+    let finalUploadedMedia: MediaObject[] = [];
+    let mediaDownloaded: DownloadedMedia[] = []; 
+    setIsSubmitting(true);
 
     try {
       mediaDownloaded = services?.find(s => s.id === data.id)?.media ?? [];
@@ -519,12 +568,14 @@ export const ProfileScreen = () => {
       // En caso de error en la creación del servicio, eliminar las imágenes subidas
       await deleteNewlyUploadedMedia(finalUploadedMedia);
       return false;
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
   const deleteRemovedMedia = async (
-    mediaDownloaded: Media[],
-    finalUploadedMedia: ImageObject[]
+    mediaDownloaded: DownloadedMedia[],
+    finalUploadedMedia: MediaObject[]
   ) => {
     const finalIds = new Set(finalUploadedMedia.map(m => m.id));
     for (const downloaded of mediaDownloaded) {
@@ -537,7 +588,7 @@ export const ProfileScreen = () => {
     }
   };
 
-  const deleteNewlyUploadedMedia = async (finalUploadedMedia: ImageObject[]) => {
+  const deleteNewlyUploadedMedia = async (finalUploadedMedia: MediaObject[]) => {
     for (const uploadedMedia of finalUploadedMedia) {
       try {
         if (!uploadedMedia.downloaded && uploadedMedia.id) {
@@ -1195,8 +1246,8 @@ export const ProfileScreen = () => {
         onSubmit={handleServiceSubmit}
         formData={serviceFormData}
         setFormData={setServiceFormData}
-        primaryButtonDisabled={isLoadingCreateService || isLoadingUpdateService}
-        secondaryButtonDisabled={isLoadingCreateService || isLoadingUpdateService}
+        primaryButtonDisabled={isSubmitting}
+        secondaryButtonDisabled={isSubmitting}
       />
     </View>
   );
