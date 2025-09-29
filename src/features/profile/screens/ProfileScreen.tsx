@@ -431,19 +431,28 @@ export const ProfileScreen = () => {
     try {
       for (const uri of mediaUris) {
         if (uri.startsWith('http')) {
+          let idFromUrl: string | undefined;
+          const imageMatch = uri.match(/imagedelivery\.net\/[^/]+\/([^/]+)/);
+          if (imageMatch) {
+            idFromUrl = imageMatch[1];
+          }
+
+          const videoMatch = uri.match(/cloudflarestream\.com\/([^/]+)\//);
+          if (videoMatch) {
+            idFromUrl = videoMatch[1];
+          }
+
           const found = existingMedia.find(m =>
-            Object.values(m.variants ?? {}).some(
-              (variant: any) => variant?.url === uri
-            )
+            m.providerRef === idFromUrl || m.id === idFromUrl
           );
+
           uploadPromises.push(
             Promise.resolve({
-              id: found?.providerRef ?? found?.id,
+              id: found?.providerRef ?? found?.id ?? idFromUrl,
               downloaded: true,
             } as MediaObject)
           );
-        } 
-        else {
+        } else {
           const isVideo = /\.(mp4|mov|avi|mkv)$/i.test(uri);
 
           if (isVideo) {
