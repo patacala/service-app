@@ -1,5 +1,5 @@
 import { AuthUser } from "@/features/auth/store";
-import { ImageObject, Media, MediaProfile } from "@/features/media/store/media.types";
+import { DownloadedMedia, MediaObject, MediaProfile } from "@/features/media/store/media.types";
 
 // Services TYPES
 export interface CreateServiceRequest {
@@ -7,7 +7,7 @@ export interface CreateServiceRequest {
   description: string;
   price: number;            
   categoryIds: string[];    
-  media?: ImageObject[];        
+  media?: MediaObject[];        
   currency?: string;      
   city?: string;
   lat?: number;
@@ -39,7 +39,7 @@ export interface Service {
   createdAt: string;
   updatedAt: string;
   isFavorite: boolean;
-  media: Media[];
+  media: DownloadedMedia[];
 }
 
 export interface MyService {
@@ -57,7 +57,7 @@ export interface MyService {
   createdAt: string;
   updatedAt: string;
   isFavorite: boolean;
-  media: Media[];
+  media: DownloadedMedia[];
 }
 
 export interface ServicesResponse {
@@ -118,7 +118,7 @@ export interface BookService {
   status: "pending" | "accepted" | "rejected" | "completed" | "cancelled";
   categories: string[];
   description?: string;
-  media: Media[];
+  media: DownloadedMedia[];
 }
 
 export interface BookServicesAll {

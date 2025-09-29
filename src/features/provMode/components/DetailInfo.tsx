@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { StyleSheet, TouchableOpacity, Image, ImageSourcePropType, Alert, ScrollView } from 'react-native';
+import { TouchableOpacity, Image, ImageSourcePropType, Alert, ScrollView } from 'react-native';
 import { useTheme } from '@shopify/restyle';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -10,8 +10,8 @@ import { useTranslation } from 'react-i18next';
 import { Icon } from '@/design-system/components/layout/Icon';
 import images from "@/assets/images/images";
 import * as ImagePicker from 'expo-image-picker';
+import * as VideoThumbnails from 'expo-video-thumbnails';
 
-// Validation Schema
 const detailInfoSchema = z.object({
   description: z
     .string()
@@ -21,12 +21,17 @@ const detailInfoSchema = z.object({
 
 type DetailInfoFormData = z.infer<typeof detailInfoSchema>;
 
-// Interfaz para los valores iniciales
 interface InitialValues {
   selectedServices?: string[];
   selectedServiceOptions?: ChipOption[];
   description?: string;
   media?: string[];
+}
+
+interface MediaAsset {
+  uri: string;
+  displayUri: string;
+  type: 'image' | 'video';
 }
 
 interface DetailInfoProps {
@@ -60,22 +65,43 @@ export const DetailInfo: React.FC<DetailInfoProps> = ({
     }
   });
 
-  // Estados para fotos
-  const [media, setMedia] = useState<string[]>(() => {
+  const [media, setMedia] = useState<MediaAsset[]>(() => {
     const initialMedia = initialValues.media || [];
-    return initialMedia;
+    return initialMedia.map(uri => ({
+      uri,
+      displayUri: uri,
+      type: uri.endsWith('.mp4') || uri.endsWith('.mov') ? 'video' : 'image',
+    }));
   });
-  
-  // Obtener servicios seleccionados desde initialValues únicamente
+
   const selectedServices = initialValues.selectedServices || [];
   const selectedServiceOptions = initialValues.selectedServiceOptions || [];
 
-  // Watch form values
   const watchedValues = watch();
 
-  // Efecto para validación general (form + fotos)
   useEffect(() => {
-    const validMedia = media.filter(media => media.trim() !== '');
+    const generateInitialThumbnails = async () => {
+      const updatedMedia = await Promise.all(
+        media.map(async (asset) => {
+          if (asset.type === 'video' && asset.uri === asset.displayUri) {
+            const thumb = await getVideoThumbnail(asset.uri);
+            if (thumb) {
+              return { ...asset, displayUri: thumb };
+            }
+          }
+          return asset;
+        })
+      );
+      setMedia(updatedMedia);
+    };
+
+    if (initialValues.media && initialValues.media.length > 0) {
+        generateInitialThumbnails();
+    }
+  }, [initialValues.media]);
+
+  useEffect(() => {
+    const validMedia = media.filter(m => m.uri.trim() !== '');
     const hasEnoughMedia = validMedia.length >= 3;
     const formIsValid = isValid;
     const overallValid = formIsValid && hasEnoughMedia;
@@ -85,91 +111,89 @@ export const DetailInfo: React.FC<DetailInfoProps> = ({
     }
   }, [isValid, media, onValidationChange]);
 
-  // Efecto para notificar cambio de descripción
   useEffect(() => {
     if (onDescriptionChange && watchedValues.description !== initialValues.description) {
       onDescriptionChange(watchedValues.description);
     }
   }, [watchedValues.description, onDescriptionChange, initialValues.description]);
 
-  // Efecto para actualizar estados si cambian los valores iniciales
-  useEffect(() => {
-    if (initialValues.media !== undefined && initialValues.media !== media) {
-      setMedia(initialValues.media);
-    }
-  }, [initialValues.media]);
-
-  // Notificar cambios de fotos al componente padre
-  const notifyMediaChange = (newMedia: string[]) => {
-    const validMedia = newMedia.filter(media => media.trim() !== '');
+  const notifyMediaChange = (newMedia: MediaAsset[]) => {
+    const validMediaUris = newMedia.map(asset => asset.uri).filter(uri => uri.trim() !== '');
     if (onMediaChange) {
-      onMediaChange(validMedia);
+      onMediaChange(validMediaUris);
     }
   };
 
-  // Función para seleccionar imagen de la galería con Expo
-  const selectImageFromLibrary = async (): Promise<string | null> => {
+  const selectImageFromLibrary = async (): Promise<MediaAsset | null> => {
     try {
-      // Abrir selector de imagen
       const result = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: ['images'],
+        mediaTypes: ["images", "videos"],
         allowsEditing: true,
         aspect: [1, 1],
         quality: 0.8,
       });
 
       if (!result.canceled && result.assets && result.assets.length > 0) {
-        return result.assets[0].uri;
+        const asset = result.assets[0];
+
+        if (asset.type === 'video') {
+          const thumbUri = await getVideoThumbnail(asset.uri);
+          return {
+            uri: asset.uri,
+            displayUri: thumbUri || asset.uri,
+            type: 'video',
+          };
+        } else {
+          return {
+            uri: asset.uri,
+            displayUri: asset.uri,
+            type: 'image',
+          };
+        }
       }
       
       return null;
     } catch (error) {
-      console.error('Error selecting image:', error);
-      Alert.alert('Error', 'Could not select image');
+      console.error('Error selecting media:', error);
+      Alert.alert('Error', 'Could not select media');
       return null;
     }
   };
 
-  // Función para hacer scroll al final
   const scrollToEnd = () => {
     setTimeout(() => {
       scrollViewRef.current?.scrollToEnd({ animated: true });
     }, 100);
   };
 
-  // Manejar selección de foto - CON SCROLL AL FINAL
   const handleMediaelect = async (index: number) => {
     try {
-      const imageUri = await selectImageFromLibrary();
+      const mediaAsset = await selectImageFromLibrary();
       
-      if (imageUri) {
+      if (mediaAsset) {
         const newMedia = [...media];
         
         if (index >= newMedia.length) {
-          // Agregar nueva foto al final
-          newMedia.push(imageUri);
+          newMedia.push(mediaAsset);
         } else {
-          // Reemplazar foto existente o slot vacío
-          newMedia[index] = imageUri;
+          newMedia[index] = mediaAsset;
         }
         
         setMedia(newMedia);
         notifyMediaChange(newMedia);
         
-        // Auto-scroll al final cuando se agrega una nueva foto
         scrollToEnd();
       }
     } catch (error) {
-      Alert.alert('Error', 'No se pudo seleccionar la imagen');
-      console.error('Error selecting image:', error);
+      Alert.alert('Error', 'No se pudo seleccionar el medio');
+      console.error('Error selecting media:', error);
     }
   };
 
-  // Manejar eliminación de foto - SIMPLIFICADA
   const handlePhotoRemove = (index: number) => {
     Alert.alert(
-      'Delete Photo',
-      'Are you sure you want to delete this photo?',
+      'Delete Media',
+      'Are you sure you want to delete this media?',
       [
         {
           text: 'Cancel',
@@ -189,45 +213,40 @@ export const DetailInfo: React.FC<DetailInfoProps> = ({
     );
   };
 
-  // Función para renderizar todas las cajas
   const renderAllPhotoBoxes = () => {
     const boxes = [];
-    const validMediaCount = media.filter(media => media.trim() !== '').length;
+    const validMediaCount = media.filter(m => m.uri.trim() !== '').length;
     
-    // Si no hay fotos, mostrar solo 3 cajas vacías
     if (media.length === 0) {
       for (let i = 0; i < 3; i++) {
-        boxes.push(renderPhotoBox('', i, false));
+        boxes.push(renderPhotoBox(null, i, false));
       }
       return boxes;
     }
     
-    // Renderizar todas las fotos existentes (mínimo 3 cajas)
     const totalBoxesToShow = Math.max(3, media.length);
     
     for (let i = 0; i < totalBoxesToShow; i++) {
-      const photo = i < media.length ? media[i] : '';
-      boxes.push(renderPhotoBox(photo, i, false));
+      const asset = i < media.length ? media[i] : null;
+      boxes.push(renderPhotoBox(asset, i, false));
     }
     
-    // Solo agregar caja adicional si TODAS las cajas actuales tienen foto Y no hemos alcanzado el máximo
-    const allBoxesFilled = media.length >= 3 && media.every(media => media.trim() !== '');
+    const allBoxesFilled = media.length >= 3 && media.every(m => m.uri.trim() !== '');
     
     if (allBoxesFilled && validMediaCount < maxMedia) {
-      boxes.push(renderPhotoBox('', media.length, true));
+      boxes.push(renderPhotoBox(null, media.length, true));
     }
-    
+ 
     return boxes;
   };
+  
+  const renderPhotoBox = (asset: MediaAsset | null, index: number, isAddButton: boolean = false) => {
+    const hasMedia = asset && asset.uri.trim() !== '';
 
-  // Renderizar cada caja de foto - ANCHO FIJO PARA SCROLL HORIZONTAL
-  const renderPhotoBox = (photo: string, index: number, isAddButton: boolean = false) => {
-    const hasPhoto = photo.trim() !== '';
-    
     return (
       <TouchableOpacity
         key={isAddButton ? `add-${index}` : index}
-        onPress={() => hasPhoto ? handlePhotoRemove(index) : handleMediaelect(index)}
+        onPress={() => hasMedia ? handlePhotoRemove(index) : handleMediaelect(index)}
       >
         <Box 
           justifyContent="center" 
@@ -240,10 +259,10 @@ export const DetailInfo: React.FC<DetailInfoProps> = ({
           position="relative"
           marginLeft="md"
         >
-          {hasPhoto ? (
+          {hasMedia ? (
             <>
               <Image
-                source={{ uri: photo }}
+                source={{ uri: asset.displayUri }}
                 style={{ 
                   width: '100%', 
                   height: '100%', 
@@ -269,7 +288,6 @@ export const DetailInfo: React.FC<DetailInfoProps> = ({
               </Box>
             </>
           ) : (
-            // Caja vacía - mostrar icono de agregar
             <>
               <Image
                 source={images.addPhoto as ImageSourcePropType}
@@ -285,13 +303,23 @@ export const DetailInfo: React.FC<DetailInfoProps> = ({
     );
   };
 
-  // Verificar si hay suficientes fotos
-  const validMediaCount = media.filter(media => media.trim() !== '').length;
+  const getVideoThumbnail = async (uri: string): Promise<string | null> => {
+    try {
+      const { uri: thumbnailUri } = await VideoThumbnails.getThumbnailAsync(uri, {
+        time: 1500,
+      });
+      return thumbnailUri;
+    } catch (e) {
+      console.warn('Error generating thumbnail:', e);
+      return null;
+    }
+  };
+
+  const validMediaCount = media.filter(m => m.uri.trim() !== '').length;
   const hasEnoughMedia = validMediaCount >= 3;
 
   return (
-    <>
-        {/* Servicios seleccionados (solo lectura) */}
+      <>
         <Box marginBottom="lg">
             <Row marginBottom="sm" gap="sm">
                 <Icon name="tag" color="colorBaseWhite"/>
@@ -319,7 +347,6 @@ export const DetailInfo: React.FC<DetailInfoProps> = ({
             )}
         </Box>
 
-        {/* Descripción del servicio */}
         <Box marginBottom="lg">
             <Box marginBottom="sm" gap="sm">
                 <Typography variant="bodyLarge" color="white">Description</Typography>
@@ -351,7 +378,6 @@ export const DetailInfo: React.FC<DetailInfoProps> = ({
             />
         </Box>
 
-        {/* Evidencias fotográficas - CON SCROLL HORIZONTAL */}
         <Box marginBottom="lg">
             <Row marginBottom="sm" gap="sm" justifyContent="space-between" alignItems="center">
                 <Box gap="sm">
@@ -359,7 +385,6 @@ export const DetailInfo: React.FC<DetailInfoProps> = ({
                 </Box>
             </Row>
 
-            {/* ScrollView horizontal con las cajas */}
             <ScrollView 
               ref={scrollViewRef}
               horizontal
@@ -369,13 +394,11 @@ export const DetailInfo: React.FC<DetailInfoProps> = ({
               {renderAllPhotoBoxes()}
             </ScrollView>
 
-            {/* Info del estado actual y error de validación */}
             <Box marginTop="sm">
                 <Typography variant="bodySmall" color={theme.colors.colorGrey300}>
                     {validMediaCount} of {maxMedia} Photos/Videos
                 </Typography>
                 
-                {/* Error message para fotos */}
                 {!hasEnoughMedia && (
                   <Box marginTop="xs">
                     <Typography variant="bodySmall" color={theme.colors.colorFeedbackError}>
@@ -385,6 +408,6 @@ export const DetailInfo: React.FC<DetailInfoProps> = ({
                 )}
             </Box>
         </Box>
-    </>
+      </>
   );
 };
