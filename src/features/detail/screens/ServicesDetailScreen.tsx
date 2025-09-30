@@ -308,7 +308,7 @@ export const ServicesDetailScreen = () => {
       <VideoView
         style={style}
         player={player}
-        allowsFullscreen
+        fullscreenOptions={{ enable: true }}
         allowsPictureInPicture
       />
     );
@@ -432,19 +432,19 @@ export const ServicesDetailScreen = () => {
                       </ScrollView>
                     </Animated.View>
 
-                    <TouchableOpacity
+                    {/* <TouchableOpacity
                       style={[styles.touchArea, styles.leftTouchArea]}
                       activeOpacity={1}
                       onPress={() => currentImageIndex > 0 && handleDotPress(currentImageIndex - 1)}
-                    />
-                    <TouchableOpacity
+                    /> */}
+                    {/* <TouchableOpacity
                       style={[styles.touchArea, styles.rightTouchArea]}
                       activeOpacity={1}
                       onPress={() =>
                         currentImageIndex < imageGallery.length - 1 &&
                         handleDotPress(currentImageIndex + 1)
                       }
-                    />
+                    /> */}
 
                     {/* <Image
                       style={styles.linearGradientBlack}
