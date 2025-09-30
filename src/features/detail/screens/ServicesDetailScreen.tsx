@@ -28,7 +28,14 @@ import { BookServiceForm } from '../components/BookServiceForm';
 import { CreateBookServiceRequest, Service } from '@/features/services/store';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { getProfileStyles } from '@/features/profile/screens/profile/profile.styles';
+import { useVideoPlayer, VideoView } from 'expo-video';
+
 const { width } = Dimensions.get('window');
+
+type VideoPlayerWrapperProps = {
+  uri: string;
+  style?: any;
+};
 
 export const ServicesDetailScreen = () => {
   const params = useLocalSearchParams();
@@ -291,6 +298,22 @@ export const ServicesDetailScreen = () => {
     }
   };
 
+  const VideoPlayerWrapper = ({ uri, style }: VideoPlayerWrapperProps) => {
+    const player = useVideoPlayer(uri, (player) => {
+      player.loop = true;
+      player.play(); 
+    });
+
+    return (
+      <VideoView
+        style={style}
+        player={player}
+        allowsFullscreen
+        allowsPictureInPicture
+      />
+    );
+  };
+
   return (
     <SafeContainer fluid backgroundColor="colorBaseBlack" paddingHorizontal="md">
       <Box>
@@ -388,11 +411,22 @@ export const ServicesDetailScreen = () => {
                         snapToInterval={slideWidth}
                         snapToAlignment="center"
                         contentContainerStyle={styles.scrollViewContent}
-                        pagingEnabled={true}
+                        pagingEnabled
                       >
-                        {imageGallery.map((image, index) => (
+                        {imageGallery.map((media, index) => (
                           <Box key={index} width={slideWidth} height={230}>
-                            <Image source={{uri: image.variants.public?.url }} style={styles.carouselImage} resizeMode="cover" />
+                            {media.kind === 'video' && media.variants.public?.url ? (
+                              <VideoPlayerWrapper
+                                uri={media.variants.public.url}
+                                style={styles.carouselImage}
+                              />
+                            ) : (
+                              <Image
+                                source={{ uri: media.variants.public?.url ?? '' }}
+                                style={styles.carouselImage}
+                                resizeMode="cover"
+                              />
+                            )}
                           </Box>
                         ))}
                       </ScrollView>
@@ -412,11 +446,11 @@ export const ServicesDetailScreen = () => {
                       }
                     />
 
-                    <Image
+                    {/* <Image
                       style={styles.linearGradientBlack}
                       source={images.linearGradientBlack as ImageSourcePropType}
                       resizeMode="cover"
-                    />
+                    /> */}
                   </Box>
 
                   <Row position="absolute" left={0} right={0} bottom={15} justifyContent="center" pointerEvents="box-none">
