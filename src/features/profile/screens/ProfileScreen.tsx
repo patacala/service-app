@@ -18,7 +18,6 @@ import { useTranslation } from 'react-i18next';
 import { useTheme } from '@shopify/restyle';
 import * as ImagePicker from 'expo-image-picker';
 import Toast from 'react-native-toast-message';
-import * as VideoThumbnails from 'expo-video-thumbnails';
 
 // Design System
 import { Box, Button, Input, Typography, Theme, GroupChipSelector, PremiumCard, SubscriptionPlans, SubscriptionPlan, ChipOption } from '@/design-system';
@@ -39,7 +38,7 @@ import { useAuth } from '@/infrastructure/auth/AuthContext';
 import { ProfilePartial, useGetCurrentUserQuery, useUpdateProfileMutation } from '@/features/auth/store';
 import { useGetCategoriesQuery } from '@/infrastructure/services/api';
 import { useCreateServiceMutation, useUpdateServiceMutation, useGetMyServicesQuery } from '@/features/services/store';
-import { useCreateVideoDirectUploadUrlMutation, useDeleteImageMutation, useUpdateImageMutation, useUploadImageMutation, useUploadVideoToDirectUrlMutation } from '@/features/media/store/media.api';
+import { useCreateVideoDirectUploadUrlMutation, useDeleteImageMutation, useUploadImageMutation, useUploadVideoToDirectUrlMutation } from '@/features/media/store/media.api';
 import { getWallStyles } from '@/features/wall/screens/wall/wall.style';
 import { ServiceOffer } from '@/features/services/components/ServiceOffer';
 import { getDeviceLanguage } from '@/assembler/config/i18n';
@@ -260,7 +259,7 @@ export const ProfileScreen = () => {
       if (profileImage && !profileImage.startsWith('http')) {
         const file = {
           uri: profileImage,
-          name: `avatar-${user?.id}.jpg`,
+          name: `avatar-${Date.now()}.jpg`,
           type: 'image/jpeg',
         };
 
