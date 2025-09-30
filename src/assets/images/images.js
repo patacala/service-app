@@ -29,7 +29,9 @@ const images = {
     profileLarge1: require('./profile-large.png'),
     iconEdit: require('./edit.png'),
     gmailLogo: require('./gmail.png'),
-    appleLogo: require('./apple.png')
+    appleLogo: require('./apple.png'),
+    chat: require('./chat.png'),
+    message: require('./message.png')
 };
   
 export default images;

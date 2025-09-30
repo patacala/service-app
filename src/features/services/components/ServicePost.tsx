@@ -1,6 +1,6 @@
 import React from "react";
-import { Image, ImageSourcePropType } from "react-native";
-import { Box, Button, ChipOption, GroupChipSelector, theme, Typography } from "@/design-system";
+import { Image, ImageSourcePropType, TouchableOpacity } from "react-native";
+import { Box, Button, Chip, ChipOption, GroupChipSelector, theme, Typography } from "@/design-system";
 import { Row } from "@/design-system/components/layout/Row/Row";
 import images from "@/assets/images/images";
 import { Icon } from "@/design-system/components/layout/Icon";
@@ -70,21 +70,27 @@ export const ServicePost: React.FC<ServicePostProps> = ({
             </Typography>
           </Box>
         </Row>
-        <Box alignItems="flex-end" gap="sm">
-          <Typography variant="bodySmall" color={theme.colors.colorGrey100}>
-            {bookService.dateShort}
-          </Typography>
-          <Typography variant="bodySmall" color={theme.colors.colorGrey100}>
-            {bookService.timeShort}
-          </Typography>
+        <Box width={50} alignItems="center">
+          {/* <Icon name="location" size={32} color="colorGrey100" /> */}
+          {bookService.status === 'accepted' && 
+            <TouchableOpacity onPress={handleDetail}>
+              <Image
+                source={images.message as ImageSourcePropType}
+                style={{
+                  width: 35,
+                  height: 35,
+                }}
+              />
+            </TouchableOpacity>
+          }
         </Box>
       </Row>
 
-      <Box marginBottom="xs">
+      <Box marginVertical="xs">
         <Row spacing="sm">
-          <Icon name="location" size={25} color="colorGrey100" />
+          <Icon name="date" size={20} color="colorGrey100" />
           <Typography variant="bodySmall" color={theme.colors.colorGrey100}>
-            {bookService.address}
+            {bookService.dateShort} - {bookService.timeShort}
           </Typography>
         </Row>
       </Box>
@@ -157,14 +163,25 @@ export const ServicePost: React.FC<ServicePostProps> = ({
           )}
 
           {bookService.status === 'accepted' && (
-            <Button
-              variant="transparent"
-              label={t("services.acceptedservice")}
-              iconWidth={18}
-              iconHeight={18}
-              rightIcon={images.rightArrow as ImageSourcePropType}
-              onPress={handleDetail}
-            />
+            <Chip
+              key="key-01"
+              onPress={() => {}}
+              variant="md"
+            >
+              <Box backgroundColor="colorBaseBlack" 
+                justifyContent="center"
+                alignItems="center" 
+                width={120} height={45}
+                borderRadius={25}
+              >
+                <Typography 
+                  color={theme.colors.colorGrey100} 
+                  variant={"bodyRegular"}
+                >
+                  Completar
+                </Typography>
+              </Box>
+            </Chip>
           )}
         </Box>
       </Row>
