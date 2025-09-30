@@ -16,10 +16,10 @@ import { getDeviceLanguage } from "@/assembler/config/i18n";
 import { useGetCategoriesQuery } from "@/infrastructure/services/api";
 import { useGetCurrentUserQuery } from "@/features/auth/store";
 import { useCreateAccountProvServiceMutation } from '@/features/services/store';
-import { useDeleteImageMutation, useUploadImageMutation } from '@/features/media/store/media.api';
-import { ImageObject, Media } from '@/features/media/store/media.types';
+import { useCreateVideoDirectUploadUrlMutation, useDeleteImageMutation, useUploadImageMutation, useUploadVideoToDirectUrlMutation } from '@/features/media/store/media.api';
 import { useAuth } from "@/infrastructure/auth/AuthContext";
 import { router } from "expo-router";
+import { DownloadedMedia, MediaObject, RNFileLike } from "@/features/media/store/media.types";
 
 interface Location {
   id: string;
@@ -42,9 +42,11 @@ export const ProvModeScreen = () => {
   });
   const [createAccountProvService, { isLoading: isLoadingCreateAccountProvService }] = useCreateAccountProvServiceMutation();
   
-  // Mutations para manejo de imágenes
+  // Mutations para manejo de imágenes y videos
   const [uploadImage] = useUploadImageMutation();
   const [deleteImage] = useDeleteImageMutation();
+  const [createVideoDirectUploadUrl] = useCreateVideoDirectUploadUrlMutation();
+  const [uploadVideoToDirectUrl] = useUploadVideoToDirectUrlMutation();
 
   const [locationPanelVisible, setLocationPanelVisible] = useState(false);
   const [currentLocation, setCurrentLocation] = useState<Location>({ id: '1', name: 'Miami, FL' });
@@ -55,9 +57,7 @@ export const ProvModeScreen = () => {
   const [step1Valid, setStep1Valid] = useState(false);
   const [step2Valid, setStep2Valid] = useState(false);
   const [step3Valid, setStep3Valid] = useState(false);
-
-  // Estado para imágenes subidas (para el cleanup en caso de error)
-  const [isUploadingImages, setIsUploadingImages] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const categories: ChipOption[] =
   categoriesData?.categories?.map((c: any) => ({
@@ -100,68 +100,63 @@ export const ProvModeScreen = () => {
   }, [profileError]);
 
   const uploadMediaFromFormData = async (
-    photoUris: string[],
-    existingMedia: Media[]
-  ): Promise<ImageObject[]> => {
-    if (photoUris.length === 0) return [];
-    const uploadPromises: Promise<ImageObject>[] = [];
-    const uploadedImageIds: string[] = [];
+    mediaUris: string[]
+  ): Promise<MediaObject[]> => {
+    if (mediaUris.length === 0) return [];
+    
+    const uploadPromises: Promise<MediaObject>[] = [];
+    const uploadedMediaForCleanup: MediaObject[] = [];
 
     try {
-      for (let i = 0; i < photoUris.length; i++) {
-        const imageUri = photoUris[i];
+      for (const uri of mediaUris) {
+        const isVideo = /\.(mp4|mov|avi|mkv)$/i.test(uri);
+        if (isVideo) {
+          const uploadPromise = (async (): Promise<MediaObject> => {
+            const { uid, uploadURL } = await createVideoDirectUploadUrl({}).unwrap();
+            const videoId = uid;
+            const name = `video-${videoId}.mp4`;
 
-        if (imageUri.startsWith('http')) {
-          const found = existingMedia.find(m =>
-            Object.values(m.variants ?? {}).some(
-              (variant: any) => variant?.url === imageUri
-            )
-          );
+            const file: RNFileLike = {
+              uri: uri,
+              name,
+              type: 'video/mp4',
+            };
+            await uploadVideoToDirectUrl({ uploadURL, file });
 
-          uploadPromises.push(
-            Promise.resolve({
-              id: found?.providerRef ?? found?.id,
-              downloaded: true,
-            } as ImageObject)
-          );
+            const uploadedVideo = { id: videoId, filename: name, downloaded: false, kind: 'video' };
+            uploadedMediaForCleanup.push(uploadedVideo);
+            return uploadedVideo;
+          })();
+          uploadPromises.push(uploadPromise);
         } else {
-          const file = {
-            uri: imageUri,
+          const file: RNFileLike = {
+            uri: uri,
             name: `service-${Date.now()}.jpg`,
             type: 'image/jpeg',
           };
 
           const uploadPromise = uploadImage({ file })
             .unwrap()
-            .then((result: ImageObject) => {
-              uploadedImageIds.push(result.id);
-              return {
-                ...result,
-                downloaded: false,
-              };
+            .then((result: MediaObject) => {
+              const uploadedImage = { ...result, downloaded: false, kind: 'image'  };
+              uploadedMediaForCleanup.push(uploadedImage);
+              return uploadedImage;
             });
-
           uploadPromises.push(uploadPromise);
         }
       }
 
       return await Promise.all(uploadPromises);
     } catch (error: any) {
-      for (const imageId of uploadedImageIds) {
-        try {
-          await deleteImage(imageId).unwrap();
-        } catch {}
+      for (const media of uploadedMediaForCleanup) {
+        if (media.id) {
+          try {
+            await deleteImage(media.id).unwrap();
+          } catch {}
+        }
       }
 
-      Toast.show({
-        type: 'error',
-        text1: 'Error',
-        text2: 'Error al subir las imágenes',
-      });
-
       return [];
-    } finally {
-      setIsUploadingImages(false);
     }
   };
 
@@ -178,13 +173,13 @@ export const ProvModeScreen = () => {
   };
 
   const handleProviderSubmit = async (data: ProviderFormData) => {
-    let finalUploadedMedia: ImageObject[] = [];
-    let mediaDownloaded: Media[] = []; 
+    let finalUploadedMedia: MediaObject[] = [];
+    let mediaDownloaded: DownloadedMedia[] = []; 
+    setIsSubmitting(true);
 
     try {
-      // Primero subir las imágenes si hay alguna en el formulario
       if (data.media && data.media.length > 0) {
-        finalUploadedMedia = await uploadMediaFromFormData(data.media, mediaDownloaded);
+        finalUploadedMedia = await uploadMediaFromFormData(data.media);
         if (finalUploadedMedia.length === 0 && data.media.length > 0) {
           return false;
         }
@@ -233,10 +228,12 @@ export const ProvModeScreen = () => {
       // En caso de error en la creación del servicio, eliminar las imágenes subidas
       await deleteNewlyUploadedMedia(finalUploadedMedia);
       return false;
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
-  const deleteNewlyUploadedMedia = async (finalUploadedMedia: ImageObject[]) => {
+  const deleteNewlyUploadedMedia = async (finalUploadedMedia: MediaObject[]) => {
     for (const uploadedMedia of finalUploadedMedia) {
       try {
         if (!uploadedMedia.downloaded && uploadedMedia.id) {
@@ -422,8 +419,8 @@ export const ProvModeScreen = () => {
         onSubmit={handleProviderSubmit}
         formData={providerFormData}
         setFormData={setProviderFormData}
-        primaryButtonDisabled={isLoadingCreateAccountProvService || isUploadingImages}
-        secondaryButtonDisabled={isLoadingCreateAccountProvService || isUploadingImages}
+        primaryButtonDisabled={isSubmitting}
+        secondaryButtonDisabled={isSubmitting}
       />
     </>
   );
