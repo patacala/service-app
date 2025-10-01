@@ -13,6 +13,7 @@ interface ServicePostProps {
   onCancel?: (serviceId: string) => void;
   onRate?: (serviceId: string) => void;
   onDetail?: (serviceId: string) => void;
+  onComplete?: (serviceId: string) => void;
 }
 
 export const ServicePost: React.FC<ServicePostProps> = ({
@@ -20,7 +21,8 @@ export const ServicePost: React.FC<ServicePostProps> = ({
   serviceOptions,
   onCancel = () => console.log("Service cancelled"),
   onRate = () => console.log("Service rated"),
-  onDetail = () => console.log("Service detail")
+  onDetail = () => console.log("Service detail"),
+  onComplete = () => console.log("Service complete")
 }) => {
   const { t } = useTranslation('auth');
   
@@ -34,6 +36,10 @@ export const ServicePost: React.FC<ServicePostProps> = ({
 
   const handleDetail = () => {
     onDetail(bookService.id);
+  };
+
+  const handleComplete = () => {
+    onComplete(bookService.id);
   };
 
   /* const chipOptionsArray = [bookService.chipOption]; */
@@ -70,9 +76,9 @@ export const ServicePost: React.FC<ServicePostProps> = ({
             </Typography>
           </Box>
         </Row>
-        <Box width={50} alignItems="center">
+        <Box>
           {/* <Icon name="location" size={32} color="colorGrey100" /> */}
-          {bookService.status === 'accepted' && 
+          {(bookService.status === 'rejected' || bookService.status === 'accepted') && (
             <TouchableOpacity onPress={handleDetail}>
               <Image
                 source={images.message as ImageSourcePropType}
@@ -82,7 +88,7 @@ export const ServicePost: React.FC<ServicePostProps> = ({
                 }}
               />
             </TouchableOpacity>
-          }
+          )}
         </Box>
       </Row>
 
@@ -105,7 +111,7 @@ export const ServicePost: React.FC<ServicePostProps> = ({
           textVariant="bodyMedium"
         />
         
-        <Box position="relative" right={-10} maxWidth={180}>
+        <Box position="relative" maxWidth={125}>
           {bookService.status === 'completed' && (
             <Button
               variant="transparent"
@@ -139,33 +145,23 @@ export const ServicePost: React.FC<ServicePostProps> = ({
             />
           )}
 
-          {bookService.status === 'rejected' && (
-            <Button
-              variant="transparent"
-              label={t("services.rejectedservice")}
-              iconWidth={18}
-              iconHeight={18}
-              textColor="colorFeedbackError"
-              rightIcon={images.rightArrow as ImageSourcePropType}
-              onPress={handleDetail}
-            />
-          )}
-
-          {bookService.status === 'cancelled' && (
-            <Box paddingRight="sm">
+          {(bookService.status === 'cancelled' || bookService.status === 'rejected') && (
+            <Box>
               <Typography
                 variant="bodyLarge"
                 color={theme.colors.colorFeedbackError}
               >
-                {t("services.cancelledservice")}
+                {bookService.status === 'cancelled'
+                  ? t("services.cancelledservice")
+                  : t("services.rejectedservice")}
               </Typography>
             </Box>
           )}
 
-          {bookService.status === 'accepted' && (
+          {bookService.status === 'accepted' && bookService.bookingType === 'provider' && (
             <Chip
               key="key-01"
-              onPress={() => {}}
+              onPress={handleComplete}
               variant="md"
             >
               <Box backgroundColor="colorBaseBlack" 
@@ -182,6 +178,17 @@ export const ServicePost: React.FC<ServicePostProps> = ({
                 </Typography>
               </Box>
             </Chip>
+          )}
+
+          {bookService.status === 'accepted' && bookService.bookingType === 'client' && (
+            <Box>
+              <Typography
+                variant="bodyLarge"
+                color={theme.colors.colorBaseWhite}
+              >
+                {t("services.acceptedservice")}
+              </Typography>
+            </Box>
           )}
         </Box>
       </Row>
