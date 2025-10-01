@@ -15,6 +15,7 @@ import { useRouter } from "expo-router";
 import { useTranslation } from "react-i18next";
 import Toast from "react-native-toast-message";
 import { useAuth } from "@/infrastructure/auth/AuthContext";
+import { CompletedService } from "../components/CompleteService";
 
 interface Location {
     id: string;
@@ -27,8 +28,10 @@ export const ServicesScreen = () => {
     const { user } = useAuth();
     const [locationPanelVisible, setLocationPanelVisible] = useState(false);
     const [cancelServiceVisible, setCancelServiceVisible] = useState(false);
+    const [completedServiceVisible, setCompletedServiceVisible] = useState(false);
     const [rateServiceVisible, setRateServiceVisible] = useState(false);
     const [selectedServiceToCancel, setSelectedServiceToCancel] = useState<BookService | null>(null);
+    const [selectedServiceToCompleted, setSelectedServiceToCompleted] = useState<BookService | null>(null);
     
     const [updateBookServiceStatus, {isLoading: isLoadBookServiceUpdate}] = useUpdateBookServiceStatusMutation();
     
@@ -140,6 +143,45 @@ export const ServicesScreen = () => {
         }
     };
 
+    const handleCompletedServicePress = (service: BookService) => {
+        setSelectedServiceToCompleted(service);
+        setCompletedServiceVisible(true);
+    }
+
+    const handleConfirmCompleted = async () => {
+        if (!selectedServiceToCompleted?.id) {
+            Toast.show({
+                type: 'error',
+                text1: t("services.error"),
+                text2: t("services.servicecanerror"),
+            });
+            return;
+        }
+
+        try {
+            await updateBookServiceStatus({
+                id: selectedServiceToCompleted.id,
+                status: 'completed'
+            }).unwrap();
+
+            Toast.show({
+                type: 'success',
+                text1: t("messages.msg22"),
+                text2: t("services.servicecompleted"),
+            });
+
+            setSelectedServiceToCompleted(null);
+            setCompletedServiceVisible(false);
+        } catch (error) {
+            console.error('Error completing service:', error);
+            Toast.show({
+                type: 'error',
+                text1: t("services.error"),
+                text2: t("services.servicecompleted"),
+            });
+        }
+    };
+
     const handleRateServicePress = () => {
         setRateServiceVisible(true);
     };
@@ -202,6 +244,7 @@ export const ServicesScreen = () => {
                                                 serviceOptions={serviceOptions}
                                                 onCancel={() => handleCancelServicePress(service)}
                                                 onDetail={() => navigateToChat(service)}
+                                                onCompleted={() =>  handleCompletedServicePress(service)}
                                             />
                                             </Box>
                                         );
@@ -264,6 +307,16 @@ export const ServicesScreen = () => {
                     setSelectedServiceToCancel(null);
                 }}
                 onCancel={handleConfirmCancel}
+                isLoading={isLoadBookServiceUpdate}
+            />
+
+            <CompletedService
+                visible={completedServiceVisible}
+                onClose={() => {
+                    setCompletedServiceVisible(false);
+                    setSelectedServiceToCompleted(null);
+                }}
+                onComplete={handleConfirmCompleted}
                 isLoading={isLoadBookServiceUpdate}
             />
 
