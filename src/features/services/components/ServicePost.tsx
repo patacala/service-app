@@ -13,7 +13,7 @@ interface ServicePostProps {
   onCancel?: (serviceId: string) => void;
   onRate?: (serviceId: string) => void;
   onDetail?: (serviceId: string) => void;
-  onComplete?: (serviceId: string) => void;
+  onCompleted?: (serviceId: string) => void;
 }
 
 export const ServicePost: React.FC<ServicePostProps> = ({
@@ -22,7 +22,7 @@ export const ServicePost: React.FC<ServicePostProps> = ({
   onCancel = () => console.log("Service cancelled"),
   onRate = () => console.log("Service rated"),
   onDetail = () => console.log("Service detail"),
-  onComplete = () => console.log("Service complete")
+  onCompleted = () => console.log("Service complete")
 }) => {
   const { t } = useTranslation('auth');
   
@@ -39,7 +39,7 @@ export const ServicePost: React.FC<ServicePostProps> = ({
   };
 
   const handleComplete = () => {
-    onComplete(bookService.id);
+    onCompleted(bookService.id);
   };
 
   /* const chipOptionsArray = [bookService.chipOption]; */
@@ -111,7 +111,7 @@ export const ServicePost: React.FC<ServicePostProps> = ({
           textVariant="bodyMedium"
         />
         
-        <Box position="relative" maxWidth={125}>
+        <Box position="relative" maxWidth={130}>
           {bookService.status === 'completed' && (
             <Button
               variant="transparent"
