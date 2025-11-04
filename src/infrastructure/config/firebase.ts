@@ -1,13 +1,12 @@
-import { initializeApp, getApp, getApps } from 'firebase/app';
-
-import { initializeAuth, getReactNativePersistence } from 'firebase/auth';
-import ReactNativeAsyncStorage from '@react-native-async-storage/async-storage';
+import firebase from '@react-native-firebase/app';
+import '@react-native-firebase/auth';
 import Constants from 'expo-constants';
 
-const firebaseConfig = Constants.expoConfig?.extra?.firebase;
+// Verificar si Firebase ya está inicializado
+if (!firebase.apps.length) {
+  const firebaseConfig = Constants.expoConfig?.extra?.firebase;
+  firebase.initializeApp(firebaseConfig);
+}
 
-const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
-
-export const auth = initializeAuth(app, {
-  persistence: getReactNativePersistence(ReactNativeAsyncStorage)
-});
+export default firebase;
+export const auth = firebase.auth();
