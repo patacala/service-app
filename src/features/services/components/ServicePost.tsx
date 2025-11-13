@@ -4,7 +4,7 @@ import { Box, Button, Chip, ChipOption, GroupChipSelector, theme, Typography } f
 import { Row } from "@/design-system/components/layout/Row/Row";
 import images from "@/assets/images/images";
 import { Icon } from "@/design-system/components/layout/Icon";
-import { BookService } from "../store";
+import { BookService } from "../store/services.types";
 import { useTranslation } from "react-i18next";
 
 interface ServicePostProps {
@@ -12,7 +12,7 @@ interface ServicePostProps {
   serviceOptions: ChipOption[];
   onCancel?: () => void;
   onRate?: () => void;
-  onDetail?: () => void;
+  onDetail?: (bookService: BookService) => void;
   onCompleted?: () => void;
 }
 
@@ -35,7 +35,7 @@ export const ServicePost: React.FC<ServicePostProps> = ({
   };
 
   const handleDetail = () => {
-    onDetail();
+    onDetail(bookService);
   };
 
   const handleComplete = () => {
@@ -78,15 +78,17 @@ export const ServicePost: React.FC<ServicePostProps> = ({
         </Row>
         <Box>
           {/* <Icon name="location" size={32} color="colorGrey100" /> */}
-          <TouchableOpacity onPress={handleDetail}>
-            <Image
-              source={images.message as ImageSourcePropType}
-              style={{
-                width: 35,
-                height: 35,
-              }}
-            />
-          </TouchableOpacity>
+          {bookService.status !== 'pending' && (
+              <TouchableOpacity onPress={handleDetail}>
+                <Image
+                  source={images.message as ImageSourcePropType}
+                  style={{
+                    width: 35,
+                    height: 35,
+                  }}
+                />
+              </TouchableOpacity>
+          )}
         </Box>
       </Row>
 

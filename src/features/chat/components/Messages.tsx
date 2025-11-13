@@ -6,7 +6,7 @@ import { Row } from '@/design-system/components/layout/Row/Row';
 interface MessagesProps {
   text: string;
   isReceived: boolean;
-  image?: ImageSourcePropType;
+  image?: string | null;
   receivedBackgroundColor?: keyof typeof theme.colors;
   sentBackgroundColor?: keyof typeof theme.colors;
   receivedTextColor?: keyof typeof theme.colors;
@@ -24,7 +24,7 @@ export const Messages = ({
 }: MessagesProps) => {
   const avatar = image ? (
     <Image
-      source={image}
+      source={{ uri: image }}
       style={{ width: 32, height: 32, borderRadius: 16 }}
     />
   ) : null;

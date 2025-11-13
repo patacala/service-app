@@ -31,6 +31,9 @@ export const ChatScreen = () => {
 
     const [isAccepted, setIsAccepted] = useState(servicePost?.status === 'accepted');
     const [isRejected, setIsRejected] = useState(servicePost?.status === 'rejected');
+    const [isCancelled, setIsCancelled] = useState(servicePost?.status === 'cancelled');
+    const isChatBlocked = isRejected || isCancelled;
+
     const [message, setMessage] = useState('');
     const [messages, setMessages] = useState<ChatMessage[]>([]);
     const scrollViewRef = useRef<ScrollView>(null);
@@ -43,16 +46,22 @@ export const ChatScreen = () => {
         const keyboardDidShowListener = Keyboard.addListener(
             'keyboardDidShow',
             () => {
-                if (isAccepted) {
-                    scrollToBottom();
-                }
+                scrollToBottom();
             }
         );
         
         return () => {
             keyboardDidShowListener.remove();
         };
-    }, [isAccepted]);
+    }, []);
+
+    useEffect(() => {
+        if (servicePost) {
+            setIsAccepted(servicePost.status === 'accepted');
+            setIsRejected(servicePost.status === 'rejected');
+            setIsCancelled(servicePost.status === 'cancelled');
+        }
+    }, [servicePost]);
 
     // Función para hacer scroll al final
     const scrollToBottom = () => {
@@ -129,7 +138,7 @@ export const ChatScreen = () => {
     };
 
     const handleSendMessage = () => {
-        if (message.trim() === '' || !isAccepted) return;
+        if (message.trim() === '' || isChatBlocked) return;
         
         // Añadir mensaje enviado (del usuario)
         const userMessage: ChatMessage = {
@@ -163,9 +172,7 @@ export const ChatScreen = () => {
     };
 
     const handleInputFocus = () => {
-        if (isAccepted) {
-            scrollToBottom();
-        }
+        scrollToBottom();
     };
 
     // Mostrar los botones solo si el estado es 'pending' y el usuario es el proveedor
@@ -196,21 +203,30 @@ export const ChatScreen = () => {
                         {servicePost?.bookingType === 'provider' ? 'User' : 'Provider'}
                     </Typography>
                     <Typography variant="bodyMedium" color={theme.colors.colorGrey100}>
-                        {servicePost?.client.name}
+                        {servicePost?.bookingType === 'provider' ? servicePost?.client.name : servicePost?.provider.name}
                     </Typography>
                 </Box>
                 
                 <Box width={60}>
-                    {servicePost?.image && (
+                    {servicePost?.bookingType === 'provider' && servicePost?.client.media ? (
                         <Image
-                            source={servicePost.image as ImageSourcePropType}
+                            source={{ uri: servicePost.client.media.profileThumbnail?.url }}
                             style={{
                                 width: 40,
                                 height: 40,
-                                borderRadius: 20
+                                borderRadius: 20,
                             }}
                         />
-                    )}
+                    ) : servicePost?.provider.media ? (
+                        <Image
+                        source={{ uri: servicePost.provider.media.profileThumbnail?.url }}
+                            style={{
+                                width: 40,
+                                height: 40,
+                                borderRadius: 20,
+                            }}
+                        />
+                    ) : null}
                 </Box>
             </Row>
 
@@ -225,13 +241,13 @@ export const ChatScreen = () => {
                         style={getChatStyles.scrollView}
                         contentContainerStyle={[
                             getChatStyles.scrollContent,
-                            isAccepted ? { paddingBottom: 30 } : {}
+                            { paddingBottom: 30 }
                         ]}
-                        showsVerticalScrollIndicator={isAccepted}
-                        scrollEnabled={isAccepted}
+                        showsVerticalScrollIndicator={true}
+                        scrollEnabled={true}
                         keyboardShouldPersistTaps="handled"
                         keyboardDismissMode="on-drag"
-                        onScrollBeginDrag={isAccepted ? dismissKeyboard : undefined}
+                        onScrollBeginDrag={dismissKeyboard}
                     >
                         {/* Notification for service details */}
                         <Notification title="¡Notificación!">
@@ -264,12 +280,12 @@ export const ChatScreen = () => {
                                 style={{
                                     opacity: buttonsOpacity,
                                     position: isAccepted || isRejected ? 'absolute':'relative',
-                                    top: 40,
+                                    top: 5,
                                     overflow: 'hidden',
                                     marginBottom: theme.spacing.sm,
                                 }}
                             >
-                                <Box width="100%" gap="lg">
+                                <Box width="100%" gap="md">
                                     <Button
                                         variant="secondary"
                                         label={isLoadUpdateBookServiceSta ? "Processing..." : "Accept Request"}
@@ -311,20 +327,20 @@ export const ChatScreen = () => {
                         )}
                         
                         <TouchableWithoutFeedback onPress={dismissKeyboard}>
-                            <View>
+                            <Box marginTop="lg">
                                 {messages.map((msg, index) => (
                                     <Messages
                                         key={`msg-${index}`}
                                         text={msg.text}
                                         isReceived={msg.isReceived}
                                         image={
-                                        msg.isReceived
-                                            ? servicePost?.image as ImageSourcePropType
-                                            : images.profile1 as ImageSourcePropType
+                                            msg.isReceived
+                                            ? servicePost?.client.media ? servicePost.client.media.profileThumbnail?.url:null
+                                            : servicePost?.provider.media ? servicePost.provider.media.profileThumbnail?.url:null
                                         }
                                     />
                                 ))}
-                            </View>
+                            </Box>
                         </TouchableWithoutFeedback>
                     </ScrollView>
                 </Box>
@@ -335,8 +351,8 @@ export const ChatScreen = () => {
                         label="Write your message"
                         value={message}
                         onChangeText={setMessage}
-                        variant={isAccepted ? "chat" : "disabled"}
-                        editable={isAccepted}
+                        variant={isChatBlocked ? "disabled" : "chat"}
+                        editable={!isChatBlocked}
                         expandable={true} 
                         maxHeight={120}
                         returnKeyType="default"
