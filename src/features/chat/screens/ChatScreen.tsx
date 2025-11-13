@@ -21,6 +21,7 @@ import { Notification } from "../components/Notification";
 import { ChatMessage } from "../slices/chat.slice";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useUpdateBookServiceStatusMutation } from "@/features/services/store/services.api";
+import { ChatInput } from "@/design-system/components/forms/ChatInput";
 
 export const ChatScreen = () => {
     const router = useRouter();
@@ -232,8 +233,8 @@ export const ChatScreen = () => {
 
             <KeyboardAvoidingView 
                 behavior={Platform.OS === "ios" ? "padding" : "height"}
-                style={{ flex: 1, justifyContent: 'flex-end', backgroundColor: 'black' }}
-                keyboardVerticalOffset={Platform.OS === "ios" ? 10 : 0}
+                style={{ flex: 1 }}
+                keyboardVerticalOffset={Platform.OS === "ios" ? 50 : 0}
             >
                 <Box flex={1}>
                     <ScrollView 
@@ -345,22 +346,17 @@ export const ChatScreen = () => {
                     </ScrollView>
                 </Box>
                 
-                <Box marginBottom="xl">
-                    <Input
-                        icon="send"
-                        label="Write your message"
-                        value={message}
-                        onChangeText={setMessage}
-                        variant={isChatBlocked ? "disabled" : "chat"}
-                        editable={!isChatBlocked}
-                        expandable={true} 
-                        maxHeight={120}
-                        returnKeyType="default"
-                        onSubmitEditing={handleSendMessage}
-                        onIconPress={handleSendMessage}
-                        onFocus={handleInputFocus}
-                    />
-                </Box>
+                <ChatInput
+                    value={message}
+                    onChangeText={setMessage}
+                    onIconPress={handleSendMessage}
+                    onSubmitEditing={handleSendMessage}
+                    onFocus={handleInputFocus}
+                    editable={!isChatBlocked}
+                    maxHeight={120}
+                    label=""
+                    placeholder="Write your message"
+                />
             </KeyboardAvoidingView>
         </SafeContainer>
     );
