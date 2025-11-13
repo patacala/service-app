@@ -10,10 +10,10 @@ import { useTranslation } from "react-i18next";
 interface ServicePostProps {
   bookService: BookService;
   serviceOptions: ChipOption[];
-  onCancel?: (serviceId: string) => void;
-  onRate?: (serviceId: string) => void;
-  onDetail?: (serviceId: string) => void;
-  onCompleted?: (serviceId: string) => void;
+  onCancel?: () => void;
+  onRate?: () => void;
+  onDetail?: () => void;
+  onCompleted?: () => void;
 }
 
 export const ServicePost: React.FC<ServicePostProps> = ({
@@ -27,19 +27,19 @@ export const ServicePost: React.FC<ServicePostProps> = ({
   const { t } = useTranslation('auth');
   
   const handleCancel = () => {
-    onCancel(bookService.id);
+    onCancel();
   };
 
   const handleRate = () => {
-    onRate(bookService.id);
+    onRate();
   };
 
   const handleDetail = () => {
-    onDetail(bookService.id);
+    onDetail();
   };
 
   const handleComplete = () => {
-    onCompleted(bookService.id);
+    onCompleted();
   };
 
   /* const chipOptionsArray = [bookService.chipOption]; */
@@ -78,17 +78,15 @@ export const ServicePost: React.FC<ServicePostProps> = ({
         </Row>
         <Box>
           {/* <Icon name="location" size={32} color="colorGrey100" /> */}
-          {(bookService.status === 'rejected' || bookService.status === 'accepted') && (
-            <TouchableOpacity onPress={handleDetail}>
-              <Image
-                source={images.message as ImageSourcePropType}
-                style={{
-                  width: 35,
-                  height: 35,
-                }}
-              />
-            </TouchableOpacity>
-          )}
+          <TouchableOpacity onPress={handleDetail}>
+            <Image
+              source={images.message as ImageSourcePropType}
+              style={{
+                width: 35,
+                height: 35,
+              }}
+            />
+          </TouchableOpacity>
         </Box>
       </Row>
 
@@ -149,7 +147,9 @@ export const ServicePost: React.FC<ServicePostProps> = ({
             <Box>
               <Typography
                 variant="bodyLarge"
-                color={theme.colors.colorFeedbackError}
+                color={bookService.status === 'cancelled' 
+                  ? theme.colors.colorFeedbackError
+                  : theme.colors.colorGrey200 }
               >
                 {bookService.status === 'cancelled'
                   ? t("services.cancelledservice")
@@ -174,7 +174,7 @@ export const ServicePost: React.FC<ServicePostProps> = ({
                   color={theme.colors.colorGrey100} 
                   variant={"bodyRegular"}
                 >
-                  Completar
+                  {t("services.completeservice")}
                 </Typography>
               </Box>
             </Chip>

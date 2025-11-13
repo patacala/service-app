@@ -32,9 +32,9 @@ export const ServicesScreen = () => {
     const [rateServiceVisible, setRateServiceVisible] = useState(false);
     const [selectedServiceToCancel, setSelectedServiceToCancel] = useState<BookService | null>(null);
     const [selectedServiceToCompleted, setSelectedServiceToCompleted] = useState<BookService | null>(null);
-    
+    const [selectedServiceToRate, setSelectedServiceToRate] = useState<BookService | null>(null);
+
     const [updateBookServiceStatus, {isLoading: isLoadBookServiceUpdate}] = useUpdateBookServiceStatusMutation();
-    
     const { data: categoriesData, error: categoriesError } = useGetCategoriesQuery({ language: getDeviceLanguage() }, {
         refetchOnMountOrArgChange: true,
         refetchOnFocus: true,
@@ -182,7 +182,8 @@ export const ServicesScreen = () => {
         }
     };
 
-    const handleRateServicePress = () => {
+    const handleRateServicePress = (service: BookService) => {
+        setSelectedServiceToRate(service);
         setRateServiceVisible(true);
     };
 
@@ -242,6 +243,7 @@ export const ServicesScreen = () => {
                                             <ServicePost
                                                 bookService={service}
                                                 serviceOptions={serviceOptions}
+                                                onRate={() => handleRateServicePress(service)}
                                                 onCancel={() => handleCancelServicePress(service)}
                                                 onDetail={() => navigateToChat(service)}
                                                 onCompleted={() =>  handleCompletedServicePress(service)}
@@ -277,7 +279,7 @@ export const ServicesScreen = () => {
                                                 <ServicePost
                                                     bookService={service}
                                                     serviceOptions={serviceOptions}
-                                                    onRate={handleRateServicePress}
+                                                    onRate={() => handleRateServicePress(service)}
                                                     onCancel={() => handleCancelServicePress(service)}
                                                     onDetail={() => navigateToChat(service)}
                                                 />
@@ -322,7 +324,13 @@ export const ServicesScreen = () => {
 
             <RateService
                 visible={rateServiceVisible}
-                onClose={() => setRateServiceVisible(false)}
+                onClose={() => {
+                    setRateServiceVisible(false);
+                    setSelectedServiceToRate(null);
+                }}
+                onRate={(rating) => {
+                    console.log(`Service ${selectedServiceToRate?.id} rated with ${rating} stars`);
+                }}
             />
         </>
         );
