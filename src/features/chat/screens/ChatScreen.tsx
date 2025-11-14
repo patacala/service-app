@@ -7,11 +7,10 @@ import {
     KeyboardAvoidingView,
     Platform,
     Keyboard,
-    View,
     TouchableWithoutFeedback,
     Alert
 } from "react-native";
-import { Box, Button, Input, SafeContainer, Typography, theme } from "@/design-system";
+import { Box, Button, SafeContainer, Typography, theme } from "@/design-system";
 import { getChatStyles } from './chat/chat.styles';
 import images from "@/assets/images/images";
 import { Row } from "@/design-system/components/layout/Row/Row";
@@ -22,38 +21,138 @@ import { ChatMessage } from "../slices/chat.slice";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useUpdateBookServiceStatusMutation } from "@/features/services/store/services.api";
 import { ChatInput } from "@/design-system/components/forms/ChatInput";
+import { useGetMessagesQuery, useCreateMessageMutation } from "@/features/messages/store/messages.api";
+import { supabase } from '@/lib/supabase';
 
 export const ChatScreen = () => {
     const router = useRouter();
     const { post } = useLocalSearchParams<{ post?: string }>();
-    const servicePost: BookService | null = post ? JSON.parse(post) : null;
+    
+    let servicePost: BookService | null = null;
+    try {
+        servicePost = post ? JSON.parse(post) : null;
+    } catch (error) {
+        console.error('Error parsing post data:', error);
+    }
+
+    if (!servicePost) {
+        useEffect(() => {
+            Alert.alert('Error', 'Service data not found', [
+                { text: 'OK', onPress: () => router.back() }
+            ]);
+        }, []);
+        
+        return (
+            <SafeContainer fluid backgroundColor="colorBaseBlack" paddingHorizontal="md">
+                <Box flex={1} justifyContent="center" alignItems="center">
+                    <Typography variant="bodyMedium" color={theme.colors.colorBaseWhite}>
+                        Loading...
+                    </Typography>
+                </Box>
+            </SafeContainer>
+        );
+    }
+
+    const bookServiceId = servicePost.id;
+    const currentUserId = servicePost.bookingType === 'provider'
+        ? servicePost.provider?.id
+        : servicePost.client?.id;
 
     const [updateBookServiceStatus, { isLoading: isLoadUpdateBookServiceSta }] = useUpdateBookServiceStatusMutation();
+    const [createMessage] = useCreateMessageMutation();
 
-    const [isAccepted, setIsAccepted] = useState(servicePost?.status === 'accepted');
-    const [isRejected, setIsRejected] = useState(servicePost?.status === 'rejected');
-    const [isCancelled, setIsCancelled] = useState(servicePost?.status === 'cancelled');
-    const isChatBlocked = isRejected || isCancelled;
+    const [isAccepted, setIsAccepted] = useState(servicePost.status === 'accepted');
+    const [isRejected, setIsRejected] = useState(servicePost.status === 'rejected');
+    const [isCancelled, setIsCancelled] = useState(servicePost.status === 'cancelled');
+    const [isCompleted, setIsCompleted] = useState(servicePost.status === 'completed');
+    const isChatBlocked = isRejected || isCancelled || isCompleted;
 
     const [message, setMessage] = useState('');
     const [messages, setMessages] = useState<ChatMessage[]>([]);
     const scrollViewRef = useRef<ScrollView>(null);
-    
-    // Animaciones para los botones
     const buttonsOpacity = useRef(new Animated.Value(1)).current;
-    
-    // Detectar cuando se activa/desactiva el teclado
+    const channelRef = useRef<any>(null);
+    const messagesLoadedRef = useRef(false);
+
+    const { data: serverMessages = [] } = useGetMessagesQuery(
+        { bookServiceId: bookServiceId },
+        { skip: !bookServiceId }
+    );
+
+    // REALTIME: Nuevos mensajes
     useEffect(() => {
-        const keyboardDidShowListener = Keyboard.addListener(
-            'keyboardDidShow',
-            () => {
-                scrollToBottom();
-            }
-        );
-        
+        if (!bookServiceId || !currentUserId) return;
+
+        const channel = supabase
+            .channel(`chat_${bookServiceId}`)
+            .on(
+                'postgres_changes',
+                {
+                    event: 'INSERT',
+                    schema: 'public',
+                    table: 'BookServiceMessage',
+                    filter: `book_service_id=eq.${bookServiceId}`,
+                },
+                (payload) => {
+                    const newMsg = payload.new;
+                    
+                    if (newMsg.sender_id === currentUserId) {
+                        return;
+                    }
+
+                    const image = servicePost.client?.media?.profileThumbnail?.url ?? null;
+
+                    setMessages(prev => {
+                        const messageExists = prev.some(m => m.text === newMsg.message);
+                        
+                        if (messageExists) {
+                            return prev;
+                        }
+
+                        return [...prev, {
+                            text: newMsg.message,
+                            isReceived: true,
+                            image,
+                        }];
+                    });
+                    scrollToBottom();
+                }
+            )
+            .subscribe();
+
+        channelRef.current = channel;
+
         return () => {
-            keyboardDidShowListener.remove();
+            if (channelRef.current) {
+                supabase.removeChannel(channelRef.current);
+            }
         };
+    }, [bookServiceId, currentUserId]);
+
+    useEffect(() => {
+        if (serverMessages.length > 0 && currentUserId && !messagesLoadedRef.current) {
+            const formatted = serverMessages.map((msg: any) => {
+                const isReceived = msg.senderId !== currentUserId;
+                const image = isReceived
+                    ? servicePost.client?.media?.profileThumbnail?.url ?? null
+                    : servicePost.provider?.media?.profileThumbnail?.url ?? null;
+
+                return {
+                    text: msg.message,
+                    isReceived,
+                    image,
+                };
+            });
+            setMessages(formatted);
+            messagesLoadedRef.current = true;
+            scrollToBottom();
+        }
+    }, [serverMessages, currentUserId]);
+
+    // Keyboard scroll
+    useEffect(() => {
+        const keyboardDidShowListener = Keyboard.addListener('keyboardDidShow', scrollToBottom);
+        return () => keyboardDidShowListener.remove();
     }, []);
 
     useEffect(() => {
@@ -61,10 +160,10 @@ export const ChatScreen = () => {
             setIsAccepted(servicePost.status === 'accepted');
             setIsRejected(servicePost.status === 'rejected');
             setIsCancelled(servicePost.status === 'cancelled');
+            setIsCompleted(servicePost.status === 'completed');
         }
     }, [servicePost]);
 
-    // Función para hacer scroll al final
     const scrollToBottom = () => {
         setTimeout(() => {
             scrollViewRef.current?.scrollToEnd({ animated: true });
@@ -72,9 +171,7 @@ export const ChatScreen = () => {
     };
 
     const handleGoBackPress = () => router.back();
-    const dismissKeyboard = () => {
-        Keyboard.dismiss();
-    };
+    const dismissKeyboard = () => Keyboard.dismiss();
 
     const handleAccept = async () => {
         if (!servicePost?.id) {
@@ -83,14 +180,11 @@ export const ChatScreen = () => {
         }
 
         try {
-            console.log('Aceptando servicio ID:', servicePost.id);
-            
             await updateBookServiceStatus({
                 id: servicePost.id,
                 status: 'accepted'
             }).unwrap();
-            
-            // Animación para ocultar botones
+
             Animated.parallel([
                 Animated.timing(buttonsOpacity, {
                     toValue: 0,
@@ -101,7 +195,6 @@ export const ChatScreen = () => {
                 setIsAccepted(true);
                 scrollToBottom();
             });
-            
         } catch (error) {
             console.error('Error accepting service:', error);
             Alert.alert('Error', 'Failed to accept the service. Please try again.');
@@ -115,14 +208,11 @@ export const ChatScreen = () => {
         }
 
         try {
-            console.log('Rechazando servicio ID:', servicePost.id);
-            
             await updateBookServiceStatus({
                 id: servicePost.id,
                 status: 'rejected'
             }).unwrap();
-            
-            // Animación para ocultar botones
+
             Animated.parallel([
                 Animated.timing(buttonsOpacity, {
                     toValue: 0,
@@ -132,52 +222,43 @@ export const ChatScreen = () => {
             ]).start(() => {
                 setIsRejected(true);
             });
-            
         } catch (error) {
             Alert.alert('Error', 'Failed to reject the service. Please try again.');
         }
     };
 
-    const handleSendMessage = () => {
-        if (message.trim() === '' || isChatBlocked) return;
-        
-        // Añadir mensaje enviado (del usuario)
-        const userMessage: ChatMessage = {
+    const handleSendMessage = async () => {
+        if (message.trim() === '' || isChatBlocked || !bookServiceId || !currentUserId) return;
+
+        const tempMessage: ChatMessage = {
             text: message,
-            isReceived: false
+            isReceived: false,
+            image: servicePost.bookingType === 'provider'
+                ? servicePost.provider?.media?.profileThumbnail?.url ?? null
+                : servicePost.client?.media?.profileThumbnail?.url ?? null,
         };
-        
-        setMessages([...messages, userMessage]);
+
+        setMessages(prev => [...prev, tempMessage]);
         setMessage('');
-        
-        setTimeout(() => {
-            // Simular una respuestas
-            const responseOptions = [
-                "Thank you for your message! I'll get back to you soon.",
-                "I understand. I'll take care of that right away.",
-                "Great! I'm looking forward to our appointment.",
-                "Thank you very much! I remain attentive to any news..."
-            ];
-            
-            const responseIndex = Math.floor(Math.random() * responseOptions.length);
-            const responseMessage: ChatMessage = {
-                text: responseOptions[responseIndex],
-                isReceived: true 
-            };
-            
-            setMessages(prevMessages => [...prevMessages, responseMessage]);
-            scrollToBottom();
-        }, 1000);
-        
         scrollToBottom();
+
+        try {
+            await createMessage({
+                bookServiceId,
+                message: message.trim(),
+            }).unwrap();
+        } catch (error) {
+            console.error('Error sending message:', error);
+            setMessages(prev => prev.filter(m => m !== tempMessage));
+            Alert.alert('Error', 'Failed to send message.');
+        }
     };
 
     const handleInputFocus = () => {
         scrollToBottom();
     };
 
-    // Mostrar los botones solo si el estado es 'pending' y el usuario es el proveedor
-    const showActionButtons = servicePost?.status === 'pending' && servicePost?.bookingType === 'provider';
+    const showActionButtons = servicePost.status === 'pending' && servicePost.bookingType === 'provider';
 
     return (
         <SafeContainer fluid backgroundColor="colorBaseBlack" paddingHorizontal="md">
@@ -201,26 +282,26 @@ export const ChatScreen = () => {
     
                 <Box justifyContent="center" alignItems="center">
                     <Typography variant="bodyMedium" color={theme.colors.colorBaseWhite}>
-                        {servicePost?.bookingType === 'provider' ? 'User' : 'Provider'}
+                        {servicePost.bookingType === 'provider' ? 'User' : 'Provider'}
                     </Typography>
                     <Typography variant="bodyMedium" color={theme.colors.colorGrey100}>
-                        {servicePost?.bookingType === 'provider' ? servicePost?.client.name : servicePost?.provider.name}
+                        {servicePost.bookingType === 'provider' ? servicePost.client?.name : servicePost.provider?.name}
                     </Typography>
                 </Box>
                 
                 <Box width={60}>
-                    {servicePost?.bookingType === 'provider' && servicePost?.client.media ? (
+                    {servicePost.bookingType === 'provider' && servicePost.client?.media?.profileThumbnail?.url ? (
                         <Image
-                            source={{ uri: servicePost.client.media.profileThumbnail?.url }}
+                            source={{ uri: servicePost.client.media.profileThumbnail.url }}
                             style={{
                                 width: 40,
                                 height: 40,
                                 borderRadius: 20,
                             }}
                         />
-                    ) : servicePost?.provider.media ? (
+                    ) : servicePost.provider?.media?.profileThumbnail?.url ? (
                         <Image
-                        source={{ uri: servicePost.provider.media.profileThumbnail?.url }}
+                            source={{ uri: servicePost.provider.media.profileThumbnail.url }}
                             style={{
                                 width: 40,
                                 height: 40,
@@ -250,32 +331,30 @@ export const ChatScreen = () => {
                         keyboardDismissMode="on-drag"
                         onScrollBeginDrag={dismissKeyboard}
                     >
-                        {/* Notification for service details */}
                         <Notification title="¡Notificación!">
                             <Box>
                                 <Box marginBottom="md">
                                     <Typography variant="bodyRegular" color="white">
-                                        New request for <Typography variant="bodyBold" color="white">{servicePost?.client.name}!</Typography>
+                                        New request for <Typography variant="bodyBold" color="white">{servicePost.client?.name}!</Typography>
                                     </Typography>
                                 </Box>
                                 
                                 <Box paddingLeft="sm">
-                                    <Typography variant="bodyRegular" color="white">• Service: {servicePost?.serviceName}</Typography>
-                                    <Typography variant="bodyRegular" color="white">• Date: {servicePost?.dateShort}</Typography>
-                                    <Typography variant="bodyRegular" color="white">• Time: {servicePost?.timeShort}</Typography>
-                                    <Typography variant="bodyRegular" color="white">• Place: {servicePost?.address}</Typography>
-                                    <Typography variant="bodyRegular" color="white">• Contact number: {servicePost?.phoneNumber}</Typography>
+                                    <Typography variant="bodyRegular" color="white">• Service: {servicePost.serviceName}</Typography>
+                                    <Typography variant="bodyRegular" color="white">• Date: {servicePost.dateShort}</Typography>
+                                    <Typography variant="bodyRegular" color="white">• Time: {servicePost.timeShort}</Typography>
+                                    <Typography variant="bodyRegular" color="white">• Place: {servicePost.address}</Typography>
+                                    <Typography variant="bodyRegular" color="white">• Contact number: {servicePost.phoneNumber}</Typography>
                                     <Typography variant="bodyRegular" color="white">• Description:</Typography>
                                     <Box marginTop="sm">
                                         <Typography variant="bodyRegular" color="white">
-                                            {servicePost?.comments}
+                                            {servicePost.comments}
                                         </Typography>
                                     </Box>
                                 </Box>
                             </Box>
                         </Notification>
                         
-                        {/* Botones de Accept/Reject - Solo mostrar si está pending y es proveedor */}
                         {showActionButtons && (
                             <Animated.View 
                                 style={{
@@ -305,22 +384,20 @@ export const ChatScreen = () => {
                             </Animated.View>
                         )}
                         
-                        {/* Mensaje de aceptación */}
                         {isAccepted && (
                             <Notification title="¡Notificación!">
                                 <Typography variant="bodyRegular" color="white">
-                                    {servicePost?.bookingType === "client"
+                                    {servicePost.bookingType === "client"
                                     ? "Your request has been accepted by the provider. You can now chat with them."
                                     : "You have accepted this request. You can now chat with the user." }
                                 </Typography>
                             </Notification>
                         )}
 
-                        {/* Mensaje de rechazo */}
                         {isRejected && (
                             <Notification title="¡Notificación!">
                                 <Typography variant="bodyRegular" color="white">
-                                    {servicePost?.bookingType === "client"
+                                    {servicePost.bookingType === "client"
                                     ? "Sorry, the service has been rejected by the provider, we recommend you try another provider!"
                                     : "You have rejected this service request."}
                                 </Typography>
@@ -334,11 +411,7 @@ export const ChatScreen = () => {
                                         key={`msg-${index}`}
                                         text={msg.text}
                                         isReceived={msg.isReceived}
-                                        image={
-                                            msg.isReceived
-                                            ? servicePost?.client.media ? servicePost.client.media.profileThumbnail?.url:null
-                                            : servicePost?.provider.media ? servicePost.provider.media.profileThumbnail?.url:null
-                                        }
+                                        image={msg.image}
                                     />
                                 ))}
                             </Box>
