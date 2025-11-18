@@ -1,5 +1,14 @@
 import React, { useState, useRef, useEffect, forwardRef } from 'react';
-import { TextInput, TouchableOpacity, TouchableWithoutFeedback, Animated, Image, ImageSourcePropType } from 'react-native';
+import { 
+  TextInput, 
+  TouchableOpacity, 
+  TouchableWithoutFeedback, 
+  Animated, 
+  Image, 
+  ImageSourcePropType 
+} from 'react-native';
+import * as ImagePicker from "expo-image-picker";
+
 import { Box } from '../../layout/Box';
 import { Typography } from '../../foundation/Typography';
 import { useTheme } from '@shopify/restyle';
@@ -15,6 +24,7 @@ export const ChatInput = forwardRef<TextInput, ChatInputProps>(({
   onIconPress,
   onSubmitEditing,
   onFocus,
+  onImageSelected,
   editable = true,
   placeholder = '',
   label = '',
@@ -28,6 +38,8 @@ export const ChatInput = forwardRef<TextInput, ChatInputProps>(({
   const [isMultiline, setIsMultiline] = useState(false);
   const [isFocused, setIsFocused] = useState(false);
   const [hasText, setHasText] = useState(Boolean(value));
+  const [imageUri, setImageUri] = useState<string | null>(null);   // 👈 NUEVO
+
   const isDisabled = !editable;
 
   const normalTopPosition = styles.labelInput?.top as number;
@@ -112,9 +124,35 @@ export const ChatInput = forwardRef<TextInput, ChatInputProps>(({
     internalRef.current?.focus();
   };
 
+  const pickImage = async () => {
+    if (isDisabled) return;
+
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ["images"],
+      allowsEditing: true,
+      quality: 0.8,
+    });
+
+    if (!result.canceled && result.assets?.length > 0) {
+      setImageUri(result.assets[0].uri);
+      onImageSelected?.();
+    }
+  };
+
+  const removeImage = () => {
+    setImageUri(null);
+  };
+
   const handleSubmit = () => {
-    if (isDisabled || !value.trim()) return;
-    onIconPress?.();
+    if (isDisabled) return;
+    if (!value.trim() && !imageUri) return;
+
+    onIconPress?.({
+      text: value,
+      image: imageUri || null,
+    });
+
+    setImageUri(null);
   };
 
   const AnimatedLabel = () => {
@@ -141,10 +179,43 @@ export const ChatInput = forwardRef<TextInput, ChatInputProps>(({
 
   return (
     <Box style={{ position: 'relative' }}>
-      {(label || placeholder) && <AnimatedLabel />}
-      
+      {imageUri && (
+        <Box
+          position="relative"
+          marginBottom="sm"
+          width={70}
+          height={70}
+          borderRadius={10}
+          overflow="hidden"
+        >
+          <Image
+            source={{ uri: imageUri }}
+            style={{ width: "100%", height: "100%" }}
+            resizeMode="cover"
+          />
+
+          <TouchableOpacity
+            onPress={removeImage}
+            style={{
+              position: "absolute",
+              top: 5,
+              right: 5,
+              backgroundColor: theme.colors.colorFeedbackError,
+              width: 22,
+              height: 22,
+              borderRadius: 22,
+              justifyContent: "center",
+              alignItems: "center",
+            }}
+          >
+            <Icon name="clear" size={14} color="colorBaseWhite" />
+          </TouchableOpacity>
+        </Box>
+      )}
+
       <TouchableWithoutFeedback onPress={isDisabled ? undefined : focusInput}>
         <Box
+          position="relative"
           flexDirection="row"
           alignItems={isMultiline ? "flex-start" : "center"}
           borderWidth={1}
@@ -155,25 +226,22 @@ export const ChatInput = forwardRef<TextInput, ChatInputProps>(({
             isDisabled && styles.disabled
           ]}
         >
-
-          {/* 🔹 ICONO IZQUIERDO */}
+          {(label || placeholder) && <AnimatedLabel />}
           <Box
             position="relative"
-            top={-2}
+            top={-1}
             marginLeft="sm"
             style={isMultiline ? { alignSelf: 'flex-end', marginBottom: 15 } : undefined}
           >
-            <TouchableOpacity 
-              onPress={() => {}} 
-            >
+            <TouchableOpacity onPress={pickImage}>
               <Image
                 source={images.camera as ImageSourcePropType}
                 resizeMode="contain"
+                style={{ width: 22, height: 22 }}
               />
             </TouchableOpacity>
           </Box>
 
-          {/* 🔹 INPUT */}
           <TextInput
             ref={internalRef}
             value={value}
@@ -198,7 +266,6 @@ export const ChatInput = forwardRef<TextInput, ChatInputProps>(({
             onSubmitEditing={onSubmitEditing}
           />
 
-          {/* 🔹 ICONO DERECHO */}
           <Box 
             marginRight="sm" 
             marginTop={isMultiline ? "md" : undefined}
@@ -206,11 +273,11 @@ export const ChatInput = forwardRef<TextInput, ChatInputProps>(({
           >
             <TouchableOpacity 
               onPress={isDisabled ? undefined : handleSubmit} 
-              disabled={isDisabled}
+              disabled={!hasText && !imageUri}
             >
               <Icon 
                 name="send" 
-                color={(!hasText || isDisabled) ? "colorGrey400" : "colorBaseWhite"}
+                color={(!hasText && !imageUri) || isDisabled ? "colorGrey400" : "colorBaseWhite"}
               />
             </TouchableOpacity>
           </Box>
