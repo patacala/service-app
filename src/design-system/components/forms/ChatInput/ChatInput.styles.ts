@@ -22,7 +22,7 @@ export const getChatInputStyles = (theme?: Theme) =>
     labelInput: {
       position: 'absolute',
       top: 0,
-      left: 0,
+      left: 30,
       zIndex: 1,
       padding: 18,
     },
