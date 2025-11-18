@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect, forwardRef } from 'react';
-import { TextInput, TouchableOpacity, TouchableWithoutFeedback, Animated } from 'react-native';
+import { TextInput, TouchableOpacity, TouchableWithoutFeedback, Animated, Image, ImageSourcePropType } from 'react-native';
 import { Box } from '../../layout/Box';
 import { Typography } from '../../foundation/Typography';
 import { useTheme } from '@shopify/restyle';
@@ -7,6 +7,7 @@ import { Theme } from '../../../theme';
 import { Icon } from '../../layout/Icon';
 import { getChatInputStyles } from './ChatInput.styles';
 import { ChatInputProps } from './types';
+import images from '@/assets/images/images';
 
 export const ChatInput = forwardRef<TextInput, ChatInputProps>(({
   value = '',
@@ -19,6 +20,7 @@ export const ChatInput = forwardRef<TextInput, ChatInputProps>(({
   label = '',
   maxHeight = 120,
 }, ref) => {
+
   const theme = useTheme<Theme>();
   const styles = getChatInputStyles(theme);
   const internalRef = useRef<TextInput>(null);
@@ -28,7 +30,6 @@ export const ChatInput = forwardRef<TextInput, ChatInputProps>(({
   const [hasText, setHasText] = useState(Boolean(value));
   const isDisabled = !editable;
 
-  // Valores para la animación del label
   const normalTopPosition = styles.labelInput?.top as number;
   const focusedTopPosition = styles.labelFocused?.top as number;
   const normalFontSize = styles.labelText?.fontSize as number;
@@ -108,9 +109,7 @@ export const ChatInput = forwardRef<TextInput, ChatInputProps>(({
 
   const focusInput = () => {
     if (isDisabled) return;
-    if (internalRef.current) {
-      internalRef.current.focus();
-    }
+    internalRef.current?.focus();
   };
 
   const handleSubmit = () => {
@@ -141,7 +140,7 @@ export const ChatInput = forwardRef<TextInput, ChatInputProps>(({
   };
 
   return (
-    <Box style={{position: 'relative'}}>
+    <Box style={{ position: 'relative' }}>
       {(label || placeholder) && <AnimatedLabel />}
       
       <TouchableWithoutFeedback onPress={isDisabled ? undefined : focusInput}>
@@ -156,10 +155,28 @@ export const ChatInput = forwardRef<TextInput, ChatInputProps>(({
             isDisabled && styles.disabled
           ]}
         >
+
+          {/* 🔹 ICONO IZQUIERDO */}
+          <Box
+            position="relative"
+            top={-2}
+            marginLeft="sm"
+            style={isMultiline ? { alignSelf: 'flex-end', marginBottom: 15 } : undefined}
+          >
+            <TouchableOpacity 
+              onPress={() => {}} 
+            >
+              <Image
+                source={images.camera as ImageSourcePropType}
+                resizeMode="contain"
+              />
+            </TouchableOpacity>
+          </Box>
+
+          {/* 🔹 INPUT */}
           <TextInput
             ref={internalRef}
             value={value}
-            placeholder=""
             style={[
               styles.input,
               {
@@ -180,7 +197,8 @@ export const ChatInput = forwardRef<TextInput, ChatInputProps>(({
             onBlur={handleBlur}
             onSubmitEditing={onSubmitEditing}
           />
-          
+
+          {/* 🔹 ICONO DERECHO */}
           <Box 
             marginRight="sm" 
             marginTop={isMultiline ? "md" : undefined}
@@ -192,10 +210,11 @@ export const ChatInput = forwardRef<TextInput, ChatInputProps>(({
             >
               <Icon 
                 name="send" 
-                color={isDisabled ? "colorGrey400" : "colorBaseWhite"}
+                color={(!hasText || isDisabled) ? "colorGrey400" : "colorBaseWhite"}
               />
             </TouchableOpacity>
           </Box>
+
         </Box>
       </TouchableWithoutFeedback>
     </Box>

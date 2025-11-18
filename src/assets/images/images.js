@@ -31,7 +31,8 @@ const images = {
     gmailLogo: require('./gmail.png'),
     appleLogo: require('./apple.png'),
     chat: require('./chat.png'),
-    message: require('./message.png')
+    message: require('./message.png'),
+    camera: require('./u_camera.png')
 };
   
 export default images;
