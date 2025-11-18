@@ -39,7 +39,11 @@ export interface ChatScreenProps {
 export interface ChatMessage {
   text: string;
   isReceived: boolean;
-  image: string | null;
+  localImage?: string | null;
+  remoteImage?: string | null;
+  uploading?: boolean;
+  failed?: boolean;
+  imageProfile?: string | null;
 }
 
 // Interface para los datos del servicio
