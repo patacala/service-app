@@ -8,6 +8,7 @@ import {
     Platform,
     Keyboard,
     TouchableWithoutFeedback,
+    ActivityIndicator,
     Alert
 } from "react-native";
 import { Box, Button, SafeContainer, Typography, theme } from "@/design-system";
@@ -78,12 +79,25 @@ export const ChatScreen = () => {
     const channelRef = useRef<any>(null);
     const messagesLoadedRef = useRef(false);
 
-    const { data: serverMessages = [] } = useGetMessagesQuery(
+    const { data: serverMessages = [], isLoading: isLoadingMessages } = useGetMessagesQuery(
         { bookServiceId: bookServiceId },
         { skip: !bookServiceId }
     );
 
-    // REALTIME: Nuevos mensajes
+    const getProfileImage = (
+        senderId: string,
+        servicePost: BookService
+    ) => {
+        const isProviderSender = senderId === servicePost.provider?.id;
+
+        if (isProviderSender) {
+            return servicePost.provider?.media?.profileThumbnail?.url ?? null;
+        }
+
+        return servicePost.client?.media?.profileThumbnail?.url ?? null;
+    };
+
+
     useEffect(() => {
         if (!bookServiceId || !currentUserId) return;
 
@@ -104,8 +118,7 @@ export const ChatScreen = () => {
                         return;
                     }
 
-                    const imageProfile = servicePost.client?.media?.profileThumbnail?.url ?? null;
-
+                    const imageProfile = getProfileImage(newMsg.sender_id, servicePost);
                     setMessages(prev => {
                         const messageExists = prev.some(m => m.text === newMsg.message);
                         
@@ -137,9 +150,7 @@ export const ChatScreen = () => {
         if (serverMessages.length > 0 && currentUserId && !messagesLoadedRef.current) {
             const formatted = serverMessages.map((msg: any) => {
                 const isReceived = msg.senderId !== currentUserId;
-                const imageProfile = isReceived
-                    ? servicePost.client?.media?.profileThumbnail?.url ?? null
-                    : servicePost.provider?.media?.profileThumbnail?.url ?? null;
+                const imageProfile = getProfileImage(msg.senderId, servicePost);
 
                 return {
                     text: msg.message,
@@ -154,7 +165,6 @@ export const ChatScreen = () => {
         }
     }, [serverMessages, currentUserId]);
 
-    // Keyboard scroll
     useEffect(() => {
         const keyboardDidShowListener = Keyboard.addListener('keyboardDidShow', scrollToBottom);
         return () => keyboardDidShowListener.remove();
@@ -240,11 +250,7 @@ export const ChatScreen = () => {
 
         if (!textToSend && !imageLocalUri) return;
 
-        const imageProfile =
-            servicePost.bookingType === "provider"
-                ? servicePost.provider?.media?.profileThumbnail?.url ?? null
-                : servicePost.client?.media?.profileThumbnail?.url ?? null;
-        
+        const imageProfile = getProfileImage(currentUserId, servicePost);
         const tempMessage: ChatMessage = {
             text: textToSend,
             localImage: imageLocalUri,
@@ -345,7 +351,6 @@ export const ChatScreen = () => {
     };
 
     const showActionButtons = servicePost.status === 'pending' && servicePost.bookingType === 'provider';
-
     return (
         <SafeContainer fluid backgroundColor="colorBaseBlack" paddingHorizontal="md">
             <Box style={getChatStyles.backgroundImageContainer}>
@@ -489,24 +494,32 @@ export const ChatScreen = () => {
                                 </Typography>
                             </Notification>
                         )}
-                        
-                        <TouchableWithoutFeedback onPress={dismissKeyboard}>
-                            <Box marginTop="lg">
-                                {messages.map((msg, index) => (
-                                    <Messages
-                                        key={`msg-${index}`}
-                                        text={msg.text}
-                                        isReceived={msg.isReceived}
-                                        imageProfile={msg.imageProfile}
-                                        localImage={msg.localImage}
-                                        remoteImage={msg.remoteImage}
-                                        mediaFiles={msg.mediaFiles}
-                                        uploading={msg.uploading}
-                                        failed={msg.failed}
-                                    />
-                                ))}
+
+                        {isLoadingMessages && (
+                            <Box width="100%" alignItems="center" marginTop="lg">
+                                <ActivityIndicator size="large" color="#fff" />
                             </Box>
-                        </TouchableWithoutFeedback>
+                        )}
+                        
+                        {!isLoadingMessages && (
+                            <TouchableWithoutFeedback onPress={dismissKeyboard}>
+                                <Box marginTop="lg">
+                                    {messages.map((msg, index) => (
+                                        <Messages
+                                            key={`msg-${index}`}
+                                            text={msg.text}
+                                            isReceived={msg.isReceived}
+                                            imageProfile={msg.imageProfile}
+                                            localImage={msg.localImage}
+                                            remoteImage={msg.remoteImage}
+                                            mediaFiles={msg.mediaFiles}
+                                            uploading={msg.uploading}
+                                            failed={msg.failed}
+                                        />
+                                    ))}
+                                </Box>
+                            </TouchableWithoutFeedback>
+                        )}
                     </ScrollView>
                 </Box>
                 
