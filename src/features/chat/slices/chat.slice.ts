@@ -1,4 +1,5 @@
 import { IconName } from '@/design-system/components/layout/Icon';
+import { MediaFile } from '@/features/messages/store/messages.types';
 import {createSlice, PayloadAction} from '@reduxjs/toolkit';
 import { ImageSourcePropType } from 'react-native';
 
@@ -38,9 +39,10 @@ export interface ChatScreenProps {
 
 export interface ChatMessage {
   text: string;
-  isReceived: boolean;
   localImage?: string | null;
   remoteImage?: string | null;
+  mediaFiles?: MediaFile[];
+  isReceived: boolean;
   uploading?: boolean;
   failed?: boolean;
   imageProfile?: string | null;
