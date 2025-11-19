@@ -3,12 +3,20 @@ import { Image, ActivityIndicator } from "react-native";
 import { Box, theme, Typography } from "@/design-system";
 import { Row } from '@/design-system/components/layout/Row/Row';
 
+interface MediaFile {
+  id: string;
+  url: string;
+  variant: string;
+  position: number;
+}
+
 interface MessagesProps {
   text: string;
   isReceived: boolean;
   imageProfile?: string | null;
   localImage?: string | null;
   remoteImage?: string | null;
+  mediaFiles?: MediaFile[];
   uploading?: boolean;
   failed?: boolean;
   receivedBackgroundColor?: keyof typeof theme.colors;
@@ -23,6 +31,7 @@ export const Messages = ({
   imageProfile,
   localImage,
   remoteImage,
+  mediaFiles,
   uploading = false,
   failed = false,
   receivedBackgroundColor = "colorBrandPrimary",
@@ -39,6 +48,9 @@ export const Messages = ({
   ) : null;
 
   const imageToShow = remoteImage ?? localImage ?? null;
+  const serverImages = !imageToShow && mediaFiles 
+    ? mediaFiles.filter(m => m.variant === 'public').sort((a, b) => a.position - b.position)
+    : [];
 
   return (
     <Row
@@ -84,6 +96,25 @@ export const Messages = ({
             )}
           </Box>
         )}
+
+        {serverImages.map((media) => (
+          <Box
+            key={media.id}
+            style={{
+              width: 180,
+              height: 180,
+              borderRadius: 20,
+              overflow: "hidden",
+              marginBottom: 8,
+            }}
+          >
+            <Image
+              source={{ uri: media.url }}
+              style={{ width: "100%", height: "100%" }}
+              resizeMode="cover"
+            />
+          </Box>
+        ))}
 
         {text ? (
           <Box

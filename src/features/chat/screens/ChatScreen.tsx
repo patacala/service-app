@@ -22,13 +22,15 @@ import { useLocalSearchParams, useRouter } from "expo-router";
 import { useUpdateBookServiceStatusMutation } from "@/features/services/store/services.api";
 import { ChatInput } from "@/design-system/components/forms/ChatInput";
 import { useGetMessagesQuery, useCreateMessageMutation } from "@/features/messages/store/messages.api";
-import { useUploadImageMutation } from "@/features/media/store/media.api";
+import { useUploadImageMutation, useDeleteImageMutation } from "@/features/media/store/media.api";
 import { supabase } from '@/lib/supabase';
+import { MediaDto } from "@/features/messages/store/messages.types";
 
 export const ChatScreen = () => {
     const router = useRouter();
     const { post } = useLocalSearchParams<{ post?: string }>();
     const [uploadImage] = useUploadImageMutation();
+    const [deleteImage] = useDeleteImageMutation();
 
     let servicePost: BookService | null = null;
     try {
@@ -102,7 +104,7 @@ export const ChatScreen = () => {
                         return;
                     }
 
-                    const image = servicePost.client?.media?.profileThumbnail?.url ?? null;
+                    const imageProfile = servicePost.client?.media?.profileThumbnail?.url ?? null;
 
                     setMessages(prev => {
                         const messageExists = prev.some(m => m.text === newMsg.message);
@@ -114,7 +116,7 @@ export const ChatScreen = () => {
                         return [...prev, {
                             text: newMsg.message,
                             isReceived: true,
-                            image,
+                            imageProfile,
                         }];
                     });
                     scrollToBottom();
@@ -143,6 +145,7 @@ export const ChatScreen = () => {
                     text: msg.message,
                     isReceived,
                     imageProfile,
+                    mediaFiles: msg.media || [],
                 };
             });
             setMessages(formatted);
@@ -241,7 +244,7 @@ export const ChatScreen = () => {
             servicePost.bookingType === "provider"
                 ? servicePost.provider?.media?.profileThumbnail?.url ?? null
                 : servicePost.client?.media?.profileThumbnail?.url ?? null;
-
+        
         const tempMessage: ChatMessage = {
             text: textToSend,
             localImage: imageLocalUri,
@@ -256,51 +259,84 @@ export const ChatScreen = () => {
         setMessage("");
         scrollToBottom();
 
+        let uploadedImageId: string | null = null;
+
         try {
-            if (textToSend) {
-                await createMessage({
-                    bookServiceId,
-                    message: textToSend,
-                }).unwrap();
+            let mediaToSend: MediaDto[] | undefined = undefined;
+
+            // Si hay imagen, subirla primero
+            if (imageLocalUri) {
+                try {
+                    const uploaded = await uploadImage({ 
+                        file: { 
+                            uri: imageLocalUri, 
+                            name: `chat-${Date.now()}.jpg`, 
+                            type: "image/jpeg" 
+                        } 
+                    }).unwrap();
+
+                    if (uploaded.id && uploaded.variants) {
+                        uploadedImageId = uploaded.id;
+                        
+                        mediaToSend = [{
+                            filename: `chat-${Date.now()}.jpg`,
+                            id: uploaded.id,
+                            downloaded: false,
+                            kind: 'image',
+                            variants: uploaded.variants
+                        }];
+
+                        // Actualizar mensaje temporal con la imagen subida
+                        setMessages(prev =>
+                            prev.map(m =>
+                                m === tempMessage
+                                    ? {
+                                        ...m,
+                                        uploading: false,
+                                        remoteImage: uploaded.url ?? null,
+                                        failed: false
+                                    }
+                                    : m
+                            )
+                        );
+                    }
+                } catch (error) {
+                    console.error("Error uploading image:", error);
+                    setMessages(prev =>
+                        prev.map(m =>
+                            m === tempMessage
+                                ? {
+                                    ...m,
+                                    uploading: false,
+                                    failed: true
+                                }
+                                : m
+                        )
+                    );
+                    return;
+                }
             }
+
+            await createMessage({
+                bookServiceId,
+                message: textToSend,
+                media: mediaToSend
+            }).unwrap();
+
         } catch (error) {
             console.error("Error sending message:", error);
-            setMessages(prev =>
-                prev.map(m => (m === tempMessage ? { ...m, failed: true } : m))
-            );
-        }
-
-        if (imageLocalUri) {
-            try {
-                const uploaded = await uploadImage({ file: { uri: imageLocalUri, name: `chat-${Date.now()}.jpg`, type: "image/jpeg" } }).unwrap();
-                console.log(uploaded);
-                setMessages(prev =>
-                    prev.map(m =>
-                        m === tempMessage
-                        ? {
-                            ...m,
-                            uploading: false,
-                            remoteImage: uploaded.url ?? null,
-                            failed: false
-                        }
-                        : m
-                    )
-                );
-            } catch (error) {
-                console.error("Error uploading image:", error);
-
-                setMessages(prev =>
-                    prev.map(m =>
-                        m === tempMessage
-                        ? {
-                            ...m,
-                            uploading: false,
-                            failed: true
-                        }
-                        : m
-                    )
-                );
+            
+            if (uploadedImageId) {
+                try {
+                    await deleteImage(uploadedImageId).unwrap();
+                } catch (deleteError) {
+                    console.error('Error deleting uploaded image:', deleteError);
+                }
             }
+
+            setMessages(prev =>
+                prev.map(m => (m === tempMessage ? { ...m, failed: true, uploading: false } : m))
+            );
         }
     };
 
@@ -464,6 +500,7 @@ export const ChatScreen = () => {
                                         imageProfile={msg.imageProfile}
                                         localImage={msg.localImage}
                                         remoteImage={msg.remoteImage}
+                                        mediaFiles={msg.mediaFiles}
                                         uploading={msg.uploading}
                                         failed={msg.failed}
                                     />
