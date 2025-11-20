@@ -90,8 +90,27 @@ export const Messages = ({
                 justifyContent="center"
                 alignItems="center"
                 backgroundColor="colorBaseBlack"
+                style={{ opacity: 0.7 }}
               >
                 <ActivityIndicator size="large" color="white" />
+              </Box>
+            )}
+
+            {failed && (
+              <Box
+                position="absolute"
+                top={0}
+                bottom={0}
+                left={0}
+                right={0}
+                justifyContent="center"
+                alignItems="center"
+                backgroundColor="colorBaseBlack"
+                style={{ opacity: 0.7 }}
+              >
+                <Typography variant="bodySmall" color={theme.colors.colorFeedbackError}>
+                  Failed to send
+                </Typography>
               </Box>
             )}
           </Box>
@@ -118,19 +137,34 @@ export const Messages = ({
         ))}
 
         {text ? (
-          <Box
-            backgroundColor={isReceived ? receivedBackgroundColor : sentBackgroundColor}
-            padding="md"
-            borderRadius={45}
-            borderBottomLeftRadius={isReceived ? 0 : 45}
-            borderBottomRightRadius={isReceived ? 45 : 0}
-          >
-            <Typography
-              variant="bodyRegular"
-              color={isReceived ? theme.colors[receivedTextColor] : theme.colors[sentTextColor]}
+          <Box>
+            <Box
+              backgroundColor={isReceived ? receivedBackgroundColor : sentBackgroundColor}
+              padding="md"
+              borderRadius={45}
+              borderBottomLeftRadius={isReceived ? 0 : 45}
+              borderBottomRightRadius={isReceived ? 45 : 0}
+              style={{
+                borderWidth: failed ? 1 : 0,
+                borderColor: failed ? theme.colors.colorFeedbackError : "transparent",
+                opacity: failed ? 0.6 : 1
+              }}
             >
-              {text}
-            </Typography>
+              <Typography
+                variant="bodyRegular"
+                color={isReceived ? theme.colors[receivedTextColor] : theme.colors[sentTextColor]}
+              >
+                {text}
+              </Typography>
+            </Box>
+            
+            {failed && (
+              <Row alignItems="center" gap="xs" marginTop="xs">
+                <Typography variant="bodySmall" color={theme.colors.colorFeedbackError}>
+                  Message failed to send
+                </Typography>
+              </Row>
+            )}
           </Box>
         ) : null}
       </Box>
