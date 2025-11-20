@@ -105,7 +105,8 @@ export const Messages = ({
               height: 180,
               borderRadius: 20,
               overflow: "hidden",
-              marginBottom: 8,
+              marginTop: 20,
+              marginBottom: 8
             }}
           >
             <Image

@@ -48,6 +48,13 @@ export interface ChatMessage {
   imageProfile?: string | null;
 }
 
+export interface MediaFileType {
+    id: string;
+    url: string;
+    variant: string;
+    position: number;
+}
+
 // Interface para los datos del servicio
 export interface ServiceData {
   id: string;

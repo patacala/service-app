@@ -18,7 +18,7 @@ import { Row } from "@/design-system/components/layout/Row/Row";
 import { BookService } from "@/features/services/store";
 import { Messages } from "../components/Messages";
 import { Notification } from "../components/Notification";
-import { ChatMessage } from "../slices/chat.slice";
+import { ChatMessage, MediaFileType } from "../slices/chat.slice";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useUpdateBookServiceStatusMutation } from "@/features/services/store/services.api";
 import { ChatInput } from "@/design-system/components/forms/ChatInput";
@@ -97,6 +97,54 @@ export const ChatScreen = () => {
         return servicePost.client?.media?.profileThumbnail?.url ?? null;
     };
 
+    const fetchMessageWithMedia = async (messageId: string) => {
+        try {
+            const { data: message, error: messageError } = await supabase
+                .from('BookServiceMessage')
+                .select('id, sender_id, message, media_link_id')
+                .eq('id', messageId)
+                .single();
+
+            if (messageError || !message) {
+                console.error('Error fetching message:', messageError);
+                return null;
+            }
+
+            if (!message.media_link_id) {
+                return {
+                    id: message.id,
+                    senderId: message.sender_id,
+                    message: message.message,
+                    media: [] as MediaFileType[]
+                };
+            }
+
+            const { data: mediaFiles, error: mediaError } = await supabase
+                .from('MediaFile')
+                .select('id, url, type_variant, position')
+                .eq('link_id', message.media_link_id)
+                .order('position', { ascending: true });
+
+            if (mediaError) {
+                console.error('Error fetching media files:', mediaError);
+            }
+
+            return {
+                id: message.id,
+                senderId: message.sender_id,
+                message: message.message,
+                media: (mediaFiles || []).map((file): MediaFileType => ({
+                    id: file.id,
+                    url: file.url,
+                    variant: file.type_variant,
+                    position: file.position
+                }))
+            };
+        } catch (error) {
+            console.error('Error in fetchMessageWithMedia:', error);
+            return null;
+        }
+    };
 
     useEffect(() => {
         if (!bookServiceId || !currentUserId) return;
@@ -111,7 +159,7 @@ export const ChatScreen = () => {
                     table: 'BookServiceMessage',
                     filter: `book_service_id=eq.${bookServiceId}`,
                 },
-                (payload) => {
+                async (payload) => {
                     const newMsg = payload.new;
                     
                     if (newMsg.sender_id === currentUserId) {
@@ -119,8 +167,17 @@ export const ChatScreen = () => {
                     }
 
                     const imageProfile = getProfileImage(newMsg.sender_id, servicePost);
+
+                    let mediaFiles: MediaFileType[] = [];
+                    if (newMsg.media_link_id) {
+                        const fullMessage = await fetchMessageWithMedia(newMsg.id);
+                        if (fullMessage) {
+                            mediaFiles = fullMessage.media;
+                        }
+                    }
+
                     setMessages(prev => {
-                        const messageExists = prev.some(m => m.text === newMsg.message);
+                        const messageExists = prev.some(m => m.text === newMsg.message && m.isReceived);
                         
                         if (messageExists) {
                             return prev;
@@ -130,6 +187,7 @@ export const ChatScreen = () => {
                             text: newMsg.message,
                             isReceived: true,
                             imageProfile,
+                            mediaFiles: mediaFiles
                         }];
                     });
                     scrollToBottom();
@@ -351,6 +409,7 @@ export const ChatScreen = () => {
     };
 
     const showActionButtons = servicePost.status === 'pending' && servicePost.bookingType === 'provider';
+    
     return (
         <SafeContainer fluid backgroundColor="colorBaseBlack" paddingHorizontal="md">
             <Box style={getChatStyles.backgroundImageContainer}>
