@@ -66,10 +66,12 @@ export const ChatScreen = () => {
     const [updateBookServiceStatus, { isLoading: isLoadUpdateBookServiceSta }] = useUpdateBookServiceStatusMutation();
     const [createMessage] = useCreateMessageMutation();
 
-    const [isAccepted, setIsAccepted] = useState(servicePost.status === 'accepted');
-    const [isRejected, setIsRejected] = useState(servicePost.status === 'rejected');
-    const [isCancelled, setIsCancelled] = useState(servicePost.status === 'cancelled');
-    const [isCompleted, setIsCompleted] = useState(servicePost.status === 'completed');
+    const initialStatusRef = useRef(servicePost.status);
+
+    const [isAccepted, setIsAccepted] = useState(initialStatusRef.current === 'accepted');
+    const [isRejected, setIsRejected] = useState(initialStatusRef.current === 'rejected');
+    const [isCancelled, setIsCancelled] = useState(initialStatusRef.current === 'cancelled');
+    const [isCompleted, setIsCompleted] = useState(initialStatusRef.current === 'completed');
     const isChatBlocked = isRejected || isCancelled || isCompleted;
 
     const [message, setMessage] = useState('');
@@ -228,15 +230,6 @@ export const ChatScreen = () => {
         return () => keyboardDidShowListener.remove();
     }, []);
 
-    useEffect(() => {
-        if (servicePost) {
-            setIsAccepted(servicePost.status === 'accepted');
-            setIsRejected(servicePost.status === 'rejected');
-            setIsCancelled(servicePost.status === 'cancelled');
-            setIsCompleted(servicePost.status === 'completed');
-        }
-    }, [servicePost]);
-
     const scrollToBottom = () => {
         setTimeout(() => {
             scrollViewRef.current?.scrollToEnd({ animated: true });
@@ -258,15 +251,17 @@ export const ChatScreen = () => {
                 status: 'accepted'
             }).unwrap();
 
-            Animated.parallel([
-                Animated.timing(buttonsOpacity, {
-                    toValue: 0,
-                    duration: 300,
-                    useNativeDriver: false,
-                }),
-            ]).start(() => {
-                setIsAccepted(true);
-                scrollToBottom();
+            setIsAccepted(true);
+            setIsRejected(false);
+            setIsCancelled(false);
+            setIsCompleted(false);
+
+            Animated.timing(buttonsOpacity, {
+                toValue: 0,
+                duration: 300,
+                useNativeDriver: true,
+            }).start(() => {
+                setTimeout(() => scrollToBottom(), 150);
             });
         } catch (error) {
             console.error('Error accepting service:', error);
@@ -286,16 +281,20 @@ export const ChatScreen = () => {
                 status: 'rejected'
             }).unwrap();
 
-            Animated.parallel([
-                Animated.timing(buttonsOpacity, {
-                    toValue: 0,
-                    duration: 300,
-                    useNativeDriver: false,
-                }),
-            ]).start(() => {
-                setIsRejected(true);
+            setIsRejected(true);
+            setIsAccepted(false);
+            setIsCancelled(false);
+            setIsCompleted(false);
+
+            Animated.timing(buttonsOpacity, {
+                toValue: 0,
+                duration: 300,
+                useNativeDriver: true,
+            }).start(() => {
+                setTimeout(() => scrollToBottom(), 150);
             });
         } catch (error) {
+            console.error('Error rejecting service:', error);
             Alert.alert('Error', 'Failed to reject the service. Please try again.');
         }
     };
@@ -328,7 +327,6 @@ export const ChatScreen = () => {
         try {
             let mediaToSend: MediaDto[] | undefined = undefined;
 
-            // Si hay imagen, subirla primero
             if (imageLocalUri) {
                 try {
                     const uploaded = await uploadImage({ 
@@ -350,7 +348,6 @@ export const ChatScreen = () => {
                             variants: uploaded.variants
                         }];
 
-                        // Actualizar mensaje temporal con la imagen subida
                         setMessages(prev =>
                             prev.map(m =>
                                 m === tempMessage
@@ -539,7 +536,7 @@ export const ChatScreen = () => {
                                 <Typography variant="bodyRegular" color="white">
                                     {servicePost.bookingType === "client"
                                     ? "Your request has been accepted by the provider. You can now chat with them."
-                                    : "You have accepted this request. You can now chat with the user." }
+                                    : "You have accepted this request." }
                                 </Typography>
                             </Notification>
                         )}
