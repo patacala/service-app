@@ -78,17 +78,15 @@ export const ServicePost: React.FC<ServicePostProps> = ({
         </Row>
         <Box>
           {/* <Icon name="location" size={32} color="colorGrey100" /> */}
-          {bookService.status !== 'pending' && (
-              <TouchableOpacity onPress={handleDetail}>
-                <Image
-                  source={images.message as ImageSourcePropType}
-                  style={{
-                    width: 35,
-                    height: 35,
-                  }}
-                />
-              </TouchableOpacity>
-          )}
+          <TouchableOpacity onPress={handleDetail}>
+            <Image
+              source={images.message as ImageSourcePropType}
+              style={{
+                width: 35,
+                height: 35,
+              }}
+            />
+          </TouchableOpacity>
         </Box>
       </Row>
 
