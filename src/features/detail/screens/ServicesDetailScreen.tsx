@@ -13,6 +13,8 @@ import {
   View,
   LayoutChangeEvent,
   TouchableWithoutFeedback,
+  Pressable,
+  Modal
 } from 'react-native';
 import images from '@/assets/images/images';
 import Toast from 'react-native-toast-message';
@@ -29,6 +31,7 @@ import { CreateBookServiceRequest, Service } from '@/features/services/store';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { getProfileStyles } from '@/features/profile/screens/profile/profile.styles';
 import { useVideoPlayer, VideoView } from 'expo-video';
+import { ImageViewer } from '@/design-system/components/ImageViewer/ImageViewer';
 
 const { width } = Dimensions.get('window');
 
@@ -42,6 +45,9 @@ export const ServicesDetailScreen = () => {
   const router = useRouter();
   const scrollViewRef = useRef<ScrollView>(null);
   const carouselScrollViewRef = useRef<ScrollView>(null);
+  const [previewImage, setPreviewImage] = useState<string | null>(null);
+  const openPreview = (uri: string) => setPreviewImage(uri);
+  const closePreview = () => setPreviewImage(null);
   const [sectionPositions, setSectionPositions] = useState({
     portfolio: 0,
     bookingdetail: 0,
@@ -52,19 +58,16 @@ export const ServicesDetailScreen = () => {
   const [createFavorite, {isLoading: isLoadingCreaFav}] = useCreateFavoriteMutation();
   const [deleteFavorite, {isLoading: isLoadingDelFav}] = useDeleteFavoriteMutation();
   const [isFavorite, setIsFavorite] = useState(post.isFavorite ?? false);
-
   const [isScrollingProgrammatically, setIsScrollingProgrammatically] = useState(false);
   const [selectedItemDetail, setSelectedItemDetail] = useState(['portfolio']);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [dotPressInProgress, setDotPressInProgress] = useState(false);
   const [serviceBookVisible, setServiceBookVisible] = useState(false);
-
   const itemsDetail = [
     { id: 'portfolio', label: 'Portfolio' },
     { id: 'bookingdetail', label: 'Service Detail' },
     { id: 'userreviews', label: 'User Reviews' },
   ];
-
   const reviews = [
     {
       rating: 4.2,
@@ -100,7 +103,6 @@ export const ServicesDetailScreen = () => {
       reviewTitle: 'Highly Recommended',
     },
   ];
-
   const imageGallery = post.media;
   const slideWidth = width - theme.spacing.md * 2;
   const animatedOpacity = useRef(new Animated.Value(1)).current;
@@ -110,7 +112,6 @@ export const ServicesDetailScreen = () => {
   const handleFavoritePress = async () => {
     const prevValue = isFavorite;
     setIsFavorite(!prevValue);
-
     try {
       if (prevValue) {
         await deleteFavorite(post.id).unwrap();
@@ -158,10 +159,8 @@ export const ServicesDetailScreen = () => {
 
   const determineVisibleSection = (scrollY: number) => {
     const scrollPosition = scrollY + 120;
-    
     const bookingDetailStart = sectionPositions.bookingdetail;
     const userReviewsStart = sectionPositions.userreviews;
-    
     if (scrollPosition < bookingDetailStart) {
       return 'portfolio';
     } else if (scrollPosition < userReviewsStart) {
@@ -173,10 +172,8 @@ export const ServicesDetailScreen = () => {
 
   const handleScroll = (event: NativeSyntheticEvent<NativeScrollEvent>) => {
     if (isScrollingProgrammatically) return;
-    
     const scrollY = event.nativeEvent.contentOffset.y;
     const visibleSection = determineVisibleSection(scrollY);
-    
     if (selectedItemDetail[0] !== visibleSection) {
       setSelectedItemDetail([visibleSection]);
     }
@@ -184,17 +181,14 @@ export const ServicesDetailScreen = () => {
 
   const handleSelectionChange = (selectedIds: string[]) => {
     if (selectedIds.length === 0 || (selectedIds.length === 1 && selectedIds[0] === selectedItemDetail[0])) return;
-    
     setSelectedItemDetail(selectedIds);
     const selectedId = selectedIds[0];
     setIsScrollingProgrammatically(true);
-
     const position = selectedId === 'portfolio' ? 0 : sectionPositions[selectedId as keyof typeof sectionPositions];
     scrollViewRef.current?.scrollTo({
       y: Math.max(0, position - 5),
       animated: true,
     });
-
     setTimeout(() => {
       setIsScrollingProgrammatically(false);
     }, 1000);
@@ -203,7 +197,7 @@ export const ServicesDetailScreen = () => {
   const panResponder = useRef(
     PanResponder.create({
       onMoveShouldSetPanResponderCapture: (_, gestureState) => {
-        const isHorizontalGesture = 
+        const isHorizontalGesture =
           Math.abs(gestureState.dx) > 10 &&
           Math.abs(gestureState.dx) > Math.abs(gestureState.dy) * 2;
         return isHorizontalGesture;
@@ -221,7 +215,6 @@ export const ServicesDetailScreen = () => {
           duration: 200,
           useNativeDriver: true,
         }).start();
-
         if (gestureState.dx < -50 && currentImageIndex < imageGallery.length - 1) {
           handleDotPress(currentImageIndex + 1);
         } else if (gestureState.dx > 50 && currentImageIndex > 0) {
@@ -233,7 +226,6 @@ export const ServicesDetailScreen = () => {
 
   const handleScrollEnd = (event: NativeSyntheticEvent<NativeScrollEvent>) => {
     if (dotPressInProgress) return;
-
     const index = Math.round(event.nativeEvent.contentOffset.x / slideWidth);
     setCurrentImageIndex(index);
   };
@@ -241,13 +233,11 @@ export const ServicesDetailScreen = () => {
   const handleDotPress = (index: number) => {
     setDotPressInProgress(true);
     setCurrentImageIndex(index);
-
     carouselScrollViewRef.current?.scrollTo({
       x: slideWidth * index,
       y: 0,
       animated: false,
     });
-
     setTimeout(() => {
       setDotPressInProgress(false);
     }, 200);
@@ -256,7 +246,7 @@ export const ServicesDetailScreen = () => {
   const renderReviews = () => {
     return reviews.map((review, index) => (
       <Box key={review.username + '-' + index} marginBottom={index < reviews.length - 1 ? "md" : "none"}>
-        <RatingReview 
+        <RatingReview
           rating={review.rating}
           reviewDate={review.reviewDate}
           username={review.username}
@@ -279,15 +269,13 @@ export const ServicesDetailScreen = () => {
         responsibleName: formData.responsibleName,
         phoneNumber: formData.phoneNumber,
       };
-
-      const result = await createBookService(bookingData).unwrap();
+      await createBookService(bookingData).unwrap();
       Toast.show({
         type: "success",
         text1: "Reserva Exitosa",
         text2: "Tu solicitud de servicio ha sido enviada correctamente",
       });
-
-      return true;      
+      return true;
     } catch (error: any) {
       Toast.show({
         type: "error",
@@ -300,8 +288,10 @@ export const ServicesDetailScreen = () => {
 
   const VideoPlayerWrapper = ({ uri, style }: VideoPlayerWrapperProps) => {
     const player = useVideoPlayer(uri, (player) => {
-      player.loop = true;
-      player.play(); 
+      player.loop = false;
+      player.muted = false;
+      player.allowsExternalPlayback = false;
+      player.play();
     });
 
     return (
@@ -309,13 +299,34 @@ export const ServicesDetailScreen = () => {
         style={style}
         player={player}
         fullscreenOptions={{ enable: true }}
-        allowsPictureInPicture
+        allowsPictureInPicture={false}
+        allowsFullscreen={true}
       />
     );
   };
 
   return (
     <SafeContainer fluid backgroundColor="colorBaseBlack" paddingHorizontal="md">
+      <Modal visible={!!previewImage} transparent animationType="fade">
+        <Pressable
+          style={{
+            flex: 1,
+            backgroundColor: "rgba(0,0,0,0.9)",
+            justifyContent: "center",
+            alignItems: "center",
+          }}
+          onPress={closePreview}
+        >
+          {previewImage && (
+            <ImageViewer
+              sourceType="url"
+              source={previewImage}
+              width={350}
+              height={350}
+            />
+          )}
+        </Pressable>
+      </Modal>
       <Box>
         <Box style={styles.backgroundImageContainer}>
           <Image
@@ -324,7 +335,6 @@ export const ServicesDetailScreen = () => {
             style={styles.backgroundImage}
           />
         </Box>
-
         <Row alignItems="center" justifyContent="space-between" marginTop="xl" height={60}>
           <Box width={60} height={60} justifyContent="center" alignItems="center">
             <Button
@@ -334,8 +344,7 @@ export const ServicesDetailScreen = () => {
               variant="centerIconOnly"
             />
           </Box>
-
-          <Box justifyContent="center" alignItems="center"  maxWidth={220}>
+          <Box justifyContent="center" alignItems="center" maxWidth={220}>
             <Typography variant="bodyLarge" color={theme.colors.colorBaseWhite} truncate>
               {post.title}
             </Typography>
@@ -349,7 +358,6 @@ export const ServicesDetailScreen = () => {
               </Typography>
             </Row>
           </Box>
-
           <Box width={60} height={60} justifyContent="center" alignItems="center">
             <Button
               label=""
@@ -365,7 +373,6 @@ export const ServicesDetailScreen = () => {
             />
           </Box>
         </Row>
-
         <Box marginTop="sm">
           <GroupChipSelector
             onChange={handleSelectionChange}
@@ -377,8 +384,7 @@ export const ServicesDetailScreen = () => {
           />
         </Box>
       </Box>
-
-      <ScrollView 
+      <ScrollView
         ref={scrollViewRef}
         showsVerticalScrollIndicator={false}
         onScroll={handleScroll}
@@ -392,7 +398,6 @@ export const ServicesDetailScreen = () => {
       >
         <TouchableWithoutFeedback onPress={() => {}}>
           <View>
-            {/* SECCIÓN: PORTFOLIO */}
             <View onLayout={handlePortfolioLayout}>
               <Box marginTop="sm" zIndex={1}>
                 <Box>
@@ -414,45 +419,32 @@ export const ServicesDetailScreen = () => {
                         pagingEnabled
                       >
                         {imageGallery.map((media, index) => (
-                          <Box key={index} width={slideWidth} height={230}>
-                            {media.kind === 'video' && media.variants.public?.url ? (
-                              <VideoPlayerWrapper
-                                uri={media.variants.public.url}
-                                style={styles.carouselImage}
-                              />
-                            ) : (
-                              <Image
-                                source={{ uri: media.variants.public?.url ?? '' }}
-                                style={styles.carouselImage}
-                                resizeMode="cover"
-                              />
-                            )}
-                          </Box>
+                          <Pressable
+                            key={index}
+                            onPress={() => {
+                              if (media.kind === 'video') return;
+                              openPreview(media.variants.public?.url ?? '');
+                            }}
+                          >
+                            <Box width={slideWidth} height={230}>
+                              {media.kind === 'video' && media.variants.public?.url ? (
+                                <VideoPlayerWrapper
+                                  uri={media.variants.public.url}
+                                  style={styles.carouselImage}
+                                />
+                              ) : (
+                                <Image
+                                  source={{ uri: media.variants.public?.url ?? '' }}
+                                  style={styles.carouselImage}
+                                  resizeMode="cover"
+                                />
+                              )}
+                            </Box>
+                          </Pressable>
                         ))}
                       </ScrollView>
                     </Animated.View>
-
-                    {/* <TouchableOpacity
-                      style={[styles.touchArea, styles.leftTouchArea]}
-                      activeOpacity={1}
-                      onPress={() => currentImageIndex > 0 && handleDotPress(currentImageIndex - 1)}
-                    /> */}
-                    {/* <TouchableOpacity
-                      style={[styles.touchArea, styles.rightTouchArea]}
-                      activeOpacity={1}
-                      onPress={() =>
-                        currentImageIndex < imageGallery.length - 1 &&
-                        handleDotPress(currentImageIndex + 1)
-                      }
-                    /> */}
-
-                    {/* <Image
-                      style={styles.linearGradientBlack}
-                      source={images.linearGradientBlack as ImageSourcePropType}
-                      resizeMode="cover"
-                    /> */}
                   </Box>
-
                   <Row position="absolute" left={0} right={0} bottom={15} justifyContent="center" pointerEvents="box-none">
                     {imageGallery.map((_, index) => (
                       <TouchableOpacity
@@ -470,9 +462,9 @@ export const ServicesDetailScreen = () => {
                     ))}
                   </Row>
                 </Box>
-                <Row justifyContent="space-between" borderBottomWidth={0.5} 
-                  borderBottomColor="colorGrey400" 
-                  paddingBottom="md" 
+                <Row justifyContent="space-between" borderBottomWidth={0.5}
+                  borderBottomColor="colorGrey400"
+                  paddingBottom="md"
                   marginTop="md"
                   marginBottom="md"
                 >
@@ -485,7 +477,6 @@ export const ServicesDetailScreen = () => {
                       </Typography>
                     </Box>
                   </Row>
-
                   <Row spacing="xs" alignItems="flex-start">
                     <Icon size={20} name="location" color="colorBaseWhite"></Icon>
                     <Box marginLeft="xs">
@@ -495,22 +486,19 @@ export const ServicesDetailScreen = () => {
                       </Typography>
                     </Box>
                   </Row>
-
                   <Box style={styles.labelDetail} justifyContent='center' alignItems='center'>
                     <Image style={styles.imageLabelDetail} source={images.labelGrayImage as ImageSourcePropType} />
                     { images.labelGrayImage ? <Typography variant="bodySmall" color="white">Super Host</Typography> : null }
                   </Box>
                 </Row>
-              </Box> 
+              </Box>
             </View>
-
-            {/* SECCIÓN: BOOKING DETAIL */}
             <View onLayout={handleBookingDetailLayout}>
               <Box>
                 <Row spacing="sm">
-                  <Image source={{ uri: post.provider.media?.profileThumbnail?.url }} 
+                  <Image source={{ uri: post.provider.media?.profileThumbnail?.url }}
                     resizeMode="contain"
-                    style={getProfileStyles.profileImageAll} 
+                    style={getProfileStyles.profileImageAll}
                   />
                   <Box marginLeft="sm">
                     <Typography variant="bodySmall" color={theme.colors.colorGrey200}>{post.title}</Typography>
@@ -524,8 +512,6 @@ export const ServicesDetailScreen = () => {
                 </Box>
               </Box>
             </View>
-
-            {/* SECCIÓN: USER REVIEWS */}
             <View onLayout={handleUserReviewsLayout}>
               <Box marginTop="lg">
                 {renderReviews()}
@@ -534,32 +520,30 @@ export const ServicesDetailScreen = () => {
           </View>
         </TouchableWithoutFeedback>
       </ScrollView>
-
-      <Box 
-        position="absolute" 
-        bottom={0} 
-        width="100%" 
+      <Box
+        position="absolute"
+        bottom={0}
+        width="100%"
         alignSelf="center"
         marginBottom="sm"
       >
-        <Button 
-          variant="secondary" 
-          label={"Book Service"} 
+        <Button
+          variant="secondary"
+          label={"Book Service"}
           onPress={() => setServiceBookVisible(true)}
         />
       </Box>
-
       <BookServiceForm
         visible={serviceBookVisible}
         disabled={isLoadBookingService}
         onClose={() => setServiceBookVisible(false)}
-        service={post} 
+        service={post}
         onSubmit={handleBookingSubmit}
       />
     </SafeContainer>
   );
 };
-                  
+
 const styles = StyleSheet.create({
   backgroundImageContainer: {
     position: 'absolute',
@@ -573,7 +557,7 @@ const styles = StyleSheet.create({
   },
   scrollViewMainContent: {
     position: "relative",
-    flexGrow: 1, 
+    flexGrow: 1,
     paddingBottom: 80
   },
   scrollView: {
@@ -594,12 +578,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingRight: 0,
   },
-  linearGradientBlack: {
-    position: 'absolute',
-    width: '100%',
-    height: '100%',
-    borderRadius: 12,
-  },
   carouselImage: {
     width: '100%',
     height: '100%',
@@ -616,23 +594,10 @@ const styles = StyleSheet.create({
   activeIndicator: {
     backgroundColor: theme.colors.colorBaseWhite,
   },
-  touchArea: {
-    position: 'absolute',
-    top: 0,
-    bottom: 0,
-    width: '30%',
-    zIndex: 5,
-  },
-  leftTouchArea: {
-    left: 0,
-  },
-  rightTouchArea: {
-    right: 0,
-  },
   labelDetail: {
     width: 102,
     height: 27.66
-  },  
+  },
   imageLabelDetail: {
     position: 'absolute'
   },
