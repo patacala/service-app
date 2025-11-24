@@ -1,5 +1,5 @@
 import {StyleSheet} from 'react-native';
-import {Theme} from '../../../theme';
+import {theme, Theme} from '../../../theme';
 import {TypographyVariant} from './types';
 
 const TYPOGRAPHY_VARIANTS = {
@@ -66,6 +66,9 @@ const COLOR_VARIANTS = {
   }),
   secondary: (theme: Theme) => ({
     color: theme.colors.colorTextSecondary,
+  }),
+  colorFeedbackError: (theme: Theme) => ({
+    color: theme.colors.colorFeedbackError,
   }),
 };
 
