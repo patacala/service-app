@@ -5,9 +5,10 @@ import { getServicesStyles } from './services/services.styles';
 import { LocationPanel } from "@/features/wall/components/LocationPanel";
 import { ServicePost } from "../components/ServicePost";
 import { CancelService } from "../components/CancelService";
-import { RateService } from "../components/RateService";
+import { RateService } from "../../ratings/components/RateService";
 import { useGetCategoriesQuery } from "@/infrastructure/services/api";
 import { useGetMyBookServicesQuery, useUpdateBookServiceStatusMutation } from "../store/services.api";
+import { useCreateRatingMutation } from "@/features/ratings/store/ratings.api";
 import { BookService } from "../store";
 import { getWallStyles } from "@/features/wall/screens/wall/wall.style";
 import { getDeviceLanguage } from "@/assembler/config/i18n";
@@ -16,6 +17,7 @@ import { useTranslation } from "react-i18next";
 import Toast from "react-native-toast-message";
 import { useAuth } from "@/infrastructure/auth/AuthContext";
 import { CompletedService } from "../components/CompleteService";
+import { RatingVisibility } from "@/features/ratings/store/ratings.types";
 
 interface Location {
     id: string;
@@ -33,6 +35,7 @@ export const ServicesScreen = () => {
     const [selectedServiceToCancel, setSelectedServiceToCancel] = useState<BookService | null>(null);
     const [selectedServiceToCompleted, setSelectedServiceToCompleted] = useState<BookService | null>(null);
     const [selectedServiceToRate, setSelectedServiceToRate] = useState<BookService | null>(null);
+    const [createRating, { isLoading: isLoadingRating }] = useCreateRatingMutation();
 
     const [updateBookServiceStatus, {isLoading: isLoadBookServiceUpdate}] = useUpdateBookServiceStatusMutation();
     const { data: categoriesData, error: categoriesError } = useGetCategoriesQuery({ language: getDeviceLanguage() }, {
@@ -182,6 +185,44 @@ export const ServicesScreen = () => {
         }
     };
 
+    const handleSubmitRating = async (rating: number, title: string, comment: string) => {
+        if (!selectedServiceToRate) {
+            Toast.show({
+                type: "error",
+                text1: "Error",
+                text2: "No hay un servicio seleccionado para calificar.",
+            });
+            return;
+        }
+
+        try {
+            await createRating({
+                ratedUserId: selectedServiceToRate.provider.id,
+                serviceId: selectedServiceToRate.serviceId,
+                score: rating,
+                title: title,
+                body: comment,
+                visibility: RatingVisibility.PUBLIC,
+            }).unwrap();
+
+            Toast.show({
+                type: "success",
+                text1: "Rating enviado",
+                text2: "Gracias por tu calificación.",
+            });
+
+            setRateServiceVisible(false);
+            setSelectedServiceToRate(null);
+        } catch (error: any) {
+            Toast.show({
+                type: "error",
+                text1: "Error al enviar rating",
+                text2: error?.data?.message ?? "Intenta nuevamente.",
+            });
+            throw error;
+        }
+    };
+
     const handleRateServicePress = (service: BookService) => {
         setSelectedServiceToRate(service);
         setRateServiceVisible(true);
@@ -328,9 +369,8 @@ export const ServicesScreen = () => {
                     setRateServiceVisible(false);
                     setSelectedServiceToRate(null);
                 }}
-                onRate={(rating) => {
-                    console.log(`Service ${selectedServiceToRate?.id} rated with ${rating} stars`);
-                }}
+                onRate={handleSubmitRating}
+                isLoading={isLoadingRating}
             />
         </>
         );
