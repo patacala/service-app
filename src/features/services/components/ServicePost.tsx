@@ -190,6 +190,17 @@ export const ServicePost: React.FC<ServicePostProps> = ({
               </Typography>
             </Box>
           )}
+
+          {(bookService.status === 'rated' ) && (
+            <Box>
+              <Typography
+                variant="bodyLarge"
+                color={theme.colors.colorBaseWhite}
+              >
+                Rated
+              </Typography>
+            </Box>
+          )}
         </Box>
       </Row>
     </Box>

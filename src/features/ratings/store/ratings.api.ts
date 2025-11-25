@@ -14,7 +14,7 @@ export const ratingsApi = apiSlice.injectEndpoints({
         method: "POST",
         data,
       }),
-      invalidatesTags: ["Ratings"],
+      invalidatesTags: ['MyBookServices'],
     }),
 
     getRatingsByUser: builder.query<RatingListResponse, { userId: string; serviceId?: string }>({
@@ -23,7 +23,6 @@ export const ratingsApi = apiSlice.injectEndpoints({
         method: "GET",
         params: serviceId ? { serviceId } : undefined,
       }),
-      providesTags: ["Ratings"],
     }),
 
     updateRating: builder.mutation<Rating, { id: string; data: UpdateRatingRequest }>({
@@ -31,16 +30,14 @@ export const ratingsApi = apiSlice.injectEndpoints({
         url: `/ratings/${id}`,
         method: "PUT",
         data,
-      }),
-      invalidatesTags: ["Ratings"],
+      })
     }),
 
     deleteRating: builder.mutation<void, string>({
       query: (id) => ({
         url: `/ratings/${id}`,
         method: "DELETE",
-      }),
-      invalidatesTags: ["Ratings"],
+      })
     }),
   }),
 });
