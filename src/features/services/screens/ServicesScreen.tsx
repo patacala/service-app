@@ -103,14 +103,18 @@ export const ServicesScreen = () => {
         ? []
         : bookServices?.myBookings ?? [];
 
-    const sortedMyBookings = useMemo(() => {
-    if (!myBookings) return [];
-        return [...myBookings].sort((a, b) => {
+    const sortedMyBookings = useMemo(() => sortBookingsByRatedLast(myBookings), [myBookings]);
+    const sortedOtherBookings = useMemo(() => sortBookingsByRatedLast(otherBookings), [otherBookings]);
+
+    const sortBookingsByRatedLast = (bookings: BookService[]) => {
+        if (!bookings) return [];
+        return [...bookings].sort((a, b) => {
             if (a.status === "rated" && b.status !== "rated") return 1;
             if (a.status !== "rated" && b.status === "rated") return -1;
             return 0;
         });
-    }, [myBookings]);
+    };
+
 
     const handleSelectLocation = (location: Location) => {
         setCurrentLocation(location);
@@ -286,7 +290,7 @@ export const ServicesScreen = () => {
 
                                     {otherBookings.length > 0 && !isLoadBookServices && (
                                     <Box gap="md">
-                                        {otherBookings.map(service => {
+                                        {sortedOtherBookings.map(service => {
                                         const serviceOptions = getCategoryOptions(service.categories || []);
 
                                         return (
