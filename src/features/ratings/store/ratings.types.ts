@@ -22,7 +22,8 @@ export interface RatingListResponse {
 
 export interface CreateRatingRequest {
   ratedUserId: string;
-  serviceId?: string;
+  serviceId: string;
+  bookingId: string;
   score: number;
   title?: string;
   body?: string;
