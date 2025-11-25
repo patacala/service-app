@@ -75,14 +75,6 @@
         "webClientId": "343824714542-csdtgbqf7ff8n4hi40a4mka4811b80nl.apps.googleusercontent.com",
         "iosClientId": "343824714542-8ft5l0frd96krj8jths4i1ranq2t6od1.apps.googleusercontent.com"
       },
-      "firebase": {
-        "apiKey": "AIzaSyDx_WGNr3G6gb1HemlolHDbYW6AA6XM39E",
-        "authDomain": "personalprojects-b43fd.firebaseapp.com",
-        "projectId": "personalprojects-b43fd",
-        "storageBucket": "personalprojects-b43fd.appspot.com",
-        "messagingSenderId": "343824714542",
-        "appId": "1:343824714542:web:5713056a993d18b50fc8bf"
-      },
       "router": {},
       "eas": {
         "projectId": "18830731-15d4-4e01-b32f-5e1571b65455"

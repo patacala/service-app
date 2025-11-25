@@ -1,12 +1,5 @@
-import firebase from '@react-native-firebase/app';
-import '@react-native-firebase/auth';
-import Constants from 'expo-constants';
+import auth from '@react-native-firebase/auth';
 
-// Verificar si Firebase ya está inicializado
-if (!firebase.apps.length) {
-  const firebaseConfig = Constants.expoConfig?.extra?.firebase;
-  firebase.initializeApp(firebaseConfig);
-}
-
-export default firebase;
-export const auth = firebase.auth();
+// Exportamos directamente el módulo de Auth de React Native Firebase
+// La configuración nativa viene de GoogleService-Info.plist / google-services.json
+export default auth;
