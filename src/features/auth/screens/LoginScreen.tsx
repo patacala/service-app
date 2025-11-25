@@ -1,14 +1,12 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Image, ImageSourcePropType, Platform, TouchableOpacity } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import Toast from 'react-native-toast-message';
 import Constants from 'expo-constants';
 import * as Google from 'expo-auth-session/providers/google';
 import * as WebBrowser from 'expo-web-browser';
-import { FirebaseRecaptchaVerifierModal } from 'expo-firebase-recaptcha';
 
-import { GoogleAuthProvider, signInWithCredential, signInWithPhoneNumber } from 'firebase/auth';
-import { auth } from '@/infrastructure/config/firebase';
+import auth from '@/infrastructure/config/firebase';
 
 import { Box, Input, theme, Typography } from '@/design-system';
 import { AuthenticationCard } from '../components/AuthenticationCard/AuthenticationCard';
@@ -34,7 +32,6 @@ export const LoginScreen = () => {
   const router = useRouter();
   const { t } = useTranslation('auth');
   const styles = getLoginStyles(theme);
-  const recaptchaVerifier = useRef(null);
 
   const [inputValues, setInputValues] = useState<LoginFormData>({ phoneNumber: '' });
   const [errors, setErrors] = useState<FormErrors>({ phoneNumber: '' });
@@ -51,10 +48,10 @@ export const LoginScreen = () => {
       if (response?.type === 'success') {
         setLoading(true);
         const { id_token } = response.params;
-        const googleCredential = GoogleAuthProvider.credential(id_token);
+        const googleCredential = auth.GoogleAuthProvider.credential(id_token);
 
         try {
-          const userCredential = await signInWithCredential(auth, googleCredential);
+          const userCredential = await auth().signInWithCredential(googleCredential);
 
           const sessionManager = SessionManager.getInstance();
           await sessionManager.initialize();
@@ -101,7 +98,7 @@ export const LoginScreen = () => {
     }
   };
 
-  // Función de Login con Teléfono actualizada para el SDK Web
+  // Función de Login con Teléfono usando React Native Firebase (nativo, sin reCAPTCHA web)
   const handleLoginWithPhone = async () => {
     if (!validateForm()) return;
     setLoading(true);
@@ -110,8 +107,8 @@ export const LoginScreen = () => {
     const fullPhoneNumber = `+1${rawPhone}`;
 
     try {
-      const confirmationResult = await signInWithPhoneNumber(auth, fullPhoneNumber, recaptchaVerifier.current!);
-      setOtpConfirmationResult(confirmationResult);
+      const confirmationResult = await auth().signInWithPhoneNumber(fullPhoneNumber);
+      setOtpConfirmationResult(confirmationResult as any);
       
       router.push({
         pathname: '/otp',
@@ -138,13 +135,6 @@ export const LoginScreen = () => {
       onSecondaryButtonPress={handleGoBack}
       primaryButtonDisabled={loading}
     >
-      <FirebaseRecaptchaVerifierModal
-        ref={recaptchaVerifier}
-        firebaseConfig={Constants.expoConfig?.extra?.firebase}
-        attemptInvisibleVerification={true}
-        title="Verifica que no eres un robot"
-        cancelLabel="Cancelar"
-      />
       <Row justify="space-between">
         <Box style={styles.prefix} padding="md"><Typography variant="bodyRegular" colorVariant="secondary">+1</Typography></Box>
         <Input
