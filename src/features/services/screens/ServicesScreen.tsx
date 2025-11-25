@@ -103,6 +103,15 @@ export const ServicesScreen = () => {
         ? []
         : bookServices?.myBookings ?? [];
 
+    const sortedMyBookings = useMemo(() => {
+    if (!myBookings) return [];
+        return [...myBookings].sort((a, b) => {
+            if (a.status === "rated" && b.status !== "rated") return 1;
+            if (a.status !== "rated" && b.status === "rated") return -1;
+            return 0;
+        });
+    }, [myBookings]);
+
     const handleSelectLocation = (location: Location) => {
         setCurrentLocation(location);
     };
@@ -199,6 +208,7 @@ export const ServicesScreen = () => {
             await createRating({
                 ratedUserId: selectedServiceToRate.provider.id,
                 serviceId: selectedServiceToRate.serviceId,
+                bookingId: selectedServiceToRate.id,
                 score: rating,
                 title: title,
                 body: comment,
@@ -310,9 +320,9 @@ export const ServicesScreen = () => {
                                 {renderSectionHeader(t("services.serviceshired") + ':')}
                                 {renderLoadSection()}
                                 
-                                {myBookings.length > 0 && !isLoadBookServices && (
+                                {sortedMyBookings.length > 0 && !isLoadBookServices && (
                                     <Box gap="md">
-                                    {myBookings.map(service => {
+                                    {sortedMyBookings.map(service => {
                                         const serviceOptions = getCategoryOptions(service.categories || []);
 
                                         return (
