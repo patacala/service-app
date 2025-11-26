@@ -3,6 +3,11 @@ export enum RatingVisibility {
   HIDDEN = "hidden",
 }
 
+export enum RoleOfRater {
+  CLIENT = "client",
+  PROVIDER = "provider",
+}
+
 export interface Rating {
   id: string;
   userId: string;   
@@ -23,7 +28,8 @@ export interface RatingListResponse {
 export interface CreateRatingRequest {
   ratedUserId: string;
   serviceId: string;
-  bookingId: string;
+  bookingId?: string | null;
+  roleOfRater: RoleOfRater;
   score: number;
   title?: string;
   body?: string;
