@@ -103,9 +103,6 @@ export const ServicesScreen = () => {
         ? []
         : bookServices?.myBookings ?? [];
 
-    const sortedMyBookings = useMemo(() => sortBookingsByRatedLast(myBookings), [myBookings]);
-    const sortedOtherBookings = useMemo(() => sortBookingsByRatedLast(otherBookings), [otherBookings]);
-
     const sortBookingsByRatedLast = (bookings: BookService[]) => {
         if (!bookings) return [];
         return [...bookings].sort((a, b) => {
@@ -115,6 +112,8 @@ export const ServicesScreen = () => {
         });
     };
 
+    const sortedMyBookings = useMemo(() => sortBookingsByRatedLast(myBookings), [myBookings]);
+    const sortedOtherBookings = useMemo(() => sortBookingsByRatedLast(otherBookings), [otherBookings]);
 
     const handleSelectLocation = (location: Location) => {
         setCurrentLocation(location);
