@@ -110,7 +110,7 @@ export const ServicePost: React.FC<ServicePostProps> = ({
         />
         
         <Box position="relative" maxWidth={130}>
-          {bookService.status === 'completed' && (
+          {(bookService.status === 'completed' || bookService.status === 'rated') && bookService.shouldRate && (
             <Button
               variant="transparent"
               label={bookService.bookingType === 'client' ? t("services.btnrateservice"):t("services.btnrateuser")}
@@ -191,7 +191,7 @@ export const ServicePost: React.FC<ServicePostProps> = ({
             </Box>
           )}
 
-          {(bookService.status === 'rated' ) && (
+          {bookService.status === 'rated' && !bookService.shouldRate && (
             <Box>
               <Typography
                 variant="bodyLarge"
