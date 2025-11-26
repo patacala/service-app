@@ -117,6 +117,7 @@ export interface BookService {
   phoneNumber: string;
   status: "pending" | "accepted" | "rejected" | "completed" | "cancelled" | "rated";
   categories: string[];
+  shouldRate: boolean;
   description?: string;
   media: DownloadedMedia[];
 }
