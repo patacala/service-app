@@ -17,7 +17,7 @@ import { useTranslation } from "react-i18next";
 import Toast from "react-native-toast-message";
 import { useAuth } from "@/infrastructure/auth/AuthContext";
 import { CompletedService } from "../components/CompleteService";
-import { RatingVisibility } from "@/features/ratings/store/ratings.types";
+import { RatingVisibility, RoleOfRater } from "@/features/ratings/store/ratings.types";
 
 interface Location {
     id: string;
@@ -207,16 +207,20 @@ export const ServicesScreen = () => {
             return;
         }
 
+        const isClientRating = selectedServiceToRate.client.id === user?.id;
+        const payload = {
+            ratedUserId: isClientRating ? selectedServiceToRate.provider.id : selectedServiceToRate.client.id,
+            serviceId: selectedServiceToRate.serviceId,
+            bookingId: selectedServiceToRate.id,
+            roleOfRater: isClientRating ? RoleOfRater.CLIENT : RoleOfRater.PROVIDER,
+            score: rating,
+            title: title,
+            body: comment,
+            visibility: RatingVisibility.PUBLIC,
+        };
+
         try {
-            await createRating({
-                ratedUserId: selectedServiceToRate.provider.id,
-                serviceId: selectedServiceToRate.serviceId,
-                bookingId: selectedServiceToRate.id,
-                score: rating,
-                title: title,
-                body: comment,
-                visibility: RatingVisibility.PUBLIC,
-            }).unwrap();
+            await createRating(payload).unwrap();
 
             Toast.show({
                 type: "success",
