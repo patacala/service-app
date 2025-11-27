@@ -10,15 +10,12 @@ export enum RoleOfRater {
 
 export interface Rating {
   id: string;
-  userId: string;   
-  ratedUserId: string;
-  serviceId?: string;
-  score: number;
-  title?: string;
-  body?: string;
-  visibility: RatingVisibility;
-  createdAt: string;
-  updatedAt: string;
+  rating: string;
+  reviewDate: string;
+  username: string;
+  reviewText: string;
+  reviewImages: any[];
+  reviewTitle: string;
 }
 
 export interface RatingListResponse {

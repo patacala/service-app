@@ -275,7 +275,7 @@ export const ServicesScreen = () => {
 
     return (
         <>
-            <Box height="100%">
+            <Box height="84%">
                 <ScrollView
                     style={getServicesStyles.scrollView}
                     showsVerticalScrollIndicator={false}
@@ -343,7 +343,6 @@ export const ServicesScreen = () => {
                                                 />
                                             </Box>
                                         );
-                                        
                                     })}
                                     </Box>
                                 )}
