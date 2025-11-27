@@ -45,7 +45,7 @@ import { getDeviceLanguage } from '@/assembler/config/i18n';
 import { ServiceFormData } from '../slices/profile.slice';
 import { useLocalSearchParams } from 'expo-router';
 import { MediaObject, DownloadedMedia, RNFileLike } from '@/features/media/store/media.types';
-
+import { Rating, useGetRatingsByUserQuery } from '@/features/ratings/store';
 
 // Validation Schema
 const profileSchema = z.object({
@@ -121,7 +121,6 @@ export const ProfileScreen = () => {
   const [step1Valid, setStep1Valid] = useState(false);
   const [step2Valid, setStep2Valid] = useState(false);
   const [step3Valid, setStep3Valid] = useState(false);
-
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Estado para los datos del formulario de servicios
@@ -145,6 +144,9 @@ export const ProfileScreen = () => {
   })) ?? [];
 
   const { logout, user } = useAuth();
+
+  // Api de rating
+  const { data: ratingsData } = useGetRatingsByUserQuery();
 
   // Función para convertir IDs de categorías a ChipOptions
   const getCategoryOptions = useMemo(() => {
@@ -940,6 +942,7 @@ export const ProfileScreen = () => {
       </Row>
     );
   }
+  
   const renderPortfolioContent = () => {
     if (isCategoriesLoading || isLoadingServices || isFetchingServices) {
       return (
@@ -997,51 +1000,16 @@ export const ProfileScreen = () => {
   };
 
   // Contenido de User Reviews
-  const reviews = [
-    {
-      rating: 4.2,
-      reviewDate: '21 Apr',
-      username: 'Username_010',
-      reviewText: 'I hired them a month ago for a complete interior painting of my home, and the results are absolutely stunning.',
-      reviewImages: [
-        images.reviewImage1 as ImageSourcePropType,
-        images.reviewImage2 as ImageSourcePropType,
-        images.reviewImage3 as ImageSourcePropType
-      ],
-      reviewTitle: 'Awesome Work!',
-    },
-    {
-      rating: 4.2,
-      reviewDate: '15 Apr',
-      username: 'Customer_456',
-      reviewText: 'Professional service with attention to detail. They completed the job ahead of schedule and the quality exceeded my expectations.',
-      reviewImages: [
-        images.reviewImage2 as ImageSourcePropType,
-        images.reviewImage3 as ImageSourcePropType
-      ],
-      reviewTitle: 'Great Experience',
-    },
-    {
-      rating: 4.2,
-      reviewDate: '02 Apr',
-      username: 'HomeOwner_22',
-      reviewText: 'The team was courteous and skilled. They transformed my living space with beautiful paint work and clean edges.',
-      reviewImages: [
-        images.reviewImage1 as ImageSourcePropType,
-      ],
-      reviewTitle: 'Highly Recommended',
-    },
-  ];
-
+  const ratings: Rating[] = ratingsData?.ratings ?? [];
   const renderUserReviewsContent = () => (
     <FlatList
-      data={reviews}
+      data={ratings}
       keyExtractor={(review, index) => review.username + '-' + index}
       renderItem={({ item: review, index }) => (
         <TouchableWithoutFeedback onPress={() => {}}>
           <Box
             key={review.username + '-' + index}
-            marginBottom={index < reviews.length - 1 ? 'md' : 'none'}
+            marginBottom={index < ratings.length - 1 ? 'md' : 'none'}
           >
             <RatingReview
               rating={review.rating}

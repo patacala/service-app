@@ -148,8 +148,8 @@ const styles = StyleSheet.create({
   card: {
     position: 'relative',
     padding: theme.spacing.md,
-    width: 392,
-    height: 230,
+    width: '100%',
+    aspectRatio: 392 / 230,
     overflow: 'hidden',
     borderRadius: 12,
   },
