@@ -211,10 +211,6 @@ export const ServicesDetailScreen = () => {
   };
 
   const ratings: Rating[] = ratingsData?.ratings ?? [];
-  useEffect(() => {
-    console.log("Ratings actualizados:", ratingsData);
-  }, [ratingsData]);
-  
   const renderReviews = () => {
     return ratings.map((rating, index) => (
       <Box key={rating.username + '-' + index} marginBottom={index < ratings.length - 1 ? "md" : "none"}>
