@@ -82,7 +82,13 @@ type ProfileFormData = z.infer<typeof profileSchema>;
 export const ProfileScreen = () => {
   const { t } = useTranslation('auth');
   const theme = useTheme<Theme>();
-  // Categorias y perfil
+  // Media Api
+  const [uploadImage] = useUploadImageMutation();
+  const [deleteImage] = useDeleteImageMutation();
+  const [createVideoDirectUploadUrl] = useCreateVideoDirectUploadUrlMutation();
+  const [uploadVideoToDirectUrl] = useUploadVideoToDirectUrlMutation();
+
+  // Categorias y perfil Api
   const { data: categoriesData, isLoading: isCategoriesLoading, error: categoriesError } = useGetCategoriesQuery({ language: getDeviceLanguage() }, {
     refetchOnMountOrArgChange: true,
     refetchOnFocus: true,
@@ -93,8 +99,9 @@ export const ProfileScreen = () => {
     refetchOnFocus: true,
     refetchOnReconnect: true
   });
-
   const [updateProfile] = useUpdateProfileMutation();
+
+  // Service Api
   const [createService] = useCreateServiceMutation();
   const [updateService] = useUpdateServiceMutation();
   const { data: services, isLoading: isLoadingServices, isFetching: isFetchingServices } = useGetMyServicesQuery(undefined, {
@@ -102,15 +109,13 @@ export const ProfileScreen = () => {
     refetchOnFocus: true,
     refetchOnReconnect: true
   });
-  const [uploadImage] = useUploadImageMutation();
-  const [deleteImage] = useDeleteImageMutation();
-  const [createVideoDirectUploadUrl] = useCreateVideoDirectUploadUrlMutation();
-  const [uploadVideoToDirectUrl] = useUploadVideoToDirectUrlMutation();
-  
-  const [isAvatarDirty, setIsAvatarDirty] = useState(false);
-  const [isSaving, setIsSaving] = useState(false);
+
+  // Ratings Api
+  const { data: ratingsData, isLoading: isLoadingRatings } = useGetRatingsByUserQuery();
 
   // Estado para la imagen de perfil
+  const [isAvatarDirty, setIsAvatarDirty] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
   const [profileImage, setProfileImage] = useState<string>('');
 
   // Estados para el formulario de servicios
@@ -144,9 +149,6 @@ export const ProfileScreen = () => {
   })) ?? [];
 
   const { logout, user } = useAuth();
-
-  // Api de rating
-  const { data: ratingsData } = useGetRatingsByUserQuery();
 
   // Función para convertir IDs de categorías a ChipOptions
   const getCategoryOptions = useMemo(() => {
@@ -1001,37 +1003,48 @@ export const ProfileScreen = () => {
 
   // Contenido de User Reviews
   const ratings: Rating[] = ratingsData?.ratings ?? [];
-  const renderUserReviewsContent = () => (
-    <FlatList
-      data={ratings}
-      keyExtractor={(review, index) => review.username + '-' + index}
-      renderItem={({ item: review, index }) => (
-        <TouchableWithoutFeedback onPress={() => {}}>
-          <Box
-            key={review.username + '-' + index}
-            marginBottom={index < ratings.length - 1 ? 'md' : 'none'}
-          >
-            <RatingReview
-              rating={review.rating}
-              reviewDate={review.reviewDate}
-              username={review.username}
-              reviewText={review.reviewText}
-              reviewImages={review.reviewImages}
-              reviewTitle={review.reviewTitle}
-            />
-          </Box>
-        </TouchableWithoutFeedback>
-      )}
-      style={{ flex: 1 }}
-      contentContainerStyle={{
-        paddingHorizontal: 16,
-        paddingTop: 16,
-        paddingBottom: 70,
-      }}
-      showsVerticalScrollIndicator={false}
-      keyboardShouldPersistTaps="handled"
-    />
-  );
+
+  const renderUserReviewsContent = () => {
+    if (isLoadingRatings) {
+      return (
+        <Box flex={1} justifyContent="center" alignItems="center">
+          <ActivityIndicator size="large" />
+        </Box>
+      );
+    }
+
+    return (
+      <FlatList
+        data={ratings}
+        keyExtractor={(review, index) => review.username + '-' + index}
+        renderItem={({ item: review, index }) => (
+          <TouchableWithoutFeedback onPress={() => {}}>
+            <Box
+              key={review.username + '-' + index}
+              marginBottom={index < ratings.length - 1 ? 'md' : 'none'}
+            >
+              <RatingReview
+                rating={review.rating}
+                reviewDate={review.reviewDate}
+                username={review.username}
+                reviewText={review.reviewText}
+                reviewImages={review.reviewImages}
+                reviewTitle={review.reviewTitle}
+              />
+            </Box>
+          </TouchableWithoutFeedback>
+        )}
+        style={{ flex: 1 }}
+        contentContainerStyle={{
+          paddingHorizontal: 16,
+          paddingTop: 16,
+          paddingBottom: 70,
+        }}
+        showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
+      />
+    );
+  };
 
   // Contenido de Subscriptions
   const premiumFeatures = [
