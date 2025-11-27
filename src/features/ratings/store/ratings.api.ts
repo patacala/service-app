@@ -17,11 +17,10 @@ export const ratingsApi = apiSlice.injectEndpoints({
       invalidatesTags: ['MyBookServices'],
     }),
 
-    getRatingsByUser: builder.query<RatingListResponse, { userId: string; serviceId?: string }>({
-      query: ({ userId, serviceId }) => ({
-        url: `/ratings/user/${userId}`,
-        method: "GET",
-        params: serviceId ? { serviceId } : undefined,
+    getRatingsByUser: builder.query<RatingListResponse, void>({
+      query: () => ({
+        url: `/ratings/user`,
+        method: "GET"
       }),
     }),
 
