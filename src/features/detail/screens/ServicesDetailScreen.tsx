@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import {
   StyleSheet,
   Image,
@@ -32,6 +32,7 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { getProfileStyles } from '@/features/profile/screens/profile/profile.styles';
 import { useVideoPlayer, VideoView } from 'expo-video';
 import { ImageViewer } from '@/design-system/components/ImageViewer/ImageViewer';
+import { Rating, useGetRatingsByServiceQuery } from '@/features/ratings/store';
 
 const { width } = Dimensions.get('window');
 
@@ -57,6 +58,8 @@ export const ServicesDetailScreen = () => {
   const [createBookService, { isLoading: isLoadBookingService}] = useCreateBookServiceMutation();
   const [createFavorite, {isLoading: isLoadingCreaFav}] = useCreateFavoriteMutation();
   const [deleteFavorite, {isLoading: isLoadingDelFav}] = useDeleteFavoriteMutation();
+  const { data: ratingsData } = useGetRatingsByServiceQuery({ serviceId: post.id });
+
   const [isFavorite, setIsFavorite] = useState(post.isFavorite ?? false);
   const [isScrollingProgrammatically, setIsScrollingProgrammatically] = useState(false);
   const [selectedItemDetail, setSelectedItemDetail] = useState(['portfolio']);
@@ -68,47 +71,11 @@ export const ServicesDetailScreen = () => {
     { id: 'bookingdetail', label: 'Service Detail' },
     { id: 'userreviews', label: 'User Reviews' },
   ];
-  const reviews = [
-    {
-      rating: 4.2,
-      reviewDate: '21 Apr',
-      username: 'Username_010',
-      reviewText: 'I hired them a month ago for a complete interior painting of my home, and the results are absolutely stunning.',
-      reviewImages: [
-        images.reviewImage1 as ImageSourcePropType,
-        images.reviewImage2 as ImageSourcePropType,
-        images.reviewImage3 as ImageSourcePropType
-      ],
-      reviewTitle: 'Awesome Work!',
-    },
-    {
-      rating: 4.2,
-      reviewDate: '15 Apr',
-      username: 'Customer_456',
-      reviewText: 'Professional service with attention to detail. They completed the job ahead of schedule and the quality exceeded my expectations.',
-      reviewImages: [
-        images.reviewImage2 as ImageSourcePropType,
-        images.reviewImage3 as ImageSourcePropType
-      ],
-      reviewTitle: 'Great Experience',
-    },
-    {
-      rating: 4.2,
-      reviewDate: '02 Apr',
-      username: 'HomeOwner_22',
-      reviewText: 'The team was courteous and skilled. They transformed my living space with beautiful paint work and clean edges.',
-      reviewImages: [
-        images.reviewImage1 as ImageSourcePropType,
-      ],
-      reviewTitle: 'Highly Recommended',
-    },
-  ];
   const imageGallery = post.media;
   const slideWidth = width - theme.spacing.md * 2;
   const animatedOpacity = useRef(new Animated.Value(1)).current;
 
   const handleGoBackPress = () => router.back();
-
   const handleFavoritePress = async () => {
     const prevValue = isFavorite;
     setIsFavorite(!prevValue);
@@ -243,16 +210,21 @@ export const ServicesDetailScreen = () => {
     }, 200);
   };
 
+  const ratings: Rating[] = ratingsData?.ratings ?? [];
+  useEffect(() => {
+    console.log("Ratings actualizados:", ratingsData);
+  }, [ratingsData]);
+  
   const renderReviews = () => {
-    return reviews.map((review, index) => (
-      <Box key={review.username + '-' + index} marginBottom={index < reviews.length - 1 ? "md" : "none"}>
+    return ratings.map((rating, index) => (
+      <Box key={rating.username + '-' + index} marginBottom={index < ratings.length - 1 ? "md" : "none"}>
         <RatingReview
-          rating={review.rating}
-          reviewDate={review.reviewDate}
-          username={review.username}
-          reviewText={review.reviewText}
-          reviewImages={review.reviewImages}
-          reviewTitle={review.reviewTitle}
+          rating={rating.rating}
+          reviewDate={rating.reviewDate}
+          username={rating.username}
+          reviewText={rating.reviewText}
+          reviewImages={rating.reviewImages}
+          reviewTitle={rating.reviewTitle}
         />
       </Box>
     ));

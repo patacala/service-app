@@ -24,6 +24,13 @@ export const ratingsApi = apiSlice.injectEndpoints({
       }),
     }),
 
+    getRatingsByService: builder.query<RatingListResponse, {serviceId: string}>({
+      query: ({serviceId}) => ({
+        url: `/ratings/service/${serviceId}`,
+        method: "GET",
+      }),
+    }),
+
     updateRating: builder.mutation<Rating, { id: string; data: UpdateRatingRequest }>({
       query: ({ id, data }) => ({
         url: `/ratings/${id}`,
@@ -44,6 +51,7 @@ export const ratingsApi = apiSlice.injectEndpoints({
 export const {
   useCreateRatingMutation,
   useGetRatingsByUserQuery,
+  useGetRatingsByServiceQuery,
   useUpdateRatingMutation,
   useDeleteRatingMutation,
 } = ratingsApi;

@@ -1000,7 +1000,6 @@ export const ProfileScreen = () => {
 
   // Contenido de User Reviews
   const ratings: Rating[] = ratingsData?.ratings ?? [];
-
   const renderUserReviewsContent = () => {
     if (isLoadingRatings) {
       return (
@@ -1016,20 +1015,20 @@ export const ProfileScreen = () => {
     return (
       <FlatList
         data={ratings}
-        keyExtractor={(review, index) => review.username + '-' + index}
-        renderItem={({ item: review, index }) => (
+        keyExtractor={(rating, index) => rating.username + '-' + index}
+        renderItem={({ item: rating, index }) => (
           <TouchableWithoutFeedback onPress={() => {}}>
             <Box
-              key={review.username + '-' + index}
+              key={rating.username + '-' + index}
               marginBottom={index < ratings.length - 1 ? 'md' : 'none'}
             >
               <RatingReview
-                rating={review.rating}
-                reviewDate={review.reviewDate}
-                username={review.username}
-                reviewText={review.reviewText}
-                reviewImages={review.reviewImages}
-                reviewTitle={review.reviewTitle}
+                rating={rating.rating}
+                reviewDate={rating.reviewDate}
+                username={rating.username}
+                reviewText={rating.reviewText}
+                reviewImages={rating.reviewImages}
+                reviewTitle={rating.reviewTitle}
               />
             </Box>
           </TouchableWithoutFeedback>
