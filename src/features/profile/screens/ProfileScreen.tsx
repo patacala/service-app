@@ -948,18 +948,15 @@ export const ProfileScreen = () => {
   const renderPortfolioContent = () => {
     if (isCategoriesLoading || isLoadingServices || isFetchingServices) {
       return (
-        <Box>
-          {renderTitlePortfolio()}
-          <Box style={getWallStyles.loadingContainer} marginTop='lg'>
-            <ActivityIndicator size="large" color={theme.colors.colorBrandPrimary} />
-            <Typography variant="bodyMedium" color="white" style={getWallStyles.loadingText}>
-              {t("profile.loadportfolio")}
-            </Typography>
-          </Box>
+        <Box style={getWallStyles.loadingContainer} marginTop='lg'>
+          <ActivityIndicator size="large" color={theme.colors.colorBrandPrimary} />
+          <Typography variant="bodyMedium" color="white" style={getWallStyles.loadingText}>
+            {t("profile.loadportfolio")}
+          </Typography>
         </Box>
       );
     }
-
+    
     return (
       <Box flex={1}>
         <FlatList
@@ -1007,8 +1004,11 @@ export const ProfileScreen = () => {
   const renderUserReviewsContent = () => {
     if (isLoadingRatings) {
       return (
-        <Box flex={1} justifyContent="center" alignItems="center">
-          <ActivityIndicator size="large" />
+        <Box style={getWallStyles.loadingContainer} marginTop='lg'>
+          <ActivityIndicator size="large" color={theme.colors.colorBrandPrimary} />
+          <Typography variant="bodyMedium" color="white" style={getWallStyles.loadingText}>
+            Cargando Reviews...
+          </Typography>
         </Box>
       );
     }
