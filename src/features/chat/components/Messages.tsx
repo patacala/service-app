@@ -1,12 +1,25 @@
-import React from 'react';
-import { Image, ImageSourcePropType } from "react-native";
+import React, { useState } from 'react';
+import { Image, ActivityIndicator, Modal, Pressable } from "react-native";
 import { Box, theme, Typography } from "@/design-system";
 import { Row } from '@/design-system/components/layout/Row/Row';
+import { ImageViewer } from '@/design-system/components/ImageViewer/ImageViewer';
+
+interface MediaFile {
+  id: string;
+  url: string;
+  variant: string;
+  position: number;
+}
 
 interface MessagesProps {
   text: string;
   isReceived: boolean;
-  image?: ImageSourcePropType;
+  imageProfile?: string | null;
+  localImage?: string | null;
+  remoteImage?: string | null;
+  mediaFiles?: MediaFile[];
+  uploading?: boolean;
+  failed?: boolean;
   receivedBackgroundColor?: keyof typeof theme.colors;
   sentBackgroundColor?: keyof typeof theme.colors;
   receivedTextColor?: keyof typeof theme.colors;
@@ -16,52 +29,173 @@ interface MessagesProps {
 export const Messages = ({
   text,
   isReceived,
-  image,
+  imageProfile,
+  localImage,
+  remoteImage,
+  mediaFiles,
+  uploading = false,
+  failed = false,
   receivedBackgroundColor = "colorBrandPrimary",
   sentBackgroundColor = "colorGrey100",
   receivedTextColor = "colorBaseWhite",
   sentTextColor = "colorGrey400"
 }: MessagesProps) => {
-  const avatar = image ? (
+  const [previewImage, setPreviewImage] = useState<string | null>(null);
+
+  const openPreview = (uri: string) => setPreviewImage(uri);
+  const closePreview = () => setPreviewImage(null);
+
+  const avatar = imageProfile ? (
     <Image
-      source={image}
+      source={{ uri: imageProfile }}
       style={{ width: 32, height: 32, borderRadius: 16 }}
     />
   ) : null;
 
-  if (isReceived) {
-    return (
-      <Row alignItems="flex-end" gap="sm" marginBottom="md" justifyContent="flex-start">
-        {avatar}
-        <Box
-          backgroundColor={receivedBackgroundColor}
-          padding="md"
-          borderRadius={45}
-          borderBottomLeftRadius={0}
-          maxWidth="80%"
-        >
-          <Typography variant="bodyRegular" color={theme.colors[receivedTextColor]}>
-            {text}
-          </Typography>
-        </Box>
-      </Row>
-    );
-  }
+  const imageToShow = remoteImage ?? localImage ?? null;
+
+  const serverImages = !imageToShow && mediaFiles
+    ? mediaFiles.filter(m => m.variant === 'public').sort((a, b) => a.position - b.position)
+    : [];
 
   return (
-    <Row alignItems="flex-end" gap="sm" marginBottom="md" justifyContent="flex-end">
-      <Box
-        backgroundColor={sentBackgroundColor}
-        padding="md"
-        borderRadius={45}
-        borderBottomRightRadius={0}
-        maxWidth="80%"
+    <>
+      <Modal visible={!!previewImage} transparent animationType="fade">
+        <Pressable
+          style={{
+            flex: 1,
+            backgroundColor: "rgba(0,0,0,0.9)",
+            justifyContent: "center",
+            alignItems: "center",
+          }}
+          onPress={closePreview}
+        >
+          {previewImage && (
+            <ImageViewer
+              sourceType="url"
+              source={previewImage}
+              width={350}
+              height={350}
+            />
+          )}
+        </Pressable>
+      </Modal>
+
+      <Row
+        alignItems="flex-end"
+        gap="sm"
+        marginBottom="md"
+        justifyContent={isReceived ? "flex-start" : "flex-end"}
       >
-        <Typography variant="bodyRegular" color={theme.colors[sentTextColor]}>
-          {text}
-        </Typography>
-      </Box>
-      {avatar}
-    </Row>
+        {isReceived && avatar}
+
+        <Box maxWidth="80%">
+          {imageToShow && (
+            <Pressable onPress={() => openPreview(imageToShow)}>
+              <Box
+                style={{
+                  width: 180,
+                  height: 180,
+                  borderRadius: 20,
+                  overflow: "hidden",
+                  borderWidth: failed ? 2 : 0,
+                  borderColor: failed ? theme.colors.colorFeedbackError : "transparent",
+                  marginBottom: 8,
+                }}
+              >
+                <Image
+                  source={{ uri: imageToShow }}
+                  style={{ width: "100%", height: "100%" }}
+                  resizeMode="cover"
+                />
+
+                {uploading && (
+                  <Box
+                    position="absolute"
+                    top={0} bottom={0} left={0} right={0}
+                    justifyContent="center"
+                    alignItems="center"
+                    backgroundColor="colorBaseBlack"
+                    style={{ opacity: 0.7 }}
+                  >
+                    <ActivityIndicator size="large" color="white" />
+                  </Box>
+                )}
+
+                {failed && (
+                  <Box
+                    position="absolute"
+                    top={0} bottom={0} left={0} right={0}
+                    justifyContent="center"
+                    alignItems="center"
+                    backgroundColor="colorBaseBlack"
+                    style={{ opacity: 0.7 }}
+                  >
+                    <Typography variant="bodySmall" color={theme.colors.colorFeedbackError}>
+                      Failed to send
+                    </Typography>
+                  </Box>
+                )}
+              </Box>
+            </Pressable>
+          )}
+
+          {serverImages.map((media) => (
+            <Pressable key={media.id} onPress={() => openPreview(media.url)}>
+              <Box
+                style={{
+                  width: 180,
+                  height: 180,
+                  borderRadius: 20,
+                  overflow: "hidden",
+                  marginTop: 20,
+                  marginBottom: 8
+                }}
+              >
+                <Image
+                  source={{ uri: media.url }}
+                  style={{ width: "100%", height: "100%" }}
+                  resizeMode="cover"
+                />
+              </Box>
+            </Pressable>
+          ))}
+
+          {text ? (
+            <Box>
+              <Box
+                backgroundColor={isReceived ? receivedBackgroundColor : sentBackgroundColor}
+                padding="md"
+                borderRadius={45}
+                borderBottomLeftRadius={isReceived ? 0 : 45}
+                borderBottomRightRadius={isReceived ? 45 : 0}
+                style={{
+                  borderWidth: failed ? 1 : 0,
+                  borderColor: failed ? theme.colors.colorFeedbackError : "transparent",
+                  opacity: failed ? 0.6 : 1
+                }}
+              >
+                <Typography
+                  variant="bodyRegular"
+                  color={isReceived ? theme.colors[receivedTextColor] : theme.colors[sentTextColor]}
+                >
+                  {text}
+                </Typography>
+              </Box>
+
+              {failed && (
+                <Row alignItems="center" gap="xs" marginTop="xs">
+                  <Typography variant="bodySmall" color={theme.colors.colorFeedbackError}>
+                    Message failed to send
+                  </Typography>
+                </Row>
+              )}
+            </Box>
+          ) : null}
+        </Box>
+
+        {!isReceived && avatar}
+      </Row>
+    </>
   );
 };
