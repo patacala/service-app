@@ -1,18 +1,19 @@
 import React from "react";
-import { Image, ImageSourcePropType } from "react-native";
-import { Box, Button, ChipOption, GroupChipSelector, theme, Typography } from "@/design-system";
+import { Image, ImageSourcePropType, TouchableOpacity } from "react-native";
+import { Box, Button, Chip, ChipOption, GroupChipSelector, theme, Typography } from "@/design-system";
 import { Row } from "@/design-system/components/layout/Row/Row";
 import images from "@/assets/images/images";
 import { Icon } from "@/design-system/components/layout/Icon";
-import { BookService } from "../store";
+import { BookService } from "../store/services.types";
 import { useTranslation } from "react-i18next";
 
 interface ServicePostProps {
   bookService: BookService;
   serviceOptions: ChipOption[];
-  onCancel?: (serviceId: string) => void;
-  onRate?: (serviceId: string) => void;
-  onDetail?: (serviceId: string) => void;
+  onCancel?: () => void;
+  onRate?: () => void;
+  onDetail?: (bookService: BookService) => void;
+  onCompleted?: () => void;
 }
 
 export const ServicePost: React.FC<ServicePostProps> = ({
@@ -20,20 +21,25 @@ export const ServicePost: React.FC<ServicePostProps> = ({
   serviceOptions,
   onCancel = () => console.log("Service cancelled"),
   onRate = () => console.log("Service rated"),
-  onDetail = () => console.log("Service detail")
+  onDetail = () => console.log("Service detail"),
+  onCompleted = () => console.log("Service complete")
 }) => {
   const { t } = useTranslation('auth');
   
   const handleCancel = () => {
-    onCancel(bookService.id);
+    onCancel();
   };
 
   const handleRate = () => {
-    onRate(bookService.id);
+    onRate();
   };
 
   const handleDetail = () => {
-    onDetail(bookService.id);
+    onDetail(bookService);
+  };
+
+  const handleComplete = () => {
+    onCompleted();
   };
 
   /* const chipOptionsArray = [bookService.chipOption]; */
@@ -48,7 +54,13 @@ export const ServicePost: React.FC<ServicePostProps> = ({
       <Row justifyContent="space-between">
         <Row spacing="none">
           <Image
-            source={bookService.image || images.profile1 as ImageSourcePropType}
+             source={{
+                  uri:
+                    (bookService.bookingType === 'client'
+                      ? bookService.provider.media?.profileThumbnail?.url
+                      : bookService.client.media?.profileThumbnail?.url) ||
+                    'https://imagedelivery.net/uusH4IRLf6yhlCMhPld_6A/d6201e99-87ce-450d-e6c1-91e3463f3600/profileThumbnail',
+                }}
             style={{
               width: 40,
               height: 40,
@@ -64,21 +76,25 @@ export const ServicePost: React.FC<ServicePostProps> = ({
             </Typography>
           </Box>
         </Row>
-        <Box alignItems="flex-end" gap="sm">
-          <Typography variant="bodySmall" color={theme.colors.colorGrey100}>
-            {bookService.dateShort}
-          </Typography>
-          <Typography variant="bodySmall" color={theme.colors.colorGrey100}>
-            {bookService.timeShort}
-          </Typography>
+        <Box>
+          {/* <Icon name="location" size={32} color="colorGrey100" /> */}
+          <TouchableOpacity onPress={handleDetail}>
+            <Image
+              source={images.message as ImageSourcePropType}
+              style={{
+                width: 35,
+                height: 35,
+              }}
+            />
+          </TouchableOpacity>
         </Box>
       </Row>
 
-      <Box marginBottom="xs">
+      <Box marginVertical="xs">
         <Row spacing="sm">
-          <Icon name="location" size={25} color="colorGrey100" />
+          <Icon name="date" size={20} color="colorGrey100" />
           <Typography variant="bodySmall" color={theme.colors.colorGrey100}>
-            {bookService.address}
+            {bookService.dateShort} - {bookService.timeShort}
           </Typography>
         </Row>
       </Box>
@@ -93,8 +109,8 @@ export const ServicePost: React.FC<ServicePostProps> = ({
           textVariant="bodyMedium"
         />
         
-        <Box position="relative" right={-10} maxWidth={180}>
-          {bookService.status === 'completed' && (
+        <Box position="relative" maxWidth={130}>
+          {(bookService.status === 'completed' || bookService.status === 'rated') && bookService.shouldRate && (
             <Button
               variant="transparent"
               label={bookService.bookingType === 'client' ? t("services.btnrateservice"):t("services.btnrateuser")}
@@ -127,38 +143,63 @@ export const ServicePost: React.FC<ServicePostProps> = ({
             />
           )}
 
-          {bookService.status === 'rejected' && (
-            <Button
-              variant="transparent"
-              label={t("services.rejectedservice")}
-              iconWidth={18}
-              iconHeight={18}
-              textColor="colorFeedbackError"
-              rightIcon={images.rightArrow as ImageSourcePropType}
-              onPress={handleDetail}
-            />
-          )}
-
-          {bookService.status === 'cancelled' && (
-            <Box paddingRight="sm">
+          {(bookService.status === 'cancelled' || bookService.status === 'rejected') && (
+            <Box>
               <Typography
                 variant="bodyLarge"
-                color={theme.colors.colorFeedbackError}
+                color={bookService.status === 'cancelled' 
+                  ? theme.colors.colorFeedbackError
+                  : theme.colors.colorGrey200 }
               >
-                {t("services.cancelledservice")}
+                {bookService.status === 'cancelled'
+                  ? t("services.cancelledservice")
+                  : t("services.rejectedservice")}
               </Typography>
             </Box>
           )}
 
-          {bookService.status === 'accepted' && (
-            <Button
-              variant="transparent"
-              label={t("services.acceptedservice")}
-              iconWidth={18}
-              iconHeight={18}
-              rightIcon={images.rightArrow as ImageSourcePropType}
-              onPress={handleDetail}
-            />
+          {bookService.status === 'accepted' && bookService.bookingType === 'provider' && (
+            <Chip
+              key="key-01"
+              onPress={handleComplete}
+              variant="md"
+            >
+              <Box backgroundColor="colorBaseBlack" 
+                justifyContent="center"
+                alignItems="center" 
+                width={120} height={45}
+                borderRadius={25}
+              >
+                <Typography 
+                  color={theme.colors.colorGrey100} 
+                  variant={"bodyRegular"}
+                >
+                  {t("services.completeservice")}
+                </Typography>
+              </Box>
+            </Chip>
+          )}
+
+          {bookService.status === 'accepted' && bookService.bookingType === 'client' && (
+            <Box>
+              <Typography
+                variant="bodyLarge"
+                color={theme.colors.colorBaseWhite}
+              >
+                {t("services.acceptedservice")}
+              </Typography>
+            </Box>
+          )}
+
+          {bookService.status === 'rated' && !bookService.shouldRate && (
+            <Box>
+              <Typography
+                variant="bodyLarge"
+                color={theme.colors.colorBaseWhite}
+              >
+                Rated
+              </Typography>
+            </Box>
           )}
         </Box>
       </Row>

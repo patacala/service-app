@@ -1,6 +1,6 @@
 import { apiSlice } from '@/store/api/apiSlice';
 import type {
-  ImageObject,
+  MediaObject,
   ListImagesParams,
   RNFileLike,
   UpdateImageRequest,
@@ -24,7 +24,7 @@ const buildFormData = (file: RNFileLike) => {
 
 export const mediaApi = apiSlice.injectEndpoints({
   endpoints: (builder) => ({
-    uploadImage: builder.mutation<ImageObject, UploadImageRequest>({
+    uploadImage: builder.mutation<MediaObject, UploadImageRequest>({
       query: ({ file, params }) => {
         const formData = buildFormData(file);
         const queryParams: Record<string, any> = {};
@@ -47,7 +47,7 @@ export const mediaApi = apiSlice.injectEndpoints({
       invalidatesTags: ['Media'],
     }),
 
-    listImages: builder.query<ImageObject[], ListImagesParams | void>({
+    listImages: builder.query<MediaObject[], ListImagesParams | void>({
       query: (params) => ({
         url: '/media/images',
         method: 'GET',
@@ -56,7 +56,7 @@ export const mediaApi = apiSlice.injectEndpoints({
       providesTags: ['Media'],
     }),
 
-    getImageById: builder.query<ImageObject, string>({
+    getImageById: builder.query<MediaObject, string>({
       query: (id) => ({
         url: `/media/images/${id}`,
         method: 'GET',
@@ -64,7 +64,7 @@ export const mediaApi = apiSlice.injectEndpoints({
       providesTags: ['Media'],
     }),
 
-    updateImage: builder.mutation<ImageObject, UpdateImageRequest>({
+    updateImage: builder.mutation<MediaObject, UpdateImageRequest>({
       query: ({ id, data }) => ({
         url: `/media/images/${id}`,
         method: 'PATCH',

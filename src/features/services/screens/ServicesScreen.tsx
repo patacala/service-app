@@ -5,9 +5,10 @@ import { getServicesStyles } from './services/services.styles';
 import { LocationPanel } from "@/features/wall/components/LocationPanel";
 import { ServicePost } from "../components/ServicePost";
 import { CancelService } from "../components/CancelService";
-import { RateService } from "../components/RateService";
+import { RateService } from "../../ratings/components/RateService";
 import { useGetCategoriesQuery } from "@/infrastructure/services/api";
 import { useGetMyBookServicesQuery, useUpdateBookServiceStatusMutation } from "../store/services.api";
+import { useCreateRatingMutation } from "@/features/ratings/store/ratings.api";
 import { BookService } from "../store";
 import { getWallStyles } from "@/features/wall/screens/wall/wall.style";
 import { getDeviceLanguage } from "@/assembler/config/i18n";
@@ -15,6 +16,8 @@ import { useRouter } from "expo-router";
 import { useTranslation } from "react-i18next";
 import Toast from "react-native-toast-message";
 import { useAuth } from "@/infrastructure/auth/AuthContext";
+import { CompletedService } from "../components/CompleteService";
+import { RatingVisibility, RoleOfRater } from "@/features/ratings/store/ratings.types";
 
 interface Location {
     id: string;
@@ -27,11 +30,14 @@ export const ServicesScreen = () => {
     const { user } = useAuth();
     const [locationPanelVisible, setLocationPanelVisible] = useState(false);
     const [cancelServiceVisible, setCancelServiceVisible] = useState(false);
+    const [completedServiceVisible, setCompletedServiceVisible] = useState(false);
     const [rateServiceVisible, setRateServiceVisible] = useState(false);
     const [selectedServiceToCancel, setSelectedServiceToCancel] = useState<BookService | null>(null);
-    
+    const [selectedServiceToCompleted, setSelectedServiceToCompleted] = useState<BookService | null>(null);
+    const [selectedServiceToRate, setSelectedServiceToRate] = useState<BookService | null>(null);
+    const [createRating, { isLoading: isLoadingRating }] = useCreateRatingMutation();
+
     const [updateBookServiceStatus, {isLoading: isLoadBookServiceUpdate}] = useUpdateBookServiceStatusMutation();
-    
     const { data: categoriesData, error: categoriesError } = useGetCategoriesQuery({ language: getDeviceLanguage() }, {
         refetchOnMountOrArgChange: true,
         refetchOnFocus: true,
@@ -97,6 +103,18 @@ export const ServicesScreen = () => {
         ? []
         : bookServices?.myBookings ?? [];
 
+    const sortBookingsByRatedLast = (bookings: BookService[]) => {
+        if (!bookings) return [];
+        return [...bookings].sort((a, b) => {
+            if (a.status === "rated" && b.status !== "rated") return 1;
+            if (a.status !== "rated" && b.status === "rated") return -1;
+            return 0;
+        });
+    };
+
+    const sortedMyBookings = useMemo(() => sortBookingsByRatedLast(myBookings), [myBookings]);
+    const sortedOtherBookings = useMemo(() => sortBookingsByRatedLast(otherBookings), [otherBookings]);
+
     const handleSelectLocation = (location: Location) => {
         setCurrentLocation(location);
     };
@@ -140,7 +158,90 @@ export const ServicesScreen = () => {
         }
     };
 
-    const handleRateServicePress = () => {
+    const handleCompletedServicePress = (service: BookService) => {
+        setSelectedServiceToCompleted(service);
+        setCompletedServiceVisible(true);
+    }
+
+    const handleConfirmCompleted = async () => {
+        if (!selectedServiceToCompleted?.id) {
+            Toast.show({
+                type: 'error',
+                text1: t("services.error"),
+                text2: t("services.servicecanerror"),
+            });
+            return;
+        }
+
+        try {
+            await updateBookServiceStatus({
+                id: selectedServiceToCompleted.id,
+                status: 'completed'
+            }).unwrap();
+
+            Toast.show({
+                type: 'success',
+                text1: t("messages.msg22"),
+                text2: t("services.servicecompleted"),
+            });
+
+            setSelectedServiceToCompleted(null);
+            setCompletedServiceVisible(false);
+        } catch (error) {
+            console.error('Error completing service:', error);
+            Toast.show({
+                type: 'error',
+                text1: t("services.error"),
+                text2: t("services.servicecompleted"),
+            });
+        }
+    };
+
+    const handleSubmitRating = async (rating: number, title: string, comment: string) => {
+        if (!selectedServiceToRate) {
+            Toast.show({
+                type: "error",
+                text1: "Error",
+                text2: "No hay un servicio seleccionado para calificar.",
+            });
+            return;
+        }
+
+        const isClientRating = selectedServiceToRate.client.id === user?.id;
+        const payload = {
+            ratedUserId: isClientRating ? selectedServiceToRate.provider.id : selectedServiceToRate.client.id,
+            serviceId: selectedServiceToRate.serviceId,
+            bookingId: selectedServiceToRate.id,
+            roleOfRater: isClientRating ? RoleOfRater.CLIENT : RoleOfRater.PROVIDER,
+            score: rating,
+            title: title,
+            body: comment,
+            visibility: RatingVisibility.PUBLIC,
+        };
+
+        try {
+            await createRating(payload).unwrap();
+
+            Toast.show({
+                type: "success",
+                text1: "Rating enviado",
+                text2: "Gracias por tu calificación.",
+            });
+
+            setRateServiceVisible(false);
+            setSelectedServiceToRate(null);
+        } catch (error: any) {
+            Toast.show({
+                type: "error",
+                text1: "Error al enviar rating",
+                text2: error?.data?.message ?? "Intenta nuevamente.",
+            });
+            throw error;
+        }
+    };
+
+    const handleRateServicePress = (service: BookService) => {
+        setSelectedServiceToRate(service);
         setRateServiceVisible(true);
     };
 
@@ -174,7 +275,7 @@ export const ServicesScreen = () => {
 
     return (
         <>
-            <Box height="100%">
+            <Box height="84%">
                 <ScrollView
                     style={getServicesStyles.scrollView}
                     showsVerticalScrollIndicator={false}
@@ -192,7 +293,7 @@ export const ServicesScreen = () => {
 
                                     {otherBookings.length > 0 && !isLoadBookServices && (
                                     <Box gap="md">
-                                        {otherBookings.map(service => {
+                                        {sortedOtherBookings.map(service => {
                                         const serviceOptions = getCategoryOptions(service.categories || []);
 
                                         return (
@@ -200,8 +301,10 @@ export const ServicesScreen = () => {
                                             <ServicePost
                                                 bookService={service}
                                                 serviceOptions={serviceOptions}
+                                                onRate={() => handleRateServicePress(service)}
                                                 onCancel={() => handleCancelServicePress(service)}
                                                 onDetail={() => navigateToChat(service)}
+                                                onCompleted={() =>  handleCompletedServicePress(service)}
                                             />
                                             </Box>
                                         );
@@ -224,9 +327,9 @@ export const ServicesScreen = () => {
                                 {renderSectionHeader(t("services.serviceshired") + ':')}
                                 {renderLoadSection()}
                                 
-                                {myBookings.length > 0 && !isLoadBookServices && (
+                                {sortedMyBookings.length > 0 && !isLoadBookServices && (
                                     <Box gap="md">
-                                    {myBookings.map(service => {
+                                    {sortedMyBookings.map(service => {
                                         const serviceOptions = getCategoryOptions(service.categories || []);
 
                                         return (
@@ -234,13 +337,12 @@ export const ServicesScreen = () => {
                                                 <ServicePost
                                                     bookService={service}
                                                     serviceOptions={serviceOptions}
-                                                    onRate={handleRateServicePress}
+                                                    onRate={() => handleRateServicePress(service)}
                                                     onCancel={() => handleCancelServicePress(service)}
                                                     onDetail={() => navigateToChat(service)}
                                                 />
                                             </Box>
                                         );
-                                        
                                     })}
                                     </Box>
                                 )}
@@ -267,9 +369,24 @@ export const ServicesScreen = () => {
                 isLoading={isLoadBookServiceUpdate}
             />
 
+            <CompletedService
+                visible={completedServiceVisible}
+                onClose={() => {
+                    setCompletedServiceVisible(false);
+                    setSelectedServiceToCompleted(null);
+                }}
+                onComplete={handleConfirmCompleted}
+                isLoading={isLoadBookServiceUpdate}
+            />
+
             <RateService
                 visible={rateServiceVisible}
-                onClose={() => setRateServiceVisible(false)}
+                onClose={() => {
+                    setRateServiceVisible(false);
+                    setSelectedServiceToRate(null);
+                }}
+                onRate={handleSubmitRating}
+                isLoading={isLoadingRating}
             />
         </>
         );

@@ -10,16 +10,25 @@ import { Typography } from '@/design-system/components/foundation/Typography';
 import { Box, theme } from '@/design-system';
 import { MainTabParamList } from '@/types/navigation';
 import { useTranslation } from 'react-i18next';
+import { useAuth } from '@/infrastructure/auth/AuthContext';
 
 export const CustomTabBar = ({ state, navigation }: BottomTabBarProps) => {
     const { t } = useTranslation('auth');
     const insets = useSafeAreaInsets();
+    const { user } = useAuth();
   
-    const renderTabItem = (routeName: keyof MainTabParamList, label: string, iconName: IconName) => {
+    const renderTabItem = (
+      routeName: keyof MainTabParamList,
+      label: string,
+      iconName: IconName,
+      hidden: boolean = false
+    ) => {
+      if (hidden) return null;
+
       const routeIndex = state.routes.findIndex(route => route.name === routeName);
       const isFocused = state.index === routeIndex;
       const color = isFocused ? 'colorBaseBlack' : 'colorBaseWhite';
-  
+
       return (
         <TouchableOpacity
           key={routeName}
@@ -35,7 +44,11 @@ export const CustomTabBar = ({ state, navigation }: BottomTabBarProps) => {
           <Box flexDirection="row" alignItems="center">
             <Icon name={iconName} size={24} color={color} />
             {isFocused && (
-              <Typography variant="bodyMedium" color="colorBaseBlack" style={styles.tabLabel}>
+              <Typography
+                variant="bodyMedium"
+                color="colorBaseBlack"
+                style={styles.tabLabel}
+              >
                 {label}
               </Typography>
             )}
@@ -43,7 +56,7 @@ export const CustomTabBar = ({ state, navigation }: BottomTabBarProps) => {
         </TouchableOpacity>
       );
     };
-  
+    
     return (
       <Box style={[styles.tabContainer, { bottom: insets.bottom - 20 }]}>
         <Box 
@@ -52,7 +65,7 @@ export const CustomTabBar = ({ state, navigation }: BottomTabBarProps) => {
           alignItems="center"
           style={styles.tabBar}
         >
-          {renderTabItem('provider-mode', t("tabs.provmode"), 'transfer')}
+          {renderTabItem('provider-mode', t("tabs.provmode"), 'transfer', user?.role === 'both')}
           {renderTabItem('services', t("tabs.services"), 'bookmark-other')}
           {renderTabItem('profile', t("tabs.profile"), 'user-circle')}
           {renderTabItem('home', t("tabs.home"), 'home')}

@@ -106,14 +106,31 @@ export const InfoMain: React.FC<InfoMainProps> = ({
   });
 
   const watchedValues = watch();
-
-  // 🔹 Filtrado dinámico por búsqueda
   const filteredOptions = useMemo(() => {
-    if (!searchTerm.trim()) return tagOptions;
-    return tagOptions.filter((option) =>
-      option.name.toLowerCase().includes(searchTerm.toLowerCase())
-    );
-  }, [tagOptions, searchTerm]);
+    let options = [...tagOptions];
+
+    if (searchTerm.trim()) {
+      options = options.filter((option) =>
+        option.name.toLowerCase().includes(searchTerm.toLowerCase())
+      );
+    }
+
+    const isEditing = 
+    initialValues.selectedServices &&
+    initialValues.selectedServices.length > 0;
+
+    if (isEditing) {
+      const selectedIds = new Set(initialValues.selectedServices);
+      options.sort((a, b) => {
+        const aSelected = selectedIds.has(a.id);
+        const bSelected = selectedIds.has(b.id);
+        return aSelected === bSelected ? 0 : aSelected ? -1 : 1;
+      });
+    }
+
+    return options;
+  }, [tagOptions, searchTerm, initialValues.selectedServices]);
+
 
   const notifySelectedServicesChange = useCallback(
     (newOptions: ChipOption[]) => {

@@ -38,14 +38,14 @@ import { useAuth } from '@/infrastructure/auth/AuthContext';
 import { ProfilePartial, useGetCurrentUserQuery, useUpdateProfileMutation } from '@/features/auth/store';
 import { useGetCategoriesQuery } from '@/infrastructure/services/api';
 import { useCreateServiceMutation, useUpdateServiceMutation, useGetMyServicesQuery } from '@/features/services/store';
-import { useDeleteImageMutation, useUpdateImageMutation, useUploadImageMutation } from '@/features/media/store/media.api';
+import { useCreateVideoDirectUploadUrlMutation, useDeleteImageMutation, useUploadImageMutation, useUploadVideoToDirectUrlMutation } from '@/features/media/store/media.api';
 import { getWallStyles } from '@/features/wall/screens/wall/wall.style';
 import { ServiceOffer } from '@/features/services/components/ServiceOffer';
 import { getDeviceLanguage } from '@/assembler/config/i18n';
 import { ServiceFormData } from '../slices/profile.slice';
 import { useLocalSearchParams } from 'expo-router';
-import { ImageObject } from '@/features/media/store/media.types';
-
+import { MediaObject, DownloadedMedia, RNFileLike } from '@/features/media/store/media.types';
+import { Rating, useGetRatingsByUserQuery } from '@/features/ratings/store';
 
 // Validation Schema
 const profileSchema = z.object({
@@ -82,7 +82,13 @@ type ProfileFormData = z.infer<typeof profileSchema>;
 export const ProfileScreen = () => {
   const { t } = useTranslation('auth');
   const theme = useTheme<Theme>();
-  // Categorias y perfil
+  // Media Api
+  const [uploadImage] = useUploadImageMutation();
+  const [deleteImage] = useDeleteImageMutation();
+  const [createVideoDirectUploadUrl] = useCreateVideoDirectUploadUrlMutation();
+  const [uploadVideoToDirectUrl] = useUploadVideoToDirectUrlMutation();
+
+  // Categorias y perfil Api
   const { data: categoriesData, isLoading: isCategoriesLoading, error: categoriesError } = useGetCategoriesQuery({ language: getDeviceLanguage() }, {
     refetchOnMountOrArgChange: true,
     refetchOnFocus: true,
@@ -93,23 +99,23 @@ export const ProfileScreen = () => {
     refetchOnFocus: true,
     refetchOnReconnect: true
   });
-
   const [updateProfile] = useUpdateProfileMutation();
-  const [createService, { isLoading: isLoadingCreateService }] = useCreateServiceMutation();
-  const [updateService, { isLoading: isLoadingUpdateService }] = useUpdateServiceMutation();
+
+  // Service Api
+  const [createService] = useCreateServiceMutation();
+  const [updateService] = useUpdateServiceMutation();
   const { data: services, isLoading: isLoadingServices, isFetching: isFetchingServices } = useGetMyServicesQuery(undefined, {
     refetchOnMountOrArgChange: true,
     refetchOnFocus: true,
     refetchOnReconnect: true
   });
-  const [uploadImage] = useUploadImageMutation();
-  const [deleteImage] = useDeleteImageMutation();
-  const [updateImage] = useUpdateImageMutation();
-  
-  const [isAvatarDirty, setIsAvatarDirty] = useState(false);
-  const [isSaving, setIsSaving] = useState(false);
+
+  // Ratings Api
+  const { data: ratingsData, isLoading: isLoadingRatings } = useGetRatingsByUserQuery();
 
   // Estado para la imagen de perfil
+  const [isAvatarDirty, setIsAvatarDirty] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
   const [profileImage, setProfileImage] = useState<string>('');
 
   // Estados para el formulario de servicios
@@ -120,8 +126,7 @@ export const ProfileScreen = () => {
   const [step1Valid, setStep1Valid] = useState(false);
   const [step2Valid, setStep2Valid] = useState(false);
   const [step3Valid, setStep3Valid] = useState(false);
-
-  const [isUploadingImages, setIsUploadingImages] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Estado para los datos del formulario de servicios
   const [serviceFormData, setServiceFormData] = useState<ServiceFormData>({
@@ -132,7 +137,7 @@ export const ProfileScreen = () => {
     selectedServices: [],
     selectedServiceOptions: [],
     description: '',
-    photos: [],
+    media: [],
     addressService: '',
     pricePerHour: 62
   });
@@ -253,12 +258,12 @@ export const ProfileScreen = () => {
       if (!profile) return;
 
       setIsSaving(true);
-      let uploadedMedia: ImageObject | undefined;
+      let uploadedMedia: MediaObject | undefined;
 
       if (profileImage && !profileImage.startsWith('http')) {
         const file = {
           uri: profileImage,
-          name: `avatar-${user?.id}.jpg`,
+          name: `avatar-${Date.now()}.jpg`,
           type: 'image/jpeg',
         };
 
@@ -351,21 +356,36 @@ export const ProfileScreen = () => {
       selectedServices: [],
       selectedServiceOptions: [],
       description: '',
-      photos: [],
+      media: [],
       addressService: '',
       pricePerHour: 62
     });
     setServiceFormVisible(true);
   };
 
-  const handleEditService = (serviceId: string) => {
+  const handleEditService = async (serviceId: string) => {
     const service = services?.find(s => s.id === serviceId);
     if (!service) return;
 
     const serviceOptions = getCategoryOptions(service.categories || []);
-    const photoUrls = service.media
-      ?.map(m => m.variants?.thumbnail?.url)
-      .filter(Boolean) as string[];
+    const photoUrls = await Promise.all(
+      service.media?.map(async (m) => {
+        if (m.kind === 'video') {
+          const videoUrl = m.variants?.public?.url;
+          if (videoUrl) {
+            try {
+              return await getVideoThumbnail(videoUrl);
+            } catch (error) {
+              return null;
+            }
+          }
+
+          return null;
+        } else {
+          return m.variants?.thumbnail?.url;
+        }
+      }) || []
+    ).then(urls => urls.filter(Boolean) as string[]);
 
     setEditingServiceId(service.id);
     setServiceFormData({
@@ -376,149 +396,219 @@ export const ProfileScreen = () => {
       selectedServices: service.categories || [],
       selectedServiceOptions: serviceOptions,
       description: service.description,
-      photos: photoUrls || [],
+      media: photoUrls || [],
       addressService: service.city || '',
       pricePerHour: service.price || 0,
     });
     setServiceFormVisible(true);
   };
 
-  const uploadPhotosFromFormData = async (photoUris: string[]): Promise<ImageObject[]> => {
-    if (photoUris.length === 0) return [];
+  const getVideoThumbnail = async (uri: string): Promise<string | null> => {
+    try {
+      // Extraer el video ID de la URL
+      const videoIdMatch = uri.match(/\/([a-f0-9]{32})\//);
+      
+      if (!videoIdMatch) {
+        return null;
+      }
+      
+      const videoId = videoIdMatch[1];
+      const customerCode = 'kb0znv13nolt7e8g';
+      const thumbnailUrl = `https://customer-${customerCode}.cloudflarestream.com/${videoId}/thumbnails/thumbnail.jpg`;
+      
+      return thumbnailUrl;
+    } catch (e) {
+      return null;
+    }
+  };
 
-    setIsUploadingImages(true);
-    const uploadPromises: Promise<ImageObject>[] = [];
-    const uploadedImageIds: string[] = [];
+  const uploadMediaFromFormData = async (
+    mediaUris: string[],
+    existingMedia: DownloadedMedia[]
+  ): Promise<MediaObject[]> => {
+    if (mediaUris.length === 0) return [];
+    
+    const uploadPromises: Promise<MediaObject>[] = [];
+    const uploadedMediaForCleanup: MediaObject[] = [];
 
     try {
-      for (let i = 0; i < photoUris.length; i++) {
-        const imageUri = photoUris[i];
-        
-        const file = {
-          uri: imageUri,
-          name: `service-${Date.now()}-${i}.jpg`,
-          type: 'image/jpeg',
-        };
+      for (const uri of mediaUris) {
+        if (uri.startsWith('http')) {
+          let idFromUrl: string | undefined;
+          const imageMatch = uri.match(/imagedelivery\.net\/[^/]+\/([^/]+)/);
+          if (imageMatch) {
+            idFromUrl = imageMatch[1];
+          }
 
-        const uploadPromise = uploadImage({ file }).unwrap();
-        uploadPromises.push(uploadPromise);
+          const videoMatch = uri.match(/cloudflarestream\.com\/([^/]+)\//);
+          if (videoMatch) {
+            idFromUrl = videoMatch[1];
+          }
+
+          const found = existingMedia.find(m =>
+            m.providerRef === idFromUrl || m.id === idFromUrl
+          );
+
+          uploadPromises.push(
+            Promise.resolve({
+              id: found?.providerRef ?? found?.id ?? idFromUrl,
+              downloaded: true,
+            } as MediaObject)
+          );
+        } else {
+          const isVideo = /\.(mp4|mov|avi|mkv)$/i.test(uri);
+
+          if (isVideo) {
+            const uploadPromise = (async (): Promise<MediaObject> => {
+              const { uid, uploadURL } = await createVideoDirectUploadUrl({}).unwrap();
+              const videoId = uid;
+              const name = `video-${videoId}.mp4`;
+
+              const file: RNFileLike = {
+                uri: uri,
+                name,
+                type: 'video/mp4',
+              };
+              await uploadVideoToDirectUrl({ uploadURL, file });
+
+              const uploadedVideo = { id: videoId, filename: name, downloaded: false, kind: 'video' };
+              uploadedMediaForCleanup.push(uploadedVideo);
+              return uploadedVideo;
+            })();
+            uploadPromises.push(uploadPromise);
+
+          } else {
+            const file: RNFileLike = {
+              uri: uri,
+              name: `service-${Date.now()}.jpg`,
+              type: 'image/jpeg',
+            };
+
+            const uploadPromise = uploadImage({ file })
+              .unwrap()
+              .then((result: MediaObject) => {
+                const uploadedImage = { ...result, downloaded: false, kind: 'image'  };
+                uploadedMediaForCleanup.push(uploadedImage);
+                return uploadedImage;
+              });
+            uploadPromises.push(uploadPromise);
+          }
+        }
       }
 
-      const results = await Promise.all(uploadPromises);
-
-      // Guardar los IDs para posible rollback
-      results.forEach(result => uploadedImageIds.push(result.id));
-      return results;
+      return await Promise.all(uploadPromises);
     } catch (error: any) {
-      // En caso de error, intentar eliminar las imágenes que sí se subieron
-      for (const imageId of uploadedImageIds) {
-        try {
-          await deleteImage(imageId).unwrap();
-        } catch {}
+      for (const media of uploadedMediaForCleanup) {
+        if (media.id) {
+          try {
+            await deleteImage(media.id).unwrap();
+          } catch {}
+        }
       }
 
-      Toast.show({
-        type: 'error',
-        text1: 'Error',
-        text2: 'Error al subir las imágenes',
-      });
-      
       return [];
-    } finally {
-      setIsUploadingImages(false);
     }
   };
 
   const handleServiceSubmit = async (data: ServiceFormData) => {
-    let uploadedImages: ImageObject[] = [];
+    let finalUploadedMedia: MediaObject[] = [];
+    let mediaDownloaded: DownloadedMedia[] = []; 
+    setIsSubmitting(true);
 
     try {
-      const originalService = editingServiceId
-        ? services?.find(s => s.id === editingServiceId)
-        : null;
+      mediaDownloaded = services?.find(s => s.id === data.id)?.media ?? [];
 
-      const originalMedia = originalService?.media ?? [];
-      const currentUris = data.photos;
-
-      // 1. Detectar nuevas (URIs que no son providerRef de imágenes existentes)
-      const newUris = currentUris.filter(
-        uri => !originalMedia.some(m => m.providerRef === uri)
-      );
-
-      if (newUris.length > 0) {
-        uploadedImages = await uploadPhotosFromFormData(newUris);
+      if (data.media && data.media.length > 0) {
+        finalUploadedMedia = await uploadMediaFromFormData(data.media, mediaDownloaded);
+        if (finalUploadedMedia.length === 0 && data.media.length > 0) {
+          return false;
+        }
       }
-
-      // 2. Detectar eliminadas (por providerRef)
-      const removedProviderRefs = originalMedia
-        .filter(m => !currentUris.includes(m.providerRef))
-        .map(m => m.providerRef);
 
       if (editingServiceId) {
         await updateService({
-          id: data.id,
-          data: {
-            title: data.title,
-            description: data.description,
-            price: data.pricePerHour,
-            categoryIds: data.selectedServices,
-            media: uploadedImages,
-            /* removedMedia: removedProviderRefs, */
-            currency: "USD",
-            city: profile?.city ?? "",
-          },
+            id: data.id,
+            data: {
+              title: data.title,
+              description: data.description,
+              price: data.pricePerHour,
+              categoryIds: data.selectedServices,
+              media: finalUploadedMedia,
+              currency: 'USD',
+              city: profile?.city ?? '',
+              lat: undefined,
+              lon: undefined
+            },
         }).unwrap();
-
-        for (const providerRef of removedProviderRefs) {
-          try {
-            await deleteImage(providerRef).unwrap();
-          } catch (err) {}
-        }
+        await deleteRemovedMedia(mediaDownloaded, finalUploadedMedia);
       } else {
         await createService({
           title: data.title,
           description: data.description,
-          price: data.pricePerHour,
+          price: data.pricePerHour,   
           categoryIds: data.selectedServices,
-          media: uploadedImages,
-          currency: "USD",
-          city: profile?.city ?? "",
+          media: finalUploadedMedia,
+          currency: 'USD',
+          city: profile?.city ?? '',
+          lat: undefined,
+          lon: undefined,
         }).unwrap();
       }
 
-      // Reset form
+      // Resetear formulario
       setServiceFormData({
-        id: "",
-        title: "",
-        city: "",
-        address: "",
+        id: '',
+        title: '',
+        city: '',
+        address: '',
         selectedServices: [],
         selectedServiceOptions: [],
-        description: "",
-        photos: [],
-        addressService: "",
+        description: '',
+        media: [],
+        addressService: '',
         pricePerHour: 62,
       });
 
       return true;
     } catch (error: any) {
-      // Rollback: eliminar las nuevas si falla el guardado
-      for (const img of uploadedImages) {
-        try {
-          await deleteImage(img.id).unwrap();
-        } catch {}
-      }
-
       Toast.show({
-        type: "error",
-        text1: "Error",
-        text2: error?.data?.message || "Failed to save service",
+        type: 'error',
+        text1: 'Error',
+        text2: error?.data?.message || 'Failed to create service',
       });
 
+      // En caso de error en la creación del servicio, eliminar las imágenes subidas
+      await deleteNewlyUploadedMedia(finalUploadedMedia);
       return false;
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
+  const deleteRemovedMedia = async (
+    mediaDownloaded: DownloadedMedia[],
+    finalUploadedMedia: MediaObject[]
+  ) => {
+    const finalIds = new Set(finalUploadedMedia.map(m => m.id));
+    for (const downloaded of mediaDownloaded) {
+      const ref = downloaded.providerRef ?? downloaded.id;
+      if (ref && !finalIds.has(ref)) {
+        try {
+          await deleteImage(ref).unwrap();
+        } catch {}
+      }
+    }
+  };
+
+  const deleteNewlyUploadedMedia = async (finalUploadedMedia: MediaObject[]) => {
+    for (const uploadedMedia of finalUploadedMedia) {
+      try {
+        if (!uploadedMedia.downloaded && uploadedMedia.id) {
+          await deleteImage(uploadedMedia.id).unwrap();
+        }
+      } catch {}
+    }
+  };
 
   // Handlers para el formulario de servicios
   const handleTitleChange = (title: string) => {
@@ -549,8 +639,8 @@ export const ProfileScreen = () => {
     setServiceFormData(prev => ({ ...prev, description }));
   };
 
-  const handlePhotosChange = (photos: string[]) => {
-    setServiceFormData(prev => ({ ...prev, photos }));
+  const handleMediaChange = (media: string[]) => {
+    setServiceFormData(prev => ({ ...prev, media }));
   };
 
   const handleAddressServiceChange = (addressService: string) => {
@@ -854,21 +944,19 @@ export const ProfileScreen = () => {
       </Row>
     );
   }
+  
   const renderPortfolioContent = () => {
     if (isCategoriesLoading || isLoadingServices || isFetchingServices) {
       return (
-        <Box>
-          {renderTitlePortfolio()}
-          <Box style={getWallStyles.loadingContainer} marginTop='lg'>
-            <ActivityIndicator size="large" color={theme.colors.colorBrandPrimary} />
-            <Typography variant="bodyMedium" color="white" style={getWallStyles.loadingText}>
-              {t("profile.loadportfolio")}
-            </Typography>
-          </Box>
+        <Box style={getWallStyles.loadingContainer} marginTop='lg'>
+          <ActivityIndicator size="large" color={theme.colors.colorBrandPrimary} />
+          <Typography variant="bodyMedium" color="white" style={getWallStyles.loadingText}>
+            {t("profile.loadportfolio")}
+          </Typography>
         </Box>
       );
     }
-
+    
     return (
       <Box flex={1}>
         <FlatList
@@ -911,73 +999,51 @@ export const ProfileScreen = () => {
   };
 
   // Contenido de User Reviews
-  const reviews = [
-    {
-      rating: 4.2,
-      reviewDate: '21 Apr',
-      username: 'Username_010',
-      reviewText: 'I hired them a month ago for a complete interior painting of my home, and the results are absolutely stunning.',
-      reviewImages: [
-        images.reviewImage1 as ImageSourcePropType,
-        images.reviewImage2 as ImageSourcePropType,
-        images.reviewImage3 as ImageSourcePropType
-      ],
-      reviewTitle: 'Awesome Work!',
-    },
-    {
-      rating: 4.2,
-      reviewDate: '15 Apr',
-      username: 'Customer_456',
-      reviewText: 'Professional service with attention to detail. They completed the job ahead of schedule and the quality exceeded my expectations.',
-      reviewImages: [
-        images.reviewImage2 as ImageSourcePropType,
-        images.reviewImage3 as ImageSourcePropType
-      ],
-      reviewTitle: 'Great Experience',
-    },
-    {
-      rating: 4.2,
-      reviewDate: '02 Apr',
-      username: 'HomeOwner_22',
-      reviewText: 'The team was courteous and skilled. They transformed my living space with beautiful paint work and clean edges.',
-      reviewImages: [
-        images.reviewImage1 as ImageSourcePropType,
-      ],
-      reviewTitle: 'Highly Recommended',
-    },
-  ];
+  const ratings: Rating[] = ratingsData?.ratings ?? [];
+  const renderUserReviewsContent = () => {
+    if (isLoadingRatings) {
+      return (
+        <Box style={getWallStyles.loadingContainer} marginTop='lg'>
+          <ActivityIndicator size="large" color={theme.colors.colorBrandPrimary} />
+          <Typography variant="bodyMedium" color="white" style={getWallStyles.loadingText}>
+            Cargando Reviews...
+          </Typography>
+        </Box>
+      );
+    }
 
-  const renderUserReviewsContent = () => (
-    <FlatList
-      data={reviews}
-      keyExtractor={(review, index) => review.username + '-' + index}
-      renderItem={({ item: review, index }) => (
-        <TouchableWithoutFeedback onPress={() => {}}>
-          <Box
-            key={review.username + '-' + index}
-            marginBottom={index < reviews.length - 1 ? 'md' : 'none'}
-          >
-            <RatingReview
-              rating={review.rating}
-              reviewDate={review.reviewDate}
-              username={review.username}
-              reviewText={review.reviewText}
-              reviewImages={review.reviewImages}
-              reviewTitle={review.reviewTitle}
-            />
-          </Box>
-        </TouchableWithoutFeedback>
-      )}
-      style={{ flex: 1 }}
-      contentContainerStyle={{
-        paddingHorizontal: 16,
-        paddingTop: 16,
-        paddingBottom: 70,
-      }}
-      showsVerticalScrollIndicator={false}
-      keyboardShouldPersistTaps="handled"
-    />
-  );
+    return (
+      <FlatList
+        data={ratings}
+        keyExtractor={(rating, index) => rating.username + '-' + index}
+        renderItem={({ item: rating, index }) => (
+          <TouchableWithoutFeedback onPress={() => {}}>
+            <Box
+              key={rating.username + '-' + index}
+              marginBottom={index < ratings.length - 1 ? 'md' : 'none'}
+            >
+              <RatingReview
+                rating={rating.rating}
+                reviewDate={rating.reviewDate}
+                username={rating.username}
+                reviewText={rating.reviewText}
+                reviewImages={rating.reviewImages}
+                reviewTitle={rating.reviewTitle}
+              />
+            </Box>
+          </TouchableWithoutFeedback>
+        )}
+        style={{ flex: 1 }}
+        contentContainerStyle={{
+          paddingHorizontal: 16,
+          paddingTop: 16,
+          paddingBottom: 70,
+        }}
+        showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
+      />
+    );
+  };
 
   // Contenido de Subscriptions
   const premiumFeatures = [
@@ -1081,13 +1147,13 @@ export const ProfileScreen = () => {
       component: (
         <DetailInfo 
           onDescriptionChange={handleDescriptionChange}
-          onPhotosChange={handlePhotosChange}
+          onMediaChange={handleMediaChange}
           onValidationChange={handleStep2Validation}
           initialValues={{
             selectedServices: serviceFormData.selectedServices,
             selectedServiceOptions: serviceFormData.selectedServiceOptions,
             description: serviceFormData.description,
-            photos: serviceFormData.photos
+            media: serviceFormData.media
           }}
         />
       ),
@@ -1168,8 +1234,8 @@ export const ProfileScreen = () => {
         onSubmit={handleServiceSubmit}
         formData={serviceFormData}
         setFormData={setServiceFormData}
-        primaryButtonDisabled={isLoadingCreateService || isLoadingUpdateService}
-        secondaryButtonDisabled={isLoadingCreateService || isLoadingUpdateService}
+        primaryButtonDisabled={isSubmitting}
+        secondaryButtonDisabled={isSubmitting}
       />
     </View>
   );
