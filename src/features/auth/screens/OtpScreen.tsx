@@ -13,6 +13,7 @@ import { useDataManager } from '@/infrastructure/dataManager/DataManager';
 import { RegisterScreenParams } from '@/types/navigation';
 import { getOtpConfirmationResult } from '@/infrastructure/auth/otpResultManager';
 import { useOtpVerification } from '../hooks/useOtpVerification';
+import { useAuth } from '@/infrastructure/auth/AuthContext';
 
 export const OtpScreen = () => {
   const router = useRouter();
@@ -21,6 +22,7 @@ export const OtpScreen = () => {
   const { t } = useTranslation('auth');
   const { clearAll } = useDataManager();
   const dispatch = useDispatch();
+  const { login } = useAuth();
 
   const [code, setCode] = useState('');
   const otpRef = useRef<OtpRef>(null);
@@ -105,6 +107,9 @@ export const OtpScreen = () => {
       // Authenticate with backend
       const authResponse = await loginWithFirebase(firebaseToken).unwrap();
       dispatch(setAuthData(authResponse));
+
+      // Persist authenticated session in AuthContext / SessionManager
+      await login(authResponse.token, authResponse.user);
 
       if (authResponse.user.isNewUser) {
         router.replace({
