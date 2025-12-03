@@ -16,12 +16,14 @@ import { useLoginWithFirebaseMutation } from '../store/auth.api';
 import { useDispatch } from 'react-redux';
 import { setAuthData, setFirebaseToken } from '../store/auth.slice';
 import images from '@/assets/images/images';
+import { useAuth } from '@/infrastructure/auth/AuthContext';
 
 export const LoginScreen = () => {
   const router = useRouter();
   const { t } = useTranslation('auth');
   const styles = getLoginStyles(theme);
   const dispatch = useDispatch();
+  const { login } = useAuth();
   
   const { loading: phoneLoading, sendCode, error: phoneError } = usePhoneAuth();
   const { loading: googleLoading, signIn: googleSignIn, error: googleError } = useGoogleAuth();
@@ -94,6 +96,9 @@ export const LoginScreen = () => {
       // Authenticate with backend
       const authResponse = await loginWithFirebase(result.token).unwrap();
       dispatch(setAuthData(authResponse));
+
+      // Persist authenticated session in AuthContext / SessionManager
+      await login(authResponse.token, authResponse.user);
 
       if (authResponse.user.isNewUser) {
         router.replace({
