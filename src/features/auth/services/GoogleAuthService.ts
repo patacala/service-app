@@ -23,7 +23,14 @@ export class GoogleAuthService {
     await GoogleSignin.hasPlayServices({ showPlayServicesUpdateDialog: true });
 
     // Get user info from Google
-    const { idToken } = await GoogleSignin.signIn();
+    const signInResult = await GoogleSignin.signIn();
+    let idToken = signInResult.idToken;
+
+    // Fallback: some environments require an explicit getTokens() call
+    if (!idToken) {
+      const tokens = await GoogleSignin.getTokens();
+      idToken = tokens.idToken;
+    }
 
     if (!idToken) {
       throw new Error('No ID token returned from Google Sign-In');
