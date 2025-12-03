@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { TouchableOpacity, StyleSheet, Image, ImageSourcePropType } from 'react-native';
+import { TouchableOpacity, StyleSheet, Image, ImageSourcePropType, View } from 'react-native';
 import { Box } from '../../../design-system/components/layout/Box';
 import { Typography } from '../../../design-system/components/foundation/Typography';
 import { theme } from '@/design-system';
@@ -55,8 +55,8 @@ export const Post = ({ post, onPress }: PostProps) => {
 
   return (
     <TouchableOpacity onPress={onPress}>
-      <Box style={styles.card}>
-        <Box style={styles.images}>
+      <View style={styles.card}>
+        <View style={styles.images}>
           <Image
             style={styles.mainImage}
             source={{ uri: mainImageUri }}
@@ -67,7 +67,7 @@ export const Post = ({ post, onPress }: PostProps) => {
             source={images.linearGradientBlack as ImageSourcePropType}
             resizeMode="cover"
           />
-        </Box>
+        </View>
 
         <Box justifyContent="center">
           <Box style={styles.labelPrice} justifyContent="center" alignItems="center">
@@ -84,30 +84,26 @@ export const Post = ({ post, onPress }: PostProps) => {
 
         <Row style={styles.footerCard} justifyContent="space-between">
           <Row>
-            <Box>
+            <View>
               <Image
                 source={{ uri: post.provider.media?.profileThumbnail?.url }}
                 resizeMode="contain"
                 style={getProfileStyles.profileImageAll}
               />
-              <Box
-                paddingLeft="sm"
-                flexDirection="row"
-                justifyContent="center"
-                alignItems="center"
-                style={styles.rating}
+              <View
+                style={[styles.rating, { paddingLeft: theme.spacing.sm }]}
               >
-                <Box paddingRight="xs">
+                <View style={{ paddingRight: theme.spacing.xs }}>
                   <Icon name="star" size={13} color="colorBaseWhite" />
-                  <Box style={styles.secondStar}>
+                  <View style={styles.secondStar}>
                     <Icon name="star" fillColor="colorBaseBlack" size={13} color="colorBaseWhite" />
-                  </Box>
-                </Box>
+                  </View>
+                </View>
                 <Typography variant="bodyXSmall" color="white">
                   {post.rating}
                 </Typography>
-              </Box>
-            </Box>
+              </View>
+            </View>
             <Box>
               <Typography variant="bodyMedium" color="white">
                 {post.provider.name}
@@ -139,7 +135,7 @@ export const Post = ({ post, onPress }: PostProps) => {
             </Box>
           </Box>
         </Row>
-      </Box>
+      </View>
     </TouchableOpacity>
   );
 };
@@ -186,6 +182,9 @@ const styles = StyleSheet.create({
     width: 55,
     height: 20,
     borderRadius: 40,
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   secondStar: {
     position: 'absolute',
