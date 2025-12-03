@@ -22,8 +22,18 @@ export const useGoogleAuth = (): UseGoogleAuthReturn => {
   const service = new GoogleAuthService();
 
   useEffect(() => {
-    // iOS client ID from GoogleService-Info.plist
-    const WEB_CLIENT_ID = '1006263162496-h58tvggmg4aomv6q8iggn03d7gqrt7g5.apps.googleusercontent.com';
+    // Web client ID configurado vía env para no acoplarlo al código
+    const WEB_CLIENT_ID = process.env.EXPO_PUBLIC_WEB_CLIENTID;
+
+    if (!WEB_CLIENT_ID) {
+      console.error(
+        '[GoogleAuth] Missing EXPO_PUBLIC_WEB_CLIENTID. ' +
+        'Define it en tu .env con el Web client ID de Google (OAuth 2.0).'
+      );
+      setError('Google Sign-In is not configured correctly (missing client ID).');
+      return;
+    }
+
     GoogleAuthService.configure(WEB_CLIENT_ID);
   }, []);
 
@@ -35,6 +45,13 @@ export const useGoogleAuth = (): UseGoogleAuthReturn => {
       const credential = await service.signIn();
       const token = await service.getIdToken(credential.user);
 
+      // Debug: log successful Google + Firebase auth payload
+      console.log('[GoogleAuth] Firebase user:', {
+        uid: credential.user.uid,
+        email: credential.user.email,
+        displayName: credential.user.displayName,
+      });
+
       return {
         token,
         email: credential.user.email,
@@ -42,12 +59,18 @@ export const useGoogleAuth = (): UseGoogleAuthReturn => {
       };
     } catch (err: any) {
       // User cancelled
-      if (err.code === '-5') {
+      if (err?.code === '-5') {
+        console.log('[GoogleAuth] Sign-in cancelled by user');
         setError('Sign-in cancelled');
         return null;
       }
 
-      const message = err.message || 'Failed to sign in with Google';
+      console.error('[GoogleAuth] Sign-in error:', {
+        code: err?.code,
+        message: err?.message,
+      });
+
+      const message = err?.message || 'Failed to sign in with Google';
       setError(message);
       return null;
     } finally {
