@@ -1,16 +1,18 @@
 import React, { useEffect, useRef, useState } from 'react';
 import Toast from 'react-native-toast-message';
 import { useTranslation } from 'react-i18next';
+import { useDispatch } from 'react-redux';
+import { useLocalSearchParams, useRouter } from 'expo-router';
+
 import { Box, SendCode, Otp } from '@/design-system';
 import { AuthenticationCard } from '../components/AuthenticationCard/AuthenticationCard';
 import { OtpRef } from '@/design-system/components/forms/Otp/types';
-import { usePhoneAuth } from '@/infrastructure/auth/hooks/usePhoneAuth';
 import { useLoginWithFirebaseMutation } from '../store/auth.api';
-import { useDispatch } from 'react-redux';
-import { setAuthData } from '../store/auth.slice';
+import { setAuthData, setFirebaseToken } from '../store/auth.slice';
 import { useDataManager } from '@/infrastructure/dataManager/DataManager';
-import { useLocalSearchParams, useRouter } from 'expo-router';
 import { RegisterScreenParams } from '@/types/navigation';
+import { getOtpConfirmationResult } from '@/infrastructure/auth/otpResultManager';
+import { useOtpVerification } from '../hooks/useOtpVerification';
 
 export const OtpScreen = () => {
   const router = useRouter();
@@ -23,11 +25,9 @@ export const OtpScreen = () => {
   const [code, setCode] = useState('');
   const otpRef = useRef<OtpRef>(null);
   
-  // Hooks para autenticación
-  const { confirmOTP, loading: otpLoading, error: otpError } = usePhoneAuth();
+  const { loading: otpLoading, verifyOtp, error: otpError } = useOtpVerification();
   const [loginWithFirebase, { isLoading: loginLoading, error: loginError }] = useLoginWithFirebaseMutation();
   
-  // Estado de carga combinado
   const loading = otpLoading || loginLoading;
   
   useEffect(() => {
@@ -36,16 +36,6 @@ export const OtpScreen = () => {
     clearAll();
   }, []);
 
-  useEffect(() => {
-    if (otpError) {
-      Toast.show({
-        type: 'error',
-        text1: t("messages.msg17"),
-        text2: otpError
-      });
-    }
-  }, [otpError]);
-  
   useEffect(() => {
     if (loginError) {
       Toast.show({
@@ -87,50 +77,63 @@ export const OtpScreen = () => {
       return;
     }
 
-    try {
-      // Confirmar el código OTP con Firebase
-      const result = await confirmOTP(code);
-      
-      
-      if (result && 'token' in result) {
-        // Autenticar con el backend usando el token de Firebase
-        const authResponse = await loginWithFirebase(result.token).unwrap();
-        
-        // Guardar los datos de autenticación en el store de Redux
-        dispatch(setAuthData(authResponse));
-        
-        if (authResponse.user.isNewUser) {
-          const registerParams: Partial<RegisterScreenParams> = {
-            phonenumber: phoneNumber,
-            name: "",
-            email: "",
-          };
-
-          router.replace({
-            pathname: '/register',
-            params: registerParams,
-          });
-
-          Toast.show({
-            type: 'success',
-            text1: t("messages.msg14"),
-            text2: t("messages.msg15"),
-          });
-        } else {
-          Toast.show({
-            type: 'success',
-            text1: t("messages.msg14"),
-            text2: t("messages.msg16")
-          });
-
-          router.replace('/home');
-        }
-      }
-    } catch (error) {
+    const confirmation = getOtpConfirmationResult();
+    if (!confirmation) {
       Toast.show({
         type: 'error',
         text1: t("messages.msg17"),
         text2: t("messages.msg18"),
+      });
+      return;
+    }
+
+    // Verify OTP with Firebase
+    const firebaseToken = await verifyOtp(confirmation, code);
+    
+    if (!firebaseToken) {
+      Toast.show({
+        type: 'error',
+        text1: t('messages.msg17'),
+        text2: otpError || t('messages.msg18'),
+      });
+      return;
+    }
+
+    dispatch(setFirebaseToken(firebaseToken));
+
+    try {
+      // Authenticate with backend
+      const authResponse = await loginWithFirebase(firebaseToken).unwrap();
+      dispatch(setAuthData(authResponse));
+
+      if (authResponse.user.isNewUser) {
+        router.replace({
+          pathname: '/register',
+          params: {
+            phonenumber: phoneNumber,
+            name: '',
+            email: '',
+          } as Partial<RegisterScreenParams>,
+        });
+
+        Toast.show({
+          type: 'success',
+          text1: t('messages.msg14'),
+          text2: t('messages.msg15'),
+        });
+      } else {
+        Toast.show({
+          type: 'success',
+          text1: t('messages.msg14'),
+          text2: t('messages.msg16'),
+        });
+        router.replace('/home');
+      }
+    } catch (error: any) {
+      Toast.show({
+        type: 'error',
+        text1: t('messages.msg17'),
+        text2: error?.message || t('messages.msg18'),
       });
     }
   };

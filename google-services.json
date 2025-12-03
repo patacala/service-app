@@ -1,6 +1,7 @@
 {
   "project_info": {
     "project_number": "1006263162496",
+    "firebase_url": "https://contact-my-app-2-default-rtdb.firebaseio.com",
     "project_id": "contact-my-app-2",
     "storage_bucket": "contact-my-app-2.firebasestorage.app"
   },
@@ -19,6 +20,14 @@
           "android_info": {
             "package_name": "com.pbarranco.contactmyapp",
             "certificate_hash": "7b25ce8fa7d87280270a064d4926a12479d9de34"
+          }
+        },
+        {
+          "client_id": "1006263162496-nb4r689g61c13q639kbuq4l5fncjecl4.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.pbarranco.contactmyapp",
+            "certificate_hash": "5e8f16062ea3cd2c4a0d547876baa6f38cabf625"
           }
         },
         {
