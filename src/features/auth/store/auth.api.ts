@@ -1,13 +1,5 @@
 import { apiSlice } from '@/store/api/apiSlice';
 import type { AuthResponse, RegisterRequest, RegisterResponse, Profile, ProfilePartial } from './auth.types';
-import { auth } from '@/infrastructure/config/firebase';
-import { FirebaseAuthTypes } from '@react-native-firebase/auth';
-
-// Interfaz para la autenticación con Firebase Phone
-interface FirebasePhoneAuthResponse {
-  user: FirebaseAuthTypes.User;
-  token: string;
-}
 
 export const authApi = apiSlice.injectEndpoints({
   endpoints: (builder) => ({
