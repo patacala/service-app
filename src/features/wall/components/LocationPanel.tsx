@@ -174,7 +174,7 @@ export const LocationPanel: React.FC<LocationPanelProps> = ({
             color={theme.colors.colorGrey200}
             style={styles.locationDescription}
           >
-            We've set your location in real-time, but feel free to switch it if you'd like to explore workers in another area
+           We&apos;ve set your location in real-time, but feel free to switch it if you&apos;d like to explore workers in another area
           </Typography>
           
           {/* Campo de búsqueda usando el componente Input con valor inicial */}
