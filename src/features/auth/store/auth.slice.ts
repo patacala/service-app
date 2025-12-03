@@ -1,6 +1,6 @@
 import { createSlice, PayloadAction } from '@reduxjs/toolkit';
 import type { AuthUser, AuthResponse } from './auth.types';
-import { auth } from '@/infrastructure/config/firebase';
+import auth from '@/infrastructure/config/firebase';
 
 interface AuthState {
   user: AuthUser | null;
@@ -23,7 +23,7 @@ const initialState: AuthState = {
 // Función auxiliar para cerrar sesión con Firebase
 export const signOutFromFirebase = async (): Promise<void> => {
   try {
-    await auth.signOut();
+    await auth().signOut();
   } catch (error: any) {
     console.error('Error signing out from Firebase:', error);
     throw error;

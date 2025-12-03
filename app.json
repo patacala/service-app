@@ -3,20 +3,15 @@
     "name": "awesome-app-expo",
     "slug": "contact-my-app-expo",
     "version": "1.0.0",
-    "runtimeVersion": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "awesome-app-expo",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
-    "ios": {
+   "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.pbarranco.contactmyapp",
-      "googleServicesFile": "./GoogleService-Info.plist",
-      "buildNumber": "1",
-      "infoPlist": {
-        "ITSAppUsesNonExemptEncryption": false
-      }
+      "googleServicesFile": "./GoogleService-Info.plist"
     },
     "android": {
       "adaptiveIcon": {
@@ -25,6 +20,7 @@
       },
       "package": "com.pbarranco.contactmyapp",
       "versionCode": 1,
+      "package": "com.pbarranco.contactmyapp",
       "googleServicesFile": "./google-services.json",
       "permissions": [
         "android.permission.CAMERA",
@@ -32,7 +28,6 @@
       ]
     },
     "web": {
-      "bundler": "metro",
       "output": "static",
       "favicon": "./assets/images/favicon.png"
     },
@@ -43,10 +38,13 @@
         {
           "ios": {
             "useFrameworks": "static",
-            "buildReactNativeFromSource": true
+            "unstable_allowFrameworkHeaderIncludes": true
           }
         }
       ],
+      "@react-native-firebase/app",
+      "@react-native-firebase/auth",
+      "@react-native-google-signin/google-signin",
       [
         "expo-splash-screen",
         {
@@ -69,18 +67,8 @@
       "expo-web-browser"
     ],
     "experiments": {
-      "typedRoutes": true
-    },
-    "extra": {
-      "googleAuth": {
-        "webClientId": "343824714542-csdtgbqf7ff8n4hi40a4mka4811b80nl.apps.googleusercontent.com",
-        "iosClientId": "343824714542-8ft5l0frd96krj8jths4i1ranq2t6od1.apps.googleusercontent.com"
-      },
-      "router": {},
-      "eas": {
-        "projectId": "18830731-15d4-4e01-b32f-5e1571b65455"
-      }
-    },
-    "owner": "contact-my-app"
+      "typedRoutes": true,
+      "reactCompiler": true
+    }
   }
 }
