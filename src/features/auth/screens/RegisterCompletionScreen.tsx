@@ -1,131 +1,140 @@
-import React, { useState, useEffect } from 'react';
-import { Box, Typography, Input, GroupChipSelector, theme } from '@/design-system';
-import { useNavigation } from '@react-navigation/native';
-import { AuthStackNavigationProp } from '@/assembler/navigation/types';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import { Box, Typography, GroupChipSelector, theme } from '@/design-system';
 import { useTranslation } from 'react-i18next';
 import { AuthenticationCard } from '../components/AuthenticationCard/AuthenticationCard';
-import { Row } from '@/design-system/components/layout/Row/Row';
-import { getRegisterCompletionStyles } from './registerCompetion/registerCompletion.style';
 import { useDataManager } from '@/infrastructure/dataManager/DataManager';
-import { getAllServiceTags } from '@/infrastructure/services/api/endpoints/servicetags.api';
 import Toast from 'react-native-toast-message';
+import { useGetCategoriesQuery } from '@/features/categories/store';
+import { useRegisterMutation } from '../store';
+import { useAuth } from '@/infrastructure/auth/AuthContext';
+import { ActivityIndicator } from 'react-native';
+import { getWallStyles } from '@/features/wall/screens/wall/wall.style';
+import { useRouter } from 'expo-router';
+import { getDeviceLanguage } from '@/assembler/config/i18n';
 
 interface CompletionFormData {
-  phoneNumber: string;
   city: string;
-  selectedServices: string[];
-}
-
-interface FormErrors {
-  phoneNumber: string;
-  city: string;
-}
-
-interface ServicetagOption {
-  id: number;
-  name: string;
+  email: string;
+  phone: string;
+  selectedCategories: string[];
 }
 
 export const RegisterCompletionScreen = () => {
-  const navigation = useNavigation<AuthStackNavigationProp>();
-  const styles = getRegisterCompletionStyles(theme);
+  const router = useRouter();
   const { t } = useTranslation('auth');
   const { getData, setData, removeData } = useDataManager();
+  const { data: categoriesData, isLoading: isCategoriesLoading, error: categoriesError } = useGetCategoriesQuery({ language: getDeviceLanguage() }, {
+    refetchOnMountOrArgChange: true,
+  });
+  const { user: userData, userUpdate } = useAuth();
 
-  const [formData, setFormData] = useState<CompletionFormData>({
-    phoneNumber: '',
+  const [completionFormData, setCompletionFormData] = useState<CompletionFormData>({
     city: '',
-    selectedServices: []
+    email: '',
+    phone: '',
+    selectedCategories: []
   });
-
-  const [errors, setErrors] = useState<FormErrors>({
-    phoneNumber: '',
-    city: ''
-  });
-
-  const [tagOptions, setTagOptions] = useState<ServicetagOption[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [allowGoBack, setAllowGoBack] = useState(false);
+  const [registerProfile] = useRegisterMutation();
+
+  const tagOptions = useMemo(() => {
+    return (
+      categoriesData?.categories?.map((category) => ({
+        id: category.id,
+        label: category.name,
+      })) || []
+    );
+  }, [categoriesData]);
 
   useEffect(() => {
-    const loadData = async () => {
+    const loadAndMergeData = async () => {
       try {
         const savedFormData = await getData('registerCompletionForm');
         const basicRegisterData = await getData('registerForm');
 
-        if (savedFormData) setFormData(savedFormData);
-        if (!basicRegisterData) setAllowGoBack(true);
-
-        const data = await getAllServiceTags();
-        setTagOptions(data.map((tag: any) => ({
-          id: tag.id,
-          name: tag.name
-        })));
+        if (savedFormData || basicRegisterData) {
+          setCompletionFormData({
+            ...basicRegisterData,
+            ...savedFormData,
+            selectedCategories: Array.isArray(savedFormData?.selectedCategories)
+              ? savedFormData.selectedCategories
+              : [],
+          });
+        }
       } catch (error) {
-        console.error('Error cargando datos del formulario o servicetags:', error);
+        return false;
       }
     };
 
-    loadData();
+    loadAndMergeData();
   }, []);
 
-  const validateForm = () => {
-    let isValid = true;
-    const newErrors: FormErrors = { ...errors };
-
-    const phoneRegex = /^\d{10}$/;
-    if (!formData.phoneNumber.trim()) {
-      newErrors.phoneNumber = t('signupCompletion.number-required');
-      isValid = false;
-    } else if (!phoneRegex.test(formData.phoneNumber)) {
-      newErrors.phoneNumber = t('signupCompletion.number-invalid');
-      isValid = false;
-    } else {
-      newErrors.phoneNumber = '';
+  useEffect(() => {
+    if (categoriesError) {
+      Toast.show({
+        type: 'error',
+        text1: t("messages.msg20"),
+        text2: t("messages.msg21"),
+      });
     }
+  }, [categoriesError]);
 
-    if (!formData.city.trim()) {
-      newErrors.city = t('signupCompletion.city-required');
-      isValid = false;
-    } else {
-      newErrors.city = '';
+  // Función para guardar automáticamente los datos
+  const saveFormData = useCallback(async (updatedFormData: CompletionFormData) => {
+    try {
+      await setData('registerCompletionForm', updatedFormData);
+    } catch (error) {
+      return false;
     }
+  }, [setData]);
 
-    setErrors(newErrors);
-    return isValid;
-  };
-
-  const handleInputChange = (field: keyof CompletionFormData, value: string | string[]) => {
+  const handleInputChange = useCallback((field: keyof CompletionFormData, value: string | string[]) => {
     const updatedFormData = {
-      ...formData,
-      [field]: value
+      ...completionFormData,
+      [field]: field === 'selectedCategories' ? (value as string[]) : value,
     };
-    setFormData(updatedFormData);
-    setData('registerCompletionForm', updatedFormData);
+    
+    setCompletionFormData(updatedFormData);
+    
+    // Guardar automáticamente cuando cambian las categorías
+    saveFormData(updatedFormData);
+  }, [completionFormData, saveFormData]);
 
-    if (errors[field as keyof FormErrors]) {
-      setErrors(prevErrors => ({
-        ...prevErrors,
-        [field]: ''
-      }));
-    }
-  };
+  // Función específica para manejar cambios en las categorías
+  const handleCategoryChange = useCallback((selectedIds: string[] | null) => {
+    const selectedCategories = selectedIds || [];
+    handleInputChange('selectedCategories', selectedCategories);
+  }, [handleInputChange]);
 
   const handleRegisterCompletion = async () => {
-    if (!validateForm()) return;
     setIsSubmitting(true);
-
     try {
-      const fullPhoneNumber = `+57${formData.phoneNumber}`;
-      await setData('registerCompletionForm', {
-        ...formData,
-        phoneNumber: fullPhoneNumber
+      await saveFormData(completionFormData);
+
+      const savedFormData = await getData('registerCompletionForm');
+      const registerRequest = {
+        ...savedFormData,
+        userId: userData?.id,
+      };
+
+      const { user } = await registerProfile(registerRequest).unwrap();
+      await userUpdate(user);
+
+      Toast.show({
+        type: 'success',
+        text1: t("messages.msg22"),
+        text2: t("messages.msg23"),
       });
-      navigation.navigate('Otp');
+
+      await removeData('registerCompletionForm');
+      await removeData('registerForm');
+
+      router.replace('/home');
     } catch (error: any) {
       Toast.show({
         type: 'error',
-        text1: 'Error saving data.',
+        text1: t("messages.msg24"),
+        text2: t("messages.msg18"),
       });
     } finally {
       setIsSubmitting(false);
@@ -133,53 +142,41 @@ export const RegisterCompletionScreen = () => {
   };
 
   const handleGoBack = () => {
-    removeData('registerCompletionForm');
-    navigation.goBack();
+    router.back();
   };
 
   return (
     <AuthenticationCard
       mainTitle={t('signup.title')}
       activeStepIndicator
+      totalSteps={2}
       currentStep={2}
       subtitle={t('signupCompletion.sub-title')}
       onPrimaryButtonPress={handleRegisterCompletion}
-      onSecondaryButtonPress={allowGoBack ? handleGoBack : undefined}
+      onSecondaryButtonPress={handleGoBack}
       primaryButtonDisabled={isSubmitting}
     >
-      <Box gap='md' marginBottom='sm'>
-        <Row justify='space-between'>
-          <Box style={styles.prefix} padding="md">
-            <Typography variant="bodyRegular" colorVariant="secondary">+57</Typography>
-          </Box>
-          <Input
-            label={t('signupCompletion.number')}
-            placeholder={t('signupCompletion.text-input-number')}
-            keyboardType="numeric"
-            value={formData.phoneNumber}
-            onChangeText={(value) => handleInputChange('phoneNumber', value.replace(/[^0-9]/g, '').slice(0, 10))}
-            error={errors.phoneNumber}
-            style={{ width: 250 }}
-          />
-        </Row>
-        <Input
-          label={t('signupCompletion.city')}
-          placeholder={t('signupCompletion.text-input-city')}
-          value={formData.city}
-          onChangeText={(value) => handleInputChange('city', value)}
-          error={errors.city}
-        />
-      </Box>
+      <Box>
+        <Box marginBottom='sm'>
+          <Typography variant="bodyRegular" colorVariant="secondary">
+            {t("messages.msg32")}
+          </Typography>
+        </Box>
+        
 
-      <GroupChipSelector
-        multiSelect
-        onChange={(selectedIds) => handleInputChange('selectedServices', selectedIds)}
-        options={tagOptions.map(tag => ({
-          id: tag.id.toString(),
-          label: tag.name
-        }))}
-        selectedIds={formData.selectedServices}
-      />
+        {isCategoriesLoading ? (
+          <Box style={getWallStyles.loadingContainer}>
+            <ActivityIndicator size="large" color={theme.colors.colorBrandPrimary} />
+          </Box>
+        ) : (
+          <GroupChipSelector
+            multiSelect
+            onChange={handleCategoryChange}
+            options={tagOptions}
+            selectedIds={completionFormData.selectedCategories || []}
+          />
+        )}
+      </Box>
     </AuthenticationCard>
   );
 };

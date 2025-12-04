@@ -40,6 +40,7 @@ export const Button: React.FC<ButtonProps> = ({
   slideThumbColor,
   width,
   height = 56,
+  textColor,
   ...props
 }) => {
   const theme = useTheme<Theme>();
@@ -79,6 +80,10 @@ export const Button: React.FC<ButtonProps> = ({
 
   // Determinar color del icono según la variante
   const getIconColor = (): IconColorType => {
+    if (textColor) {
+      return textColor;
+    }
+
     switch (variant) {
       case 'secondary':
         return "colorBaseBlack";
@@ -358,9 +363,8 @@ export const Button: React.FC<ButtonProps> = ({
               {renderLeftIcon()}
               <Typography 
                 variant="bodyRegular" 
-                color={theme.colors[buttonStyles.text.color as keyof typeof theme.colors]}
+                color={textColor ? theme.colors[textColor as keyof typeof theme.colors]:theme.colors.colorBaseWhite}
                 style={[
-                  buttonStyles.text, 
                   { flexShrink: 1 }
                 ]}
                 numberOfLines={1}

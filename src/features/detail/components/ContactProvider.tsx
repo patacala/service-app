@@ -14,12 +14,10 @@ interface InitialValues {
 
 interface FormServiceProps {
   onButtonPress?: () => void;
-  initialValues?: InitialValues;
 }
 
 export const ContactProvider: React.FC<FormServiceProps> = ({
   onButtonPress,
-  initialValues = {},
 }) => {
   const theme = useTheme<Theme>();
   const styles = createStyles(theme);

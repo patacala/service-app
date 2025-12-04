@@ -1,23 +1,33 @@
 import {createSlice, PayloadAction, createAsyncThunk} from '@reduxjs/toolkit';
 import { ImageSourcePropType } from 'react-native';
 import { Float } from 'react-native/Libraries/Types/CodegenTypes';
-import images from '@/assets/images/images';
 import { IconName } from '@/design-system/components/layout/Icon';
+import { Media } from '@/features/media/store/media.types';
 
 export interface CardPost {
   id: string;
+  title: string;
+  description: string;
   price: number;
-  name: string;
-  type: string;
+  currency: string;
+  categories: string[];
   category: string;
-  rating: Float;
-  distance: Float;
-  location: string;
-  miniImage: ImageSourcePropType;
-  image: ImageSourcePropType;
-  isFavorite: boolean;
+  name: string;
+  provider: {
+    id: string;
+    name: string;
+  };
+  city?: string | null;
+  lat?: number | null;
+  lon?: number | null;
   createdAt: string;
   updatedAt: string;
+  type: string;
+  rating: number;
+  distance: number;
+  location: string;
+  isFavorite: boolean;
+  media: Media[];
 }
 
 export interface Post {
@@ -68,7 +78,7 @@ const initialState: WallState = {
 };
 
 // Datos de muestra que simulan respuesta del servidor
-const samplePosts: CardPost[] = [
+const samplePosts: CardPost[] = [/* 
   {
     id: '1',
     price: 15,
@@ -143,7 +153,7 @@ const samplePosts: CardPost[] = [
     isFavorite: false,
     createdAt: '2023-05-14T14:30:00Z',
     updatedAt: '2023-05-14T14:30:00Z',
-  }
+  } */
 ];
 
 const sampleCategories = [

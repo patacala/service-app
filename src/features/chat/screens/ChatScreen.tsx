@@ -7,137 +7,406 @@ import {
     KeyboardAvoidingView,
     Platform,
     Keyboard,
-    View,
-    TouchableWithoutFeedback
+    TouchableWithoutFeedback,
+    ActivityIndicator,
+    Alert
 } from "react-native";
-import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
-import { Box, Button, Input, SafeContainer, Typography, theme } from "@/design-system";
+import { Box, Button, SafeContainer, Typography, theme } from "@/design-system";
 import { getChatStyles } from './chat/chat.styles';
 import images from "@/assets/images/images";
 import { Row } from "@/design-system/components/layout/Row/Row";
-import { AuthStackParamList } from "@/assembler/navigation/types";
-import { ServiceData } from "@/features/services/slices/services.slice";
+import { BookService } from "@/features/services/store";
 import { Messages } from "../components/Messages";
 import { Notification } from "../components/Notification";
-import { ChatMessage, ChatScreenProps } from "../slices/chat.slice";
-type ChatScreenRouteProp = RouteProp<AuthStackParamList, 'Chat'>;
+import { ChatMessage, MediaFileType } from "../slices/chat.slice";
+import { useLocalSearchParams, useRouter } from "expo-router";
+import { useUpdateBookServiceStatusMutation } from "@/features/services/store/services.api";
+import { ChatInput } from "@/design-system/components/forms/ChatInput";
+import { useGetMessagesQuery, useCreateMessageMutation } from "@/features/messages/store/messages.api";
+import { useUploadImageMutation, useDeleteImageMutation } from "@/features/media/store/media.api";
+import { supabase } from '@/lib/supabase';
+import { MediaDto } from "@/features/messages/store/messages.types";
 
-export const ChatScreen = (service: ChatScreenProps) => {
-    const navigation = useNavigation();
-    const route = useRoute<ChatScreenRouteProp>();
-    const [isAccepted, setIsAccepted] = useState(false);
-    const [isRejected, setIsRejected] = useState(false);
+export const ChatScreen = () => {
+    const router = useRouter();
+    const { post } = useLocalSearchParams<{ post?: string }>();
+    const [uploadImage] = useUploadImageMutation();
+    const [deleteImage] = useDeleteImageMutation();
+
+    let servicePost: BookService | null = null;
+    try {
+        servicePost = post ? JSON.parse(post) : null;
+    } catch (error) {
+        console.error('Error parsing post data:', error);
+    }
+
+    if (!servicePost) {
+        useEffect(() => {
+            Alert.alert('Error', 'Service data not found', [
+                { text: 'OK', onPress: () => router.back() }
+            ]);
+        }, []);
+        
+        return (
+            <SafeContainer fluid backgroundColor="colorBaseBlack" paddingHorizontal="md">
+                <Box flex={1} justifyContent="center" alignItems="center">
+                    <Typography variant="bodyMedium" color={theme.colors.colorBaseWhite}>
+                        Loading...
+                    </Typography>
+                </Box>
+            </SafeContainer>
+        );
+    }
+
+    const bookServiceId = servicePost.id;
+    const currentUserId = servicePost.bookingType === 'provider'
+        ? servicePost.provider?.id
+        : servicePost.client?.id;
+
+    const [updateBookServiceStatus, { isLoading: isLoadUpdateBookServiceSta }] = useUpdateBookServiceStatusMutation();
+    const [createMessage] = useCreateMessageMutation();
+
+    const initialStatusRef = useRef(servicePost.status);
+
+    const [isAccepted, setIsAccepted] = useState(initialStatusRef.current === 'accepted');
+    const [isRejected, setIsRejected] = useState(initialStatusRef.current === 'rejected');
+    const [isCancelled, setIsCancelled] = useState(initialStatusRef.current === 'cancelled');
+    const [isCompleted, setIsCompleted] = useState(initialStatusRef.current === 'completed');
+    const isChatBlocked = isRejected || isCancelled || isCompleted;
+
     const [message, setMessage] = useState('');
     const [messages, setMessages] = useState<ChatMessage[]>([]);
     const scrollViewRef = useRef<ScrollView>(null);
-    
-    // Animaciones para los botones
     const buttonsOpacity = useRef(new Animated.Value(1)).current;
-    
-    // Recuperamos el servicio de los props o de la ruta
-    const servicePost = (route.params?.service as ServiceData);
+    const channelRef = useRef<any>(null);
+    const messagesLoadedRef = useRef(false);
 
-    // Detectar cuando se activa/desactiva el teclado
+    const { data: serverMessages = [], isLoading: isLoadingMessages } = useGetMessagesQuery(
+        { bookServiceId: bookServiceId },
+        { skip: !bookServiceId }
+    );
+
+    const getProfileImage = (
+        senderId: string,
+        servicePost: BookService
+    ) => {
+        const isProviderSender = senderId === servicePost.provider?.id;
+
+        if (isProviderSender) {
+            return servicePost.provider?.media?.profileThumbnail?.url ?? null;
+        }
+
+        return servicePost.client?.media?.profileThumbnail?.url ?? null;
+    };
+
+    const fetchMessageWithMedia = async (messageId: string) => {
+        try {
+            const { data: message, error: messageError } = await supabase
+                .from('BookServiceMessage')
+                .select('id, sender_id, message, media_link_id')
+                .eq('id', messageId)
+                .single();
+
+            if (messageError || !message) {
+                console.error('Error fetching message:', messageError);
+                return null;
+            }
+
+            if (!message.media_link_id) {
+                return {
+                    id: message.id,
+                    senderId: message.sender_id,
+                    message: message.message,
+                    media: [] as MediaFileType[]
+                };
+            }
+
+            const { data: mediaFiles, error: mediaError } = await supabase
+                .from('MediaFile')
+                .select('id, url, type_variant, position')
+                .eq('link_id', message.media_link_id)
+                .order('position', { ascending: true });
+
+            if (mediaError) {
+                console.error('Error fetching media files:', mediaError);
+            }
+
+            return {
+                id: message.id,
+                senderId: message.sender_id,
+                message: message.message,
+                media: (mediaFiles || []).map((file): MediaFileType => ({
+                    id: file.id,
+                    url: file.url,
+                    variant: file.type_variant,
+                    position: file.position
+                }))
+            };
+        } catch (error) {
+            console.error('Error in fetchMessageWithMedia:', error);
+            return null;
+        }
+    };
+
     useEffect(() => {
-        const keyboardDidShowListener = Keyboard.addListener(
-            'keyboardDidShow',
-            () => {
-                if (isAccepted) {
+        if (!bookServiceId || !currentUserId) return;
+
+        const channel = supabase
+            .channel(`chat_${bookServiceId}`)
+            .on(
+                'postgres_changes',
+                {
+                    event: 'INSERT',
+                    schema: 'public',
+                    table: 'BookServiceMessage',
+                    filter: `book_service_id=eq.${bookServiceId}`,
+                },
+                async (payload) => {
+                    const newMsg = payload.new;
+                    
+                    if (newMsg.sender_id === currentUserId) {
+                        return;
+                    }
+
+                    const imageProfile = getProfileImage(newMsg.sender_id, servicePost);
+
+                    let mediaFiles: MediaFileType[] = [];
+                    if (newMsg.media_link_id) {
+                        const fullMessage = await fetchMessageWithMedia(newMsg.id);
+                        if (fullMessage) {
+                            mediaFiles = fullMessage.media;
+                        }
+                    }
+
+                    setMessages(prev => {
+                        const messageExists = prev.some(m => m.text === newMsg.message && m.isReceived);
+                        
+                        if (messageExists) {
+                            return prev;
+                        }
+
+                        return [...prev, {
+                            text: newMsg.message,
+                            isReceived: true,
+                            imageProfile,
+                            mediaFiles: mediaFiles
+                        }];
+                    });
                     scrollToBottom();
                 }
-            }
-        );
-        
-        return () => {
-            keyboardDidShowListener.remove();
-        };
-    }, [isAccepted]);
+            )
+            .subscribe();
 
-    // Función para hacer scroll al final
+        channelRef.current = channel;
+
+        return () => {
+            if (channelRef.current) {
+                supabase.removeChannel(channelRef.current);
+            }
+        };
+    }, [bookServiceId, currentUserId]);
+
+    useEffect(() => {
+        if (serverMessages.length > 0 && currentUserId && !messagesLoadedRef.current) {
+            const formatted = serverMessages.map((msg: any) => {
+                const isReceived = msg.senderId !== currentUserId;
+                const imageProfile = getProfileImage(msg.senderId, servicePost);
+
+                return {
+                    text: msg.message,
+                    isReceived,
+                    imageProfile,
+                    mediaFiles: msg.media || [],
+                };
+            });
+            setMessages(formatted);
+            messagesLoadedRef.current = true;
+            scrollToBottom();
+        }
+    }, [serverMessages, currentUserId]);
+
+    useEffect(() => {
+        const keyboardDidShowListener = Keyboard.addListener('keyboardDidShow', scrollToBottom);
+        return () => keyboardDidShowListener.remove();
+    }, []);
+
     const scrollToBottom = () => {
         setTimeout(() => {
             scrollViewRef.current?.scrollToEnd({ animated: true });
         }, 100);
     };
 
-    const handleGoBackPress = () => navigation.goBack();
+    const handleGoBackPress = () => router.back();
+    const dismissKeyboard = () => Keyboard.dismiss();
 
-    const dismissKeyboard = () => {
-        Keyboard.dismiss();
-    };
+    const handleAccept = async () => {
+        if (!servicePost?.id) {
+            Alert.alert('Error', 'Service ID not found');
+            return;
+        }
 
-    const handleAccept = () => {
-        console.log('Acción Accept para servicio ID:', servicePost?.id);
-        
-        // Animación para ocultar botones
-        Animated.parallel([
-            Animated.timing(buttonsOpacity, {
-                toValue: 0,
-                duration: 300,
-                useNativeDriver: false,
-            }),
-        ]).start(() => {
+        try {
+            await updateBookServiceStatus({
+                id: servicePost.id,
+                status: 'accepted'
+            }).unwrap();
+
             setIsAccepted(true);
-            
-            scrollToBottom();
-        });
-    };
+            setIsRejected(false);
+            setIsCancelled(false);
+            setIsCompleted(false);
 
-    const handleReject = () => {
-        console.log('Acción Reject para servicio ID:', servicePost?.id);
-        
-        // Animación para ocultar botones
-        Animated.parallel([
             Animated.timing(buttonsOpacity, {
                 toValue: 0,
                 duration: 300,
-                useNativeDriver: false,
-            }),
-        ]).start(() => {
-            setIsRejected(true);
-        });
-    };
-
-    const handleSendMessage = () => {
-        if (message.trim() === '' || !isAccepted) return;
-        
-        // Añadir mensaje enviado (del usuario)
-        const userMessage: ChatMessage = {
-            text: message,
-            isReceived: false
-        };
-        
-        setMessages([...messages, userMessage]);
-        setMessage('');
-        
-        setTimeout(() => {
-            // Simular una respuestas
-            const responseOptions = [
-                "Thank you for your message! I'll get back to you soon.",
-                "I understand. I'll take care of that right away.",
-                "Great! I'm looking forward to our appointment.",
-                "Thank you very much! I remain attentive to any news..."
-            ];
-            
-            const responseIndex = Math.floor(Math.random() * responseOptions.length);
-            const responseMessage: ChatMessage = {
-                text: responseOptions[responseIndex],
-                isReceived: true 
-            };
-            
-            setMessages(prevMessages => [...prevMessages, responseMessage]);
-            scrollToBottom();
-        }, 1000);
-        
-        scrollToBottom();
-    };
-
-    const handleInputFocus = () => {
-        if (isAccepted) {
-            scrollToBottom();
+                useNativeDriver: true,
+            }).start(() => {
+                setTimeout(() => scrollToBottom(), 150);
+            });
+        } catch (error) {
+            console.error('Error accepting service:', error);
+            Alert.alert('Error', 'Failed to accept the service. Please try again.');
         }
     };
 
+    const handleReject = async () => {
+        if (!servicePost?.id) {
+            Alert.alert('Error', 'Service ID not found');
+            return;
+        }
+
+        try {
+            await updateBookServiceStatus({
+                id: servicePost.id,
+                status: 'rejected'
+            }).unwrap();
+
+            setIsRejected(true);
+            setIsAccepted(false);
+            setIsCancelled(false);
+            setIsCompleted(false);
+
+            Animated.timing(buttonsOpacity, {
+                toValue: 0,
+                duration: 300,
+                useNativeDriver: true,
+            }).start(() => {
+                setTimeout(() => scrollToBottom(), 150);
+            });
+        } catch (error) {
+            console.error('Error rejecting service:', error);
+            Alert.alert('Error', 'Failed to reject the service. Please try again.');
+        }
+    };
+
+    const handleSendMessage = async (payload?: { text: string; image: string | null }) => {
+        if (isChatBlocked || !bookServiceId || !currentUserId) return;
+
+        const textToSend = payload?.text ?? message.trim();
+        const imageLocalUri = payload?.image ?? null;
+
+        if (!textToSend && !imageLocalUri) return;
+
+        const imageProfile = getProfileImage(currentUserId, servicePost);
+        const tempMessage: ChatMessage = {
+            text: textToSend,
+            localImage: imageLocalUri,
+            remoteImage: null,
+            isReceived: false,
+            uploading: !!imageLocalUri,
+            failed: false,
+            imageProfile
+        };
+
+        setMessages(prev => [...prev, tempMessage]);
+        setMessage("");
+        scrollToBottom();
+
+        let uploadedImageId: string | null = null;
+
+        try {
+            let mediaToSend: MediaDto[] | undefined = undefined;
+
+            if (imageLocalUri) {
+                try {
+                    const uploaded = await uploadImage({ 
+                        file: { 
+                            uri: imageLocalUri, 
+                            name: `chat-${Date.now()}.jpg`, 
+                            type: "image/jpeg" 
+                        } 
+                    }).unwrap();
+
+                    if (uploaded.id && uploaded.variants) {
+                        uploadedImageId = uploaded.id;
+                        
+                        mediaToSend = [{
+                            filename: `chat-${Date.now()}.jpg`,
+                            id: uploaded.id,
+                            downloaded: false,
+                            kind: 'image',
+                            variants: uploaded.variants
+                        }];
+
+                        setMessages(prev =>
+                            prev.map(m =>
+                                m === tempMessage
+                                    ? {
+                                        ...m,
+                                        uploading: false,
+                                        remoteImage: uploaded.url ?? null,
+                                        failed: false
+                                    }
+                                    : m
+                            )
+                        );
+                    }
+                } catch (error) {
+                    console.error("Error uploading image:", error);
+                    setMessages(prev =>
+                        prev.map(m =>
+                            m === tempMessage
+                                ? {
+                                    ...m,
+                                    uploading: false,
+                                    failed: true
+                                }
+                                : m
+                        )
+                    );
+                    return;
+                }
+            }
+
+            await createMessage({
+                bookServiceId,
+                message: textToSend,
+                media: mediaToSend
+            }).unwrap();
+
+        } catch (error) {
+            console.error("Error sending message:", error);
+            
+            if (uploadedImageId) {
+                try {
+                    await deleteImage(uploadedImageId).unwrap();
+                } catch (deleteError) {
+                    console.error('Error deleting uploaded image:', deleteError);
+                }
+            }
+
+            setMessages(prev =>
+                prev.map(m => (m === tempMessage ? { ...m, failed: true, uploading: false } : m))
+            );
+        }
+    };
+
+    const handleInputFocus = () => {
+        scrollToBottom();
+    };
+
+    const showActionButtons = servicePost.status === 'pending' && servicePost.bookingType === 'provider';
+    
     return (
         <SafeContainer fluid backgroundColor="colorBaseBlack" paddingHorizontal="md">
             <Box style={getChatStyles.backgroundImageContainer}>
@@ -160,152 +429,168 @@ export const ChatScreen = (service: ChatScreenProps) => {
     
                 <Box justifyContent="center" alignItems="center">
                     <Typography variant="bodyMedium" color={theme.colors.colorBaseWhite}>
-                        {servicePost?.role === 'provider' ? 'User' : servicePost.category}
+                        {servicePost.bookingType === 'provider' ? 'User' : 'Provider'}
                     </Typography>
                     <Typography variant="bodyMedium" color={theme.colors.colorGrey100}>
-                        {servicePost.name}
+                        {servicePost.bookingType === 'provider' ? servicePost.client?.name : servicePost.provider?.name}
                     </Typography>
                 </Box>
                 
                 <Box width={60}>
-                    {servicePost?.image && (
+                    {servicePost.bookingType === 'provider' && servicePost.client?.media?.profileThumbnail?.url ? (
                         <Image
-                            source={servicePost.image as ImageSourcePropType}
+                            source={{ uri: servicePost.client.media.profileThumbnail.url }}
                             style={{
                                 width: 40,
                                 height: 40,
-                                borderRadius: 20
+                                borderRadius: 20,
                             }}
                         />
-                    )}
+                    ) : servicePost.provider?.media?.profileThumbnail?.url ? (
+                        <Image
+                            source={{ uri: servicePost.provider.media.profileThumbnail.url }}
+                            style={{
+                                width: 40,
+                                height: 40,
+                                borderRadius: 20,
+                            }}
+                        />
+                    ) : null}
                 </Box>
             </Row>
 
             <KeyboardAvoidingView 
                 behavior={Platform.OS === "ios" ? "padding" : "height"}
-                style={{ flex: 1, justifyContent: 'flex-end', backgroundColor: 'black' }}
-                keyboardVerticalOffset={Platform.OS === "ios" ? 10 : 0}
+                style={{ flex: 1 }}
+                keyboardVerticalOffset={Platform.OS === "ios" ? 50 : 0}
             >
-                {/* El problema es que TouchableWithoutFeedback captura los eventos de toque y no permite el scroll */}
-                {/* Usaremos un enfoque diferente para permitir scroll solo cuando isAccepted es true */}
                 <Box flex={1}>
                     <ScrollView 
                         ref={scrollViewRef}
                         style={getChatStyles.scrollView}
                         contentContainerStyle={[
                             getChatStyles.scrollContent,
-                            isAccepted ? { paddingBottom: 30 } : {} // Añadir padding extra solo si está aceptado
+                            { paddingBottom: 30 }
                         ]}
-                        showsVerticalScrollIndicator={isAccepted}
-                        scrollEnabled={isAccepted} // Solo habilitado cuando se acepta la solicitud
+                        showsVerticalScrollIndicator={true}
+                        scrollEnabled={true}
                         keyboardShouldPersistTaps="handled"
-                        keyboardDismissMode="on-drag" // Mejor experiencia de usuario
-                        onScrollBeginDrag={isAccepted ? dismissKeyboard : undefined} // Solo si está aceptado
+                        keyboardDismissMode="on-drag"
+                        onScrollBeginDrag={dismissKeyboard}
                     >
-                        {/* Notification for service details */}
                         <Notification title="¡Notificación!">
                             <Box>
                                 <Box marginBottom="md">
                                     <Typography variant="bodyRegular" color="white">
-                                        New request for <Typography variant="bodyBold" color="white">{servicePost.name}!</Typography>
+                                        New request for <Typography variant="bodyBold" color="white">{servicePost.client?.name}!</Typography>
                                     </Typography>
                                 </Box>
                                 
                                 <Box paddingLeft="sm">
-                                    <Typography variant="bodyRegular" color="white">• Service: {servicePost.category}</Typography>
-                                    <Typography variant="bodyRegular" color="white">• Date: {servicePost.date}</Typography>
-                                    <Typography variant="bodyRegular" color="white">• Time: {servicePost.time}</Typography>
+                                    <Typography variant="bodyRegular" color="white">• Service: {servicePost.serviceName}</Typography>
+                                    <Typography variant="bodyRegular" color="white">• Date: {servicePost.dateShort}</Typography>
+                                    <Typography variant="bodyRegular" color="white">• Time: {servicePost.timeShort}</Typography>
                                     <Typography variant="bodyRegular" color="white">• Place: {servicePost.address}</Typography>
-                                    <Typography variant="bodyRegular" color="white">• Contact number: {servicePost.phone}</Typography>
+                                    <Typography variant="bodyRegular" color="white">• Contact number: {servicePost.phoneNumber}</Typography>
                                     <Typography variant="bodyRegular" color="white">• Description:</Typography>
                                     <Box marginTop="sm">
                                         <Typography variant="bodyRegular" color="white">
-                                            {servicePost?.description}
+                                            {servicePost.comments}
                                         </Typography>
                                     </Box>
                                 </Box>
                             </Box>
                         </Notification>
                         
-                        <Animated.View 
-                            style={{
-                                opacity: buttonsOpacity,
-                                position: isAccepted || isRejected ? 'absolute':'relative',
-                                top: 40,
-                                overflow: 'hidden',
-                                marginBottom: theme.spacing.sm,
-                            }}
-                        >
-                            <Box width="100%" gap="lg">
-                                <Button
-                                    variant="secondary"
-                                    label="Accept Request"
-                                    onPress={handleAccept}
-                                />
+                        {showActionButtons && (
+                            <Animated.View 
+                                style={{
+                                    opacity: buttonsOpacity,
+                                    position: isAccepted || isRejected ? 'absolute':'relative',
+                                    top: 5,
+                                    overflow: 'hidden',
+                                    marginBottom: theme.spacing.sm,
+                                }}
+                            >
+                                <Box width="100%" gap="md">
+                                    <Button
+                                        variant="secondary"
+                                        label={isLoadUpdateBookServiceSta ? "Processing..." : "Accept Request"}
+                                        onPress={handleAccept}
+                                        disabled={isLoadUpdateBookServiceSta}
+                                    />
 
-                                <Button
-                                    variant="slide"
-                                    label="Reject"
-                                    leftIcon="clear"
-                                    onPress={handleReject}
-                                />
-                            </Box>
-                        </Animated.View>
+                                    <Button
+                                        variant="slide"
+                                        label={isLoadUpdateBookServiceSta ? "Processing..." : "Reject"}
+                                        leftIcon="clear"
+                                        onPress={handleReject}
+                                        disabled={isLoadUpdateBookServiceSta}
+                                    />
+                                </Box>
+                            </Animated.View>
+                        )}
                         
-                        {/* Mensaje de aceptación */}
                         {isAccepted && (
                             <Notification title="¡Notificación!">
                                 <Typography variant="bodyRegular" color="white">
-                                    You have accepted this request. You can now chat with the user.
+                                    {servicePost.bookingType === "client"
+                                    ? "Your request has been accepted by the provider. You can now chat with them."
+                                    : "You have accepted this request." }
                                 </Typography>
                             </Notification>
                         )}
 
-                        {/* Mensaje de rechazo */}
                         {isRejected && (
                             <Notification title="¡Notificación!">
                                 <Typography variant="bodyRegular" color="white">
-                                    Sorry, the service has been rejected by the provider, we recommend you try another provider!
+                                    {servicePost.bookingType === "client"
+                                    ? "Sorry, the service has been rejected by the provider, we recommend you try another provider!"
+                                    : "You have rejected this service request."}
                                 </Typography>
                             </Notification>
                         )}
+
+                        {isLoadingMessages && (
+                            <Box width="100%" alignItems="center" marginTop="lg">
+                                <ActivityIndicator size="large" color="#fff" />
+                            </Box>
+                        )}
                         
-                        {/* Agregar un TouchableWithoutFeedback dentro del ScrollView para manejar toques */}
-                        <TouchableWithoutFeedback onPress={dismissKeyboard}>
-                            <View>
-                                {messages.map((msg, index) => (
-                                    <Messages
-                                        key={`msg-${index}`}
-                                        text={msg.text}
-                                        isReceived={msg.isReceived}
-                                        image={
-                                        msg.isReceived
-                                            ? servicePost.image as ImageSourcePropType
-                                            : images.profile1 as ImageSourcePropType
-                                        }
-                                    />
-                                ))}
-                            </View>
-                        </TouchableWithoutFeedback>
+                        {!isLoadingMessages && (
+                            <TouchableWithoutFeedback onPress={dismissKeyboard}>
+                                <Box marginTop="lg">
+                                    {messages.map((msg, index) => (
+                                        <Messages
+                                            key={`msg-${index}`}
+                                            text={msg.text}
+                                            isReceived={msg.isReceived}
+                                            imageProfile={msg.imageProfile}
+                                            localImage={msg.localImage}
+                                            remoteImage={msg.remoteImage}
+                                            mediaFiles={msg.mediaFiles}
+                                            uploading={msg.uploading}
+                                            failed={msg.failed}
+                                        />
+                                    ))}
+                                </Box>
+                            </TouchableWithoutFeedback>
+                        )}
                     </ScrollView>
                 </Box>
                 
-                <Box marginBottom="md">
-                    <Input
-                        icon="send"
-                        label="Write your message"
-                        value={message}
-                        onChangeText={setMessage}
-                        variant={isAccepted ? "default" : "disabled"}
-                        editable={isAccepted}
-                        expandable={true} 
-                        maxHeight={120}
-                        returnKeyType="default"
-                        onSubmitEditing={handleSendMessage}
-                        onIconPress={handleSendMessage}
-                        onFocus={handleInputFocus}
-                    />
-                </Box>
+                <ChatInput
+                    value={message}
+                    onChangeText={setMessage}
+                    onIconPress={handleSendMessage}
+                    onSubmitEditing={handleSendMessage}
+                    onFocus={handleInputFocus}
+                    onImageSelected={scrollToBottom}
+                    editable={!isChatBlocked}
+                    maxHeight={120}
+                    label=""
+                    placeholder="Write your message"
+                />
             </KeyboardAvoidingView>
         </SafeContainer>
     );
