@@ -36,4 +36,5 @@ export interface ButtonProps extends ButtonStylesProps, TouchableOpacityProps {
   slideThumbColor?: string;
   width?: number;
   height?: number;
+  textColor?: keyof Theme['colors'];
 }

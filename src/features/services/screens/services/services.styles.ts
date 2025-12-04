@@ -6,6 +6,6 @@ export const getServicesStyles = StyleSheet.create({
         marginTop: 16,
     },
     scrollContent: {
-        paddingBottom: 160
+        paddingBottom: 30
     }
 });

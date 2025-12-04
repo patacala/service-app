@@ -1,8 +1,25 @@
-import {getAuthToken, removeAuthToken, setAuthToken} from './storage';
+import { getAuthToken, removeAuthToken, setAuthToken, getUserData, removeUserData, setUserData, getUserProfile, setUserProfile, removeUserProfile } from './storage';
+
+interface BackendUser {
+  id: string;
+  displayName: string;
+  email: string;
+  role: string;
+  isNewUser: boolean;
+}
+
+interface Profile {
+  name: string;
+  email: string;
+  phone: string;
+  location_city: string;
+  address: string;
+}
 
 export class SessionManager {
   private static instance: SessionManager;
   private _token: string | null = null;
+  private _user: BackendUser | null = null;
 
   private constructor() {}
 
@@ -17,21 +34,45 @@ export class SessionManager {
     return this._token;
   }
 
-  async initialize(): Promise<void> {
-    this._token = await getAuthToken();
+  get user(): BackendUser | null {
+    return this._user;
   }
 
-  async setSession(token: string): Promise<void> {
+  async initialize(): Promise<void> {
+    this._token = await getAuthToken();
+    const userData = await getUserData();
+    this._user = userData;
+  }
+
+  async setSession(token: string, user: BackendUser | null): Promise<void> {
     this._token = token;
+    this._user = user;
     await setAuthToken(token);
+    if (user) {
+      await setUserData(user);
+    } else {
+      await removeUserData();
+    }
   }
 
   async clearSession(): Promise<void> {
     this._token = null;
+    this._user = null;
     await removeAuthToken();
+    await removeUserData();
   }
 
   isAuthenticated(): boolean {
     return !!this._token;
   }
+
+  async updateUser(user: BackendUser | null): Promise<void> {
+    this._user = user;
+    if (user) {
+      await setUserData(user);
+    } else {
+      await removeUserData();
+    }
+  }
 }
+

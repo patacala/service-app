@@ -1,113 +1,150 @@
-import { Box, SendCode, Otp} from '@/design-system';
-import { useNavigation } from '@react-navigation/native';
-import { AuthStackNavigationProp } from '@/assembler/navigation/types';
-import { useTranslation } from 'react-i18next';
-import { AuthenticationCard } from '../components/AuthenticationCard/AuthenticationCard';
-import { useDataManager } from '@/infrastructure/dataManager/DataManager';
-import { useEffect, useRef, useState } from 'react';
-import { requestOtp, verifyOtpInitial } from '@/infrastructure/services/api/endpoints/auth.api';
-import { SessionManager } from '@/infrastructure/session';
-import { OtpRef } from '@/design-system/components/forms/Otp/types';
+import React, { useEffect, useRef, useState } from 'react';
 import Toast from 'react-native-toast-message';
+import { useTranslation } from 'react-i18next';
+import { useDispatch } from 'react-redux';
+import { useLocalSearchParams, useRouter } from 'expo-router';
+
+import { Box, SendCode, Otp } from '@/design-system';
+import { AuthenticationCard } from '../components/AuthenticationCard/AuthenticationCard';
+import { OtpRef } from '@/design-system/components/forms/Otp/types';
+import { useLoginWithFirebaseMutation } from '../store/auth.api';
+import { setAuthData, setFirebaseToken } from '../store/auth.slice';
+import { useDataManager } from '@/infrastructure/dataManager/DataManager';
+import { RegisterScreenParams } from '@/types/navigation';
+import { getOtpConfirmationResult } from '@/infrastructure/auth/otpResultManager';
+import { useOtpVerification } from '../hooks/useOtpVerification';
+import { useAuth } from '@/infrastructure/auth/AuthContext';
 
 export const OtpScreen = () => {
-  const navigation = useNavigation<AuthStackNavigationProp>();
+  const router = useRouter();
+  const params = useLocalSearchParams<{ phoneNumber: string }>();
+  const { phoneNumber } = params;
   const { t } = useTranslation('auth');
-  const { getData, removeData } = useDataManager();
+  const { clearAll } = useDataManager();
+  const dispatch = useDispatch();
+  const { login } = useAuth();
 
   const [code, setCode] = useState('');
-  const [isSubmitting, setIsSubmitting] = useState(false);
-
   const otpRef = useRef<OtpRef>(null);
-
-  const sendCodeOnMount = async () => {
-    try {
-      const step1 = await getData('registerForm');
-      const step2 = await getData('registerCompletionForm');
-
-      if (!step1?.userId || !step2?.phoneNumber) return;
-      await requestOtp({ userId: step1.userId, phonenumber: step2.phoneNumber});
-      Toast.show({ type: 'success', text1: 'Code sent', text2: 'Check your SMS.' });
-    } catch (error: any) {
-      Toast.show({
-        type: 'error',
-        text1: 'Error sending OTP automatically',
-        text2: error?.response?.data?.message || 'There was an unexpected error.',
-      });
-    }
-  };
+  
+  const { loading: otpLoading, verifyOtp, error: otpError } = useOtpVerification();
+  const [loginWithFirebase, { isLoading: loginLoading, error: loginError }] = useLoginWithFirebaseMutation();
+  
+  const loading = otpLoading || loginLoading;
+  
+  useEffect(() => {
+    otpRef.current?.clear();
+    otpRef.current?.focusFirst();
+    clearAll();
+  }, []);
 
   useEffect(() => {
-    sendCodeOnMount().then(() => {
-      otpRef.current?.clear();
-      otpRef.current?.focusFirst();
-    });
-  }, []);
+    if (loginError) {
+      Toast.show({
+        type: 'error',
+        text1: t("messages.msg17"),
+        text2: 'Error al autenticar con el servidor'
+      });
+    }
+  }, [loginError]);
 
   const handleResendCode = async () => {
     try {
-      const step1 = await getData('registerForm');
-      const step2 = await getData('registerCompletionForm');
-      if (!step1?.userId || !step2?.phoneNumber) throw new Error('Datos incompletos');
-
-      await requestOtp({ userId: step1.userId, phonenumber: step2.phoneNumber });
-
-      // Reiniciar campos OTP
+      // La lógica de reenvío se implementaría aquí usando usePhoneAuth
+      // Por ahora, mostramos un mensaje informativo
+      Toast.show({
+        type: 'info',
+        text1: t("messages.msg6"),
+        text2: `${t("messages.msg7")} ${phoneNumber}`
+      });
+      
       otpRef.current?.clear();
       otpRef.current?.focusFirst();
-
-      Toast.show({ type: 'success', text1: 'Code sent', text2: 'Check your SMS.' });
-    } catch (err) {
+    } catch (err: any) {
       Toast.show({
         type: 'error',
-        text1: 'Error re-sending OTP'
+        text1: t("messages.msg8"),
+        text2: t("messages.msg9")
       });
     }
   };
 
   const handleOtp = async () => {
-    if (!code || code.length !== 4) return;
+    if (!code || code.length !== 6) {
+      Toast.show({
+        type: 'error',
+        text1: t("messages.msg12"),
+        text2: t("messages.msg13"),
+      });
+      return;
+    }
 
-    setIsSubmitting(true);
+    const confirmation = getOtpConfirmationResult();
+    if (!confirmation) {
+      Toast.show({
+        type: 'error',
+        text1: t("messages.msg17"),
+        text2: t("messages.msg18"),
+      });
+      return;
+    }
+
+    // Verify OTP with Firebase
+    const firebaseToken = await verifyOtp(confirmation, code);
+    
+    if (!firebaseToken) {
+      Toast.show({
+        type: 'error',
+        text1: t('messages.msg17'),
+        text2: otpError || t('messages.msg18'),
+      });
+      return;
+    }
+
+    dispatch(setFirebaseToken(firebaseToken));
 
     try {
-      const step1 = await getData('registerForm');
-      const step2 = await getData('registerCompletionForm');
+      // Authenticate with backend
+      const authResponse = await loginWithFirebase(firebaseToken).unwrap();
+      dispatch(setAuthData(authResponse));
 
-      if (!step1?.userId || !step2) throw new Error('Faltan datos');
+      // Persist authenticated session in AuthContext / SessionManager
+      await login(authResponse.token, authResponse.user);
 
-      // Verificar OTP
-      const response = await verifyOtpInitial({
-        userId: step1.userId,
-        code,
-        city: step2.city,
-        servicetagids: step2.selectedServices,
-      });
+      if (authResponse.user.isNewUser) {
+        router.replace({
+          pathname: '/register',
+          params: {
+            phonenumber: phoneNumber,
+            name: '',
+            email: '',
+          } as Partial<RegisterScreenParams>,
+        });
 
-      const { token, user } = response.data;
-
-      const session = SessionManager.getInstance();
-      await session.setSession(token);
-
-      // Limpiar la data
-      await removeData('registerForm');
-      await removeData('registerCompletionForm');
-
-      // Redirigir a Home o Dashboard
-      navigation.navigate('Main');
+        Toast.show({
+          type: 'success',
+          text1: t('messages.msg14'),
+          text2: t('messages.msg15'),
+        });
+      } else {
+        Toast.show({
+          type: 'success',
+          text1: t('messages.msg14'),
+          text2: t('messages.msg16'),
+        });
+        router.replace('/home');
+      }
     } catch (error: any) {
       Toast.show({
         type: 'error',
-        text1: 'Error verifying OTP',
-        text2: error?.response?.data?.message || 'There was an unexpected error.',
+        text1: t('messages.msg17'),
+        text2: error?.message || t('messages.msg18'),
       });
-    } finally {
-      setIsSubmitting(false);
     }
   };
 
   const handleGoBack = () => {
-    navigation.goBack();
+    router.back();
   };
 
   return (
@@ -119,12 +156,12 @@ export const OtpScreen = () => {
       message={t('verification.message')}
       onPrimaryButtonPress={handleOtp}
       onSecondaryButtonPress={handleGoBack}
-      primaryButtonDisabled={isSubmitting}
+      primaryButtonDisabled={loading || !code || code.length !== 6}
     >
       <Box marginTop="xl">
-        <Otp ref={otpRef} onChangeValue={(otp) => setCode(otp.toString())} />
+        <Otp qtyDigits={6} ref={otpRef} onChangeValue={(otp) => setCode(otp.toString())} />
       </Box>
-      <SendCode delaySeconds={10} onSend={handleResendCode} />
+      <SendCode delaySeconds={60} onSend={handleResendCode} />
     </AuthenticationCard>
   );
 };

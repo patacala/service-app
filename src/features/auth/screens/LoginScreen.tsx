@@ -1,189 +1,176 @@
 import React, { useState } from 'react';
-import { useNavigation } from '@react-navigation/native';
 import { useTranslation } from 'react-i18next';
-import { Box, Button, Input, theme, Typography } from '@/design-system';
+import Toast from 'react-native-toast-message';
+import { useRouter } from 'expo-router';
+import { Image, ImageSourcePropType, TouchableOpacity } from 'react-native';
+
+import { Box, Input, theme, Typography } from '@/design-system';
 import { AuthenticationCard } from '../components/AuthenticationCard/AuthenticationCard';
-import { login } from '@/infrastructure/services/api/endpoints/auth.api';
-import { SessionManager } from '@/infrastructure/session/session';
-import { LoginPayload } from '@/infrastructure/services/api/types/auth.types';
-import { AuthStackNavigationProp } from '@/assembler/navigation/types';
 import { Row } from '@/design-system/components/layout/Row/Row';
 import { getLoginStyles } from './login/login.style';
-import Toast from 'react-native-toast-message';
-
-interface LoginFormData {
-  phoneNumber: string;
-  password: string;
-}
-
-interface FormErrors {
-  phoneNumber: string;
-  password: string;
-}
+import { setOtpConfirmationResult } from '@/infrastructure/auth/otpResultManager';
+import { usePhoneAuth } from '../hooks/usePhoneAuth';
+import { useGoogleAuth } from '../hooks/useGoogleAuth';
+import { PhoneValidator } from '../utils/phoneValidator';
+import { useLoginWithFirebaseMutation } from '../store/auth.api';
+import { useDispatch } from 'react-redux';
+import { setAuthData, setFirebaseToken } from '../store/auth.slice';
+import images from '@/assets/images/images';
+import { useAuth } from '@/infrastructure/auth/AuthContext';
 
 export const LoginScreen = () => {
-  const navigation = useNavigation<AuthStackNavigationProp>();
+  const router = useRouter();
   const { t } = useTranslation('auth');
-  const session = SessionManager.getInstance();
   const styles = getLoginStyles(theme);
+  const dispatch = useDispatch();
+  const { login } = useAuth();
+  
+  const { loading: phoneLoading, sendCode, error: phoneError } = usePhoneAuth();
+  const { loading: googleLoading, signIn: googleSignIn, error: googleError } = useGoogleAuth();
+  const [loginWithFirebase, { isLoading: backendLoading }] = useLoginWithFirebaseMutation();
 
-  const [inputValues, setInputValues] = useState<LoginFormData>({
-    phoneNumber: '',
-    password: '',
-  });
+  const [phoneNumber, setPhoneNumber] = useState('');
+  const [validationError, setValidationError] = useState('');
 
-  const [errors, setErrors] = useState<FormErrors>({
-    phoneNumber: '',
-    password: '',
-  });
+  const loading = phoneLoading || googleLoading || backendLoading;
 
-  const [loading, setLoading] = useState(false);
-
-  const validateForm = () => {
-    let isValid = true;
-    const newErrors: FormErrors = { phoneNumber: '', password: '' };
-
-    if (!inputValues.phoneNumber.trim()) {
-      newErrors.phoneNumber = t('login.phone-required');
-      isValid = false;
-    } else if (inputValues.phoneNumber.length !== 10) {
-      newErrors.phoneNumber = t('login.phone-invalid');
-      isValid = false;
-    }
-
-    if (!inputValues.password) {
-      newErrors.password = t('login.password-required');
-      isValid = false;
-    }
-
-    setErrors(newErrors);
-
-    if (!isValid) {
-      Toast.show({
-        type: 'error',
-        text1: 'Validation Error',
-        text2: 'Please correct the highlighted fields.',
-      });
-    }
-
-    return isValid;
+  const handlePhoneChange = (value: string) => {
+    const sanitized = PhoneValidator.sanitize(value);
+    setPhoneNumber(sanitized);
+    setValidationError('');
   };
 
-  const handleInputChange = (field: keyof LoginFormData, value: string) => {
-    setInputValues(prev => ({ ...prev, [field]: value }));
-
-    if (errors[field]) {
-      setErrors(prev => ({ ...prev, [field]: '' }));
+  const handleLoginWithPhone = async () => {
+    const validation = PhoneValidator.validateUSPhone(phoneNumber);
+    
+    if (!validation.isValid) {
+      setValidationError(validation.error || '');
+      return;
     }
-  };
 
-  const handleLogin = async () => {
-    if (!validateForm()) return;
-    setLoading(true);
+    const formattedPhone = PhoneValidator.formatWithCountryCode(phoneNumber);
+    const confirmation = await sendCode(formattedPhone);
 
-    try {
-      const payload: LoginPayload = {
-        phonenumber: `+57${inputValues.phoneNumber}`,
-        password: inputValues.password,
-      };
-
-      const response = await login(payload);
-      const { token } = response.data;
-
-      await session.setSession(token);
-      Toast.show({
-        type: 'success',
-        text1: 'Login successful',
-      });
-      navigation.navigate('Main');
-    } catch (err) {
+    if (!confirmation) {
       Toast.show({
         type: 'error',
-        text1: 'Login failed',
-        text2: 'Please check your credentials.',
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleForgotPassword = () => {
-    let errorMessage = '';
-
-    if (!inputValues.phoneNumber.trim()) {
-      errorMessage = t('signupCompletion.number-required');
-    } else if (inputValues.phoneNumber.length !== 10) {
-      errorMessage = t('signupCompletion.number-invalid');
-    }
-
-    if (errorMessage) {
-      setErrors(prev => ({
-        ...prev,
-        phoneNumber: errorMessage,
-      }));
-
-      Toast.show({
-        type: 'error',
-        text1: 'Phone required',
-        text2: errorMessage,
+        text1: t('messages.msg5'),
+        text2: phoneError || t('messages.msg18')
       });
       return;
     }
 
-    navigation.navigate('ForgotPassword', {
-      phonenumber: `+57${inputValues.phoneNumber}`,
+    setOtpConfirmationResult(confirmation);
+    
+    router.push({
+      pathname: '/otp',
+      params: { phoneNumber: formattedPhone },
+    });
+
+    Toast.show({
+      type: 'info',
+      text1: t('messages.msg3'),
+      text2: `${t('messages.msg4')} ${formattedPhone}`
     });
   };
 
-  const handleGoBack = () => navigation.goBack();
+  const handleGoogleSignIn = async () => {
+    console.log('before sign')
+    const result = await googleSignIn();
+    console.log('results11111111111', result);
+    if (!result) {
+      if (googleError && !googleError.includes('cancelled')) {
+        Toast.show({
+          type: 'error',
+          text1: 'Google Sign-In Failed',
+          text2: googleError
+        });
+      }
+      return;
+    }
+
+    console.log('result+++++++++++', result);
+    dispatch(setFirebaseToken(result.token));
+
+    try {
+      // Authenticate with backend
+      const authResponse = await loginWithFirebase(result.token).unwrap();
+      dispatch(setAuthData(authResponse));
+
+      // Persist authenticated session in AuthContext / SessionManager
+      await login(authResponse.token, authResponse.user);
+
+      if (authResponse.user.isNewUser) {
+        router.replace({
+          pathname: '/register',
+          params: {
+            email: result.email || '',
+            name: result.name || '',
+          },
+        });
+
+        Toast.show({
+          type: 'success',
+          text1: 'Welcome!',
+          text2: 'Complete your profile',
+        });
+      } else {
+        Toast.show({
+          type: 'success',
+          text1: 'Welcome back!',
+          text2: `Hi ${result.name || 'there'}`,
+        });
+        router.replace('/home');
+      }
+    } catch (error: any) {
+      Toast.show({
+        type: 'error',
+        text1: 'Authentication Failed',
+        text2: error?.message || 'Could not authenticate with server',
+      });
+    }
+  };
 
   return (
     <AuthenticationCard
       mainTitle={t('login.title')}
       title={t('login.title')}
       subtitle={t('login.sub-title')}
-      onPrimaryButtonPress={handleLogin}
-      onSecondaryButtonPress={handleGoBack}
+      onPrimaryButtonPress={handleLoginWithPhone}
+      onSecondaryButtonPress={() => router.back()}
       primaryButtonDisabled={loading}
     >
       <Row justify="space-between">
         <Box style={styles.prefix} padding="md">
           <Typography variant="bodyRegular" colorVariant="secondary">
-            +57
+            +1
           </Typography>
         </Box>
         <Input
           label={t('signupCompletion.number')}
           placeholder={t('signupCompletion.text-input-number')}
           keyboardType="numeric"
-          value={inputValues.phoneNumber}
-          onChangeText={(value) =>
-            handleInputChange(
-              'phoneNumber',
-              value.replace(/[^0-9]/g, '').slice(0, 10)
-            )
-          }
-          error={errors.phoneNumber}
+          value={phoneNumber}
+          onChangeText={handlePhoneChange}
+          error={validationError}
           style={{ width: 250 }}
         />
       </Row>
-      <Input
-        label={t('login.password-input')}
-        placeholder={t('login.text-input-password')}
-        variant="password"
-        value={inputValues.password}
-        onChangeText={(value) => handleInputChange('password', value)}
-        error={errors.password}
-      />
-
-      <Box alignItems="center">
-        <Button
-          variant="ghost"
-          label={t('login.forgot-password')}
-          onPress={handleForgotPassword}
-          style={{ width: '100%', maxWidth: 195 }}
-        />
-      </Box>
+      
+      <Box marginTop="lg" />
+      <Row justifyContent="center">
+        <TouchableOpacity
+          onPress={handleGoogleSignIn}
+          disabled={loading}
+          activeOpacity={0.7}
+        >
+          <Image
+            source={images.gmailLogo as ImageSourcePropType}
+            resizeMode="contain"
+            style={styles.logos}
+          />
+        </TouchableOpacity>
+      </Row>
     </AuthenticationCard>
   );
 };

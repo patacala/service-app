@@ -1,93 +1,77 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { BottomModal } from '@/design-system/components/forms/BottomModal/BottomModal';
-import { IconName } from '@/design-system/components/layout/Icon';
 import { FormService } from './FormService';
 import { FormResponsible } from './FormResponsible';
 import { ContactProvider } from './ContactProvider';
-
-interface ChipOption {
-  id: string;
-  label: string;
-  icon: IconName
-}
+import { useRouter } from 'expo-router';
+import { Service } from '@/features/services/store';
 
 interface BookServiceFormProps {
   visible: boolean;
+  disabled?: boolean;
   onClose: () => void;
-  chipOptions?: ChipOption[];
+  service: Service; 
   onSubmit?: (data: {
     serviceId: string;
+    serviceName: string;
     dateTime: Date | null;
     address: string;
     comments: string;
     responsibleName: string;
     phoneNumber: string;
-  }) => void;
+  }) => Promise<boolean> | boolean;
 }
 
 export const BookServiceForm: React.FC<BookServiceFormProps> = ({
   visible,
+  disabled,
   onClose,
-  chipOptions = [],
+  service,
   onSubmit
 }) => {
+  const router = useRouter();
   const [currentStep, setCurrentStep] = useState<number>(1);
   const [contactProviderVisible, setContactProviderVisible] = useState<boolean>(false);
-  const hasSetInitialService = useRef(false);
   const wasVisible = useRef(false);
 
   const [serviceData, setServiceData] = useState({
-    serviceId: '',
+    serviceId: service.id,
+    serviceName: service.title,
     dateTime: null as Date | null,
     address: '',
     comments: '',
     responsibleName: '',
     phoneNumber: ''
   });
-  
-  // Estado para controlar la altura del modal según el paso
-  const modalHeight = currentStep === 2 ? !contactProviderVisible ? 500:600 : undefined;
 
   useEffect(() => {
     if (visible && !wasVisible.current) {
       setCurrentStep(1);
-      hasSetInitialService.current = false;
+      setServiceData({
+        serviceId: service.id,
+        serviceName: service.title,
+        dateTime: null,
+        address: '',
+        comments: '',
+        responsibleName: '',
+        phoneNumber: ''
+      });
     }
-    
     wasVisible.current = visible;
-  
-    if (visible && chipOptions.length > 0 && !hasSetInitialService.current) {
-      setServiceData(prev => ({
-        ...prev,
-        serviceId: chipOptions[0].id
-      }));
-      hasSetInitialService.current = true;
-      console.log('Servicio seleccionado inicialmente:', chipOptions[0].id);
-    }
-  }, [visible, chipOptions]);
+  }, [visible, service]);
 
   const handleDateTimeChange = (date: Date) => {
-    console.log('Fecha seleccionada:', date);
-    
     setServiceData(prev => ({ ...prev, dateTime: date }));
   };
 
   const handleTextChange = (text: string) => {
     setServiceData(prev => ({ ...prev, comments: text }));
   };
-  
+
   const handleAddressChange = (address: string) => {
     setServiceData(prev => ({ ...prev, address }));
   };
-  
-  const handleServiceSelect = (serviceId: string) => {
-    if (serviceId !== serviceData.serviceId) {
-      setServiceData(prev => ({ ...prev, serviceId }));
-      console.log('Servicio seleccionado manualmente:', serviceId);
-    }
-  };
 
-  // Handlers para FormResponsible
   const handleResponsibleNameChange = (name: string) => {
     setServiceData(prev => ({ ...prev, responsibleName: name }));
   };
@@ -96,52 +80,32 @@ export const BookServiceForm: React.FC<BookServiceFormProps> = ({
     setServiceData(prev => ({ ...prev, phoneNumber: phone }));
   };
 
-  // Validación para habilitar/deshabilitar el botón de continuar
   const canContinue = () => {
     if (currentStep === 1) {
-      const canProceed = !!(serviceData.serviceId && serviceData.dateTime && serviceData.address);
-      return canProceed;
+      return !!(serviceData.dateTime && serviceData.address);
     } else if (currentStep === 2) {
       return !!(serviceData.responsibleName && serviceData.phoneNumber);
     }
     return false;
   };
 
-  // Función para avanzar al siguiente paso
-  const handleContinue = () => {
+  const handleContinue = async () => {
+    if (disabled) return;
+
     if (currentStep === 1) {
-      console.log('Avanzando al paso 2 con datos:', serviceData);
       setCurrentStep(2);
     } else if (currentStep === 2) {
-      console.log('Enviando formulario completo:', serviceData);
-      
       if (onSubmit) {
-        onSubmit(serviceData);
+        const success = await onSubmit(serviceData);
+        if (success) {
+          setContactProviderVisible(true);
+        }
       }
-      
-      setServiceData({
-        serviceId: '',
-        dateTime: null,
-        address: '',
-        comments: '',
-        responsibleName: '',
-        phoneNumber: ''
-      });
-      
-      // Resetear el flag de servicio inicial
-      hasSetInitialService.current = false;
-
-      setContactProviderVisible(true);
-      
-      // Cerrar el modal
-      //onClose();
     }
   };
 
-  // Función para volver al paso anterior
   const handleBack = () => {
     if (currentStep === 2) {
-      console.log('Volviendo al paso 1 con datos:', serviceData);
       setCurrentStep(1);
     } else {
       onClose();
@@ -149,40 +113,40 @@ export const BookServiceForm: React.FC<BookServiceFormProps> = ({
   };
 
   const handleContactProvider = () => {
+    router.replace('/services');
     setContactProviderVisible(false);
     onClose();
-  }
+  };
 
   return (
     <BottomModal
       visible={visible}
       onClose={onClose}
-      title={!contactProviderVisible ? "Book Service":""} 
-      subtitle={!contactProviderVisible ? "Complete your painter request":""} 
+      title={!contactProviderVisible ? "Book Service":""}
+      subtitle={!contactProviderVisible ?"Complete your painter request":""}
       draggable={true}
       activateSteps={!contactProviderVisible}
       currentStep={currentStep}
       totalSteps={2}
-      showPrimaryButton={contactProviderVisible ? false:true}
-      primaryButtonText={currentStep === 2 ? !contactProviderVisible ? "Complete Request":"Contact Provider" : "Continue"}
+      showPrimaryButton={!contactProviderVisible}
+      primaryButtonText={currentStep === 2 ? (!contactProviderVisible ? "Complete Request" : "Contact Provider") : "Continue"}
       secondaryButtonText={currentStep === 2 ? "Go back" : "Cancel"}
       primaryButtonVariant="secondary"
       onPrimaryButtonPress={handleContinue}
-      primaryButtonDisabled={!contactProviderVisible ? !canContinue():false}
-      showSecondaryButton={contactProviderVisible ? false:true}
+      primaryButtonDisabled={disabled || (!contactProviderVisible ? !canContinue() : false)}
+      showSecondaryButton={!contactProviderVisible}
       secondaryButtonIcon="left-arrow"
       secondaryButtonVariant="outlined"
       onSecondaryButtonPress={handleBack}
-      height={modalHeight}
-      enableScroll={false}
+      height={currentStep === 1 ? '88%': !contactProviderVisible ? '70%':'64%'}
+      enableScroll={true}
     >
       {currentStep === 1 ? (
-        <FormService 
-          chipOptions={chipOptions}
+        <FormService
+          serviceName={service.title}
           onDateTimeChange={handleDateTimeChange}
           onAddressChange={handleAddressChange}
           onCommentChange={handleTextChange}
-          onServiceSelect={handleServiceSelect}
           initialValues={{
             dateTime: serviceData.dateTime,
             address: serviceData.address,
@@ -190,16 +154,18 @@ export const BookServiceForm: React.FC<BookServiceFormProps> = ({
           }}
         />
       ) : (
-        !contactProviderVisible ? 
-          <FormResponsible 
+        !contactProviderVisible ? (
+          <FormResponsible
             onNameChange={handleResponsibleNameChange}
             onPhoneChange={handlePhoneNumberChange}
             initialValues={{
               name: serviceData.responsibleName,
               phone: serviceData.phoneNumber
             }}
-          /> 
-        : <ContactProvider onButtonPress={handleContactProvider} initialValues={{}} />
+          />
+        ) : (
+          <ContactProvider onButtonPress={handleContactProvider} />
+        )
       )}
     </BottomModal>
   );
