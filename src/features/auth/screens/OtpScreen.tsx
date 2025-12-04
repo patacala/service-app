@@ -126,6 +126,7 @@ export const OtpScreen = () => {
           text1: t('messages.msg14'),
           text2: t('messages.msg15'),
         });
+        
       } else {
         Toast.show({
           type: 'success',
