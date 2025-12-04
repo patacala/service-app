@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { StyleSheet } from 'react-native';
 import { useTheme } from '@shopify/restyle';
 import { Box, Input, Theme, Typography } from '@/design-system';
-import { IconName } from '@/design-system/components/layout/Icon';
 import { Row } from '@/design-system/components/layout/Row/Row';
 import { useTranslation } from 'react-i18next';
 
@@ -71,7 +70,7 @@ export const FormResponsible: React.FC<FormResponsibleProps> = ({
           onChangeValue={handleNameChange}
         />
       </Box>
-      <Box gap='md' marginBottom="md">
+      <Box gap='md' marginBottom="xl">
         <Row spacing="none" gap="sm" justify='space-between'>
           <Box style={styles.prefix} padding="md">
             <Typography variant="bodyRegular" colorVariant="secondary">+1</Typography>

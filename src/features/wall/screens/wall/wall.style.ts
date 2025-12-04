@@ -12,11 +12,8 @@ export const getWallStyles = StyleSheet.create({
       alignItems: 'center',
     },
     listContainer: {
-      justifyContent: 'center',
-      alignItems: 'center',
-      paddingHorizontal: 16,
       paddingTop: 16,
-      paddingBottom: 80,
+      paddingBottom: 100,
       gap: 25,
     },
     withoutResult: {

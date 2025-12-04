@@ -1,9 +1,10 @@
-import { useState } from "react";
-import { Image, ImageSourcePropType } from "react-native";
-import { Box, Button, PremiumCard, Typography, theme, ChipOption } from "@/design-system";
-import { getProvModeStyles } from './provMode/provmode.styles';
+import { useEffect, useState } from "react";
+import { ImageSourcePropType } from "react-native";
+import Toast from "react-native-toast-message";
+import { useTranslation } from "react-i18next";
+
+import { Box, Button, PremiumCard, ChipOption } from "@/design-system";
 import images from "@/assets/images/images";
-import { Row } from "@/design-system/components/layout/Row/Row";
 import { LocationPanel } from "@/features/wall/components/LocationPanel";
 import { ProviderAccount } from "../components/ProviderAccount";
 import { ProviderForm } from "../components/ProviderForm";
@@ -11,6 +12,14 @@ import { InfoMain } from "../components/InfoMain";
 import { DetailInfo } from "../components/DetailInfo";
 import { DetailService } from "../components/DetailService";
 import { ProviderFormData } from "../slices/provmod.slice";
+import { getDeviceLanguage } from "@/assembler/config/i18n";
+import { useGetCategoriesQuery } from "@/infrastructure/services/api";
+import { useGetCurrentUserQuery } from "@/features/auth/store";
+import { useCreateAccountProvServiceMutation } from '@/features/services/store';
+import { useCreateVideoDirectUploadUrlMutation, useDeleteImageMutation, useUploadImageMutation, useUploadVideoToDirectUrlMutation } from '@/features/media/store/media.api';
+import { useAuth } from "@/infrastructure/auth/AuthContext";
+import { router } from "expo-router";
+import { DownloadedMedia, MediaObject, RNFileLike } from "@/features/media/store/media.types";
 
 interface Location {
   id: string;
@@ -18,6 +27,27 @@ interface Location {
 }
 
 export const ProvModeScreen = () => {
+  const { t } = useTranslation('auth');
+  const { login } = useAuth();
+  const { data: categoriesData, isLoading: isCategoriesLoading, error: categoriesError } =
+  useGetCategoriesQuery({ language: getDeviceLanguage() }, {
+    refetchOnMountOrArgChange: true,
+    refetchOnFocus: true,
+    refetchOnReconnect: true
+  });
+  const { data: profile, error: profileError } = useGetCurrentUserQuery(undefined, {
+      refetchOnMountOrArgChange: true,
+      refetchOnFocus: true,
+      refetchOnReconnect: true
+  });
+  const [createAccountProvService, { isLoading: isLoadingCreateAccountProvService }] = useCreateAccountProvServiceMutation();
+  
+  // Mutations para manejo de imágenes y videos
+  const [uploadImage] = useUploadImageMutation();
+  const [deleteImage] = useDeleteImageMutation();
+  const [createVideoDirectUploadUrl] = useCreateVideoDirectUploadUrlMutation();
+  const [uploadVideoToDirectUrl] = useUploadVideoToDirectUrlMutation();
+
   const [locationPanelVisible, setLocationPanelVisible] = useState(false);
   const [currentLocation, setCurrentLocation] = useState<Location>({ id: '1', name: 'Miami, FL' });
   const [provAccountVisible, setProvAccountVisible] = useState(false);
@@ -27,19 +57,108 @@ export const ProvModeScreen = () => {
   const [step1Valid, setStep1Valid] = useState(false);
   const [step2Valid, setStep2Valid] = useState(false);
   const [step3Valid, setStep3Valid] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const categories: ChipOption[] =
+  categoriesData?.categories?.map((c: any) => ({
+    id: c.id,
+    label: c.name,
+  })) ?? [];
 
   // Estado para manejar los datos del formulario
-  const [formData, setFormData] = useState<ProviderFormData>({
+  const [providerFormData, setProviderFormData] = useState<ProviderFormData>({
+    title: '',
     phone: '',
     city: '',
     address: '',
     selectedServices: [],
     selectedServiceOptions: [],
     description: '',
-    photos: [],
+    media: [],
     addressService: '',
     pricePerHour: 62
   });
+
+  useEffect(() => {
+    if (categoriesError) {
+      Toast.show({
+        type: 'error',
+        text1: t("messages.msg20"),
+        text2: t("messages.msg21"),
+      });
+    }
+  }, [categoriesError]);
+  
+  useEffect(() => {
+    if (profileError) {
+      Toast.show({
+        type: 'error',
+        text1: t("messages.msg34"),
+        text2: t("messages.msg35")
+      });
+    }
+  }, [profileError]);
+
+  const uploadMediaFromFormData = async (
+    mediaUris: string[]
+  ): Promise<MediaObject[]> => {
+    if (mediaUris.length === 0) return [];
+    
+    const uploadPromises: Promise<MediaObject>[] = [];
+    const uploadedMediaForCleanup: MediaObject[] = [];
+
+    try {
+      for (const uri of mediaUris) {
+        const isVideo = /\.(mp4|mov|avi|mkv)$/i.test(uri);
+        if (isVideo) {
+          const uploadPromise = (async (): Promise<MediaObject> => {
+            const { uid, uploadURL } = await createVideoDirectUploadUrl({}).unwrap();
+            const videoId = uid;
+            const name = `video-${videoId}.mp4`;
+
+            const file: RNFileLike = {
+              uri: uri,
+              name,
+              type: 'video/mp4',
+            };
+            await uploadVideoToDirectUrl({ uploadURL, file });
+
+            const uploadedVideo = { id: videoId, filename: name, downloaded: false, kind: 'video' };
+            uploadedMediaForCleanup.push(uploadedVideo);
+            return uploadedVideo;
+          })();
+          uploadPromises.push(uploadPromise);
+        } else {
+          const file: RNFileLike = {
+            uri: uri,
+            name: `service-${Date.now()}.jpg`,
+            type: 'image/jpeg',
+          };
+
+          const uploadPromise = uploadImage({ file })
+            .unwrap()
+            .then((result: MediaObject) => {
+              const uploadedImage = { ...result, downloaded: false, kind: 'image'  };
+              uploadedMediaForCleanup.push(uploadedImage);
+              return uploadedImage;
+            });
+          uploadPromises.push(uploadPromise);
+        }
+      }
+
+      return await Promise.all(uploadPromises);
+    } catch (error: any) {
+      for (const media of uploadedMediaForCleanup) {
+        if (media.id) {
+          try {
+            await deleteImage(media.id).unwrap();
+          } catch {}
+        }
+      }
+
+      return [];
+    }
+  };
 
   const handleSelectLocation = (location: Location) => {
     setCurrentLocation(location);
@@ -53,37 +172,96 @@ export const ProvModeScreen = () => {
     setProviderFormVisible(true);
   };
 
-  const handleProviderSubmit = (data: ProviderFormData) => {
-    console.log('Datos del formulario completo:', data);
+  const handleProviderSubmit = async (data: ProviderFormData) => {
+    let finalUploadedMedia: MediaObject[] = [];
+    let mediaDownloaded: DownloadedMedia[] = []; 
+    setIsSubmitting(true);
 
-    setFormData({
-      phone: '',
-      city: '',
-      address: '',
-      selectedServices: [],
-      selectedServiceOptions: [],
-      description: '',
-      photos: [],
-      addressService: '',
-      pricePerHour: 62
-    });
+    try {
+      if (data.media && data.media.length > 0) {
+        finalUploadedMedia = await uploadMediaFromFormData(data.media);
+        if (finalUploadedMedia.length === 0 && data.media.length > 0) {
+          return false;
+        }
+      }
+
+      // Crear el servicio con las imágenes subidas
+      const { user, token } = await createAccountProvService({
+        title: data.title,
+        description: data.description,
+        price: data.pricePerHour,   
+        categoryIds: data.selectedServices,
+        media: finalUploadedMedia,
+        currency: 'USD',
+        city: profile?.city ?? '',
+        lat: undefined,
+        lon: undefined,
+      }).unwrap();
+
+      await login(token, user);
+
+      // Limpiar estados
+      setProviderFormData({
+        title: '',
+        phone: '',
+        city: '',
+        address: '',
+        selectedServices: [],
+        selectedServiceOptions: [],
+        description: '',
+        media: [],
+        addressService: '',
+        pricePerHour: 62
+      });
+
+      router.replace({ pathname: '/profile', params: { section: 'portfolio' } });
+      return true;
+    } catch (error: any) {
+      console.log(error);
+      
+      Toast.show({
+        type: 'error',
+        text1: 'Error',
+        text2: error?.data?.message || 'Failed to create account',
+      });
+
+      // En caso de error en la creación del servicio, eliminar las imágenes subidas
+      await deleteNewlyUploadedMedia(finalUploadedMedia);
+      return false;
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const deleteNewlyUploadedMedia = async (finalUploadedMedia: MediaObject[]) => {
+    for (const uploadedMedia of finalUploadedMedia) {
+      try {
+        if (!uploadedMedia.downloaded && uploadedMedia.id) {
+          await deleteImage(uploadedMedia.id).unwrap();
+        }
+      } catch {}
+    }
   };
 
   // Handlers para cada paso
+  const handleTitleChange = (title: string) => {
+    setProviderFormData(prev => ({ ...prev, title }));
+  };
+
   const handlePhoneChange = (phone: string) => {
-    setFormData(prev => ({ ...prev, phone }));
+    setProviderFormData(prev => ({ ...prev, phone }));
   };
 
   const handleCityChange = (city: string) => {
-    setFormData(prev => ({ ...prev, city }));
+    setProviderFormData(prev => ({ ...prev, city }));
   };
 
   const handleAddressChange = (address: string) => {
-    setFormData(prev => ({ ...prev, address }));
+    setProviderFormData(prev => ({ ...prev, address }));
   };
 
   const handleSelectedServicesChange = (services: string[], serviceOptions: ChipOption[]) => {
-    setFormData(prev => ({ 
+    setProviderFormData(prev => ({ 
       ...prev, 
       selectedServices: services,
       selectedServiceOptions: serviceOptions
@@ -91,19 +269,20 @@ export const ProvModeScreen = () => {
   };
 
   const handleDescriptionChange = (description: string) => {
-    setFormData(prev => ({ ...prev, description }));
+    setProviderFormData(prev => ({ ...prev, description }));
   };
 
-  const handlePhotosChange = (photos: string[]) => {
-    setFormData(prev => ({ ...prev, photos }));
+  // Handler para actualizar las fotos desde DetailInfo
+  const handleMediaChange = (media: string[]) => {
+    setProviderFormData(prev => ({ ...prev, media }));
   };
 
   const handleAddressServiceChange = (addressService: string) => {
-    setFormData(prev => ({ ...prev, addressService }));
+    setProviderFormData(prev => ({ ...prev, addressService }));
   };
 
   const handlePricePerHourChange = (pricePerHour: number) => {
-    setFormData(prev => ({ ...prev, pricePerHour }));
+    setProviderFormData(prev => ({ ...prev, pricePerHour }));
   };
 
   // Handlers de validación para cada paso
@@ -129,20 +308,24 @@ export const ProvModeScreen = () => {
     {
       title: "Provider Account",
       topText: "Almost done!",
-      height: "100%",
+      height: "99%",
       component: (
         <InfoMain 
+          onTitleChange={handleTitleChange}
           onPhoneChange={handlePhoneChange}
           onCityChange={handleCityChange}
           onAddressChange={handleAddressChange}
           onSelectedServicesChange={handleSelectedServicesChange}
           onValidationChange={handleStep1Validation}
+          categories={categories} 
+          isCategoriesLoading={isCategoriesLoading} 
           initialValues={{
-            phone: formData.phone,
-            city: formData.city,
-            address: formData.address,
-            selectedServices: formData.selectedServices,
-            selectedServiceOptions: formData.selectedServiceOptions
+            title: providerFormData.title,
+            phone: providerFormData.phone,
+            city: providerFormData.city,
+            address: providerFormData.address,
+            selectedServices: providerFormData.selectedServices,
+            selectedServiceOptions: providerFormData.selectedServiceOptions
           }}
         />
       ),
@@ -155,13 +338,14 @@ export const ProvModeScreen = () => {
       component: (
         <DetailInfo 
           onDescriptionChange={handleDescriptionChange}
-          onPhotosChange={handlePhotosChange}
+          onMediaChange={handleMediaChange}
           onValidationChange={handleStep2Validation}
+          maxMedia={6}
           initialValues={{
-            selectedServices: formData.selectedServices,
-            selectedServiceOptions: formData.selectedServiceOptions,
-            description: formData.description,
-            photos: formData.photos
+            selectedServices: providerFormData.selectedServices,
+            selectedServiceOptions: providerFormData.selectedServiceOptions,
+            description: providerFormData.description,
+            media: providerFormData.media
           }}
         />
       ),
@@ -177,10 +361,10 @@ export const ProvModeScreen = () => {
           onPricePerHourChange={handlePricePerHourChange}
           onValidationChange={handleStep3Validation}
           initialValues={{
-            selectedServices: formData.selectedServices,
-            selectedServiceOptions: formData.selectedServiceOptions,
-            addressService: formData.addressService,
-            pricePerHour: formData.pricePerHour
+            selectedServices: providerFormData.selectedServices,
+            selectedServiceOptions: providerFormData.selectedServiceOptions,
+            addressService: providerFormData.addressService,
+            pricePerHour: providerFormData.pricePerHour
           }}
         />
       ),
@@ -233,8 +417,10 @@ export const ProvModeScreen = () => {
         steps={providerSteps}
         confirmationStep={confirmationStep}
         onSubmit={handleProviderSubmit}
-        formData={formData}
-        setFormData={setFormData}
+        formData={providerFormData}
+        setFormData={setProviderFormData}
+        primaryButtonDisabled={isSubmitting}
+        secondaryButtonDisabled={isSubmitting}
       />
     </>
   );

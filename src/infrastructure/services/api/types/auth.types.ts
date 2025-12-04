@@ -1,7 +1,8 @@
 export interface RegisterPayload {
   name: string;
+  city: string;
   email: string;
-  password: string;
+  phone: string;
 }
 
 export interface VerifyOtpInitialPayload {
@@ -23,6 +24,5 @@ export interface ChangePasswordWithTokenPayload  {
 }
 
 export interface LoginPayload {
-  phonenumber: string;
-  password: string;
+  firebaseToken: string;
 }

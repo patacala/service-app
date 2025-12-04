@@ -1,130 +1,257 @@
-import { useState } from "react";
-import { Image, ImageSourcePropType, TouchableOpacity, ScrollView } from "react-native";
-import { Box, SafeContainer, Typography, theme } from "@/design-system";
-import { Row } from "@/design-system/components/layout/Row/Row";
-import { getWallStyles } from '@/features/wall/screens/wall/wall.style';
+import { useEffect, useMemo, useState } from "react";
+import { ActivityIndicator, ScrollView, TouchableWithoutFeedback, View } from "react-native";
+import { Box, ChipOption, Typography, theme } from "@/design-system";
 import { getServicesStyles } from './services/services.styles';
-import images from "@/assets/images/images";
-import { Icon, IconName } from "@/design-system/components/layout/Icon";
 import { LocationPanel } from "@/features/wall/components/LocationPanel";
 import { ServicePost } from "../components/ServicePost";
-import { ServiceData } from "../slices/services.slice";
 import { CancelService } from "../components/CancelService";
-import { RateService } from "../components/RateService";
-import { AuthStackNavigationProp } from "@/assembler/navigation/types";
-import { useNavigation } from "@react-navigation/native";
+import { RateService } from "../../ratings/components/RateService";
+import { useGetCategoriesQuery } from "@/infrastructure/services/api";
+import { useGetMyBookServicesQuery, useUpdateBookServiceStatusMutation } from "../store/services.api";
+import { useCreateRatingMutation } from "@/features/ratings/store/ratings.api";
+import { BookService } from "../store";
+import { getWallStyles } from "@/features/wall/screens/wall/wall.style";
+import { getDeviceLanguage } from "@/assembler/config/i18n";
+import { useRouter } from "expo-router";
+import { useTranslation } from "react-i18next";
+import Toast from "react-native-toast-message";
+import { useAuth } from "@/infrastructure/auth/AuthContext";
+import { CompletedService } from "../components/CompleteService";
+import { RatingVisibility, RoleOfRater } from "@/features/ratings/store/ratings.types";
 
 interface Location {
     id: string;
     name: string;
 }
 
-// Datos mock para servicios
-const mockServices: ServiceData[] = [
-    {
-        id: "1",
-        category: "Painter",
-        name: "Darius Robinson",
-        role: 'user',
-        date: "21 Apr",
-        time: "2:00 PM EST",
-        image: images.profile1 as ImageSourcePropType,
-        address: "S Miami Ave Miami, FL 33129 3251",
-        status: 'pending',
-        chipOption: {
-            id: "painter",
-            label: "Painter",
-            icon: "painter" as IconName
-        },
-        selectedChipId: "painter",
-        phone: "408 234 7654",
-        description: "I need to paint three rooms with different colors. I have all the paints ready."
-    },
-    {
-        id: "2",
-        category: "Babysister",
-        name: "Alexa Jonasson",
-        role: 'user',
-        date: "10 Mar",
-        time: "2:00 PM EST",
-        image: images.profile3 as ImageSourcePropType,
-        address: "S Miami Ave Miami, FL 33129 3251",
-        status: 'completed',
-        chipOption: {
-            id: "babysister",
-            label: "Babysister",
-            icon: "smile" as IconName
-        },
-        selectedChipId: "babysister",
-        phone: "305 123 4567",
-        description: "Childcare for two kids for 4 hours. They are 3 and 5 years old."
-    },
-    {
-        id: "3",
-        category: "Painter",
-        name: "Garry Calvin",
-        role: 'provider',
-        date: "10 Mar",
-        time: "8:00 AM EST",
-        image: images.profile2 as ImageSourcePropType,
-        address: "S Miami Ave Miami, FL 33129 3251",
-        status: 'pending',
-        chipOption: {
-            id: "babysister",
-            label: "Babysister",
-            icon: "smile" as IconName
-        },
-        selectedChipId: "babysister",
-        phone: "786 987 6543",
-        description: "Request to watch my children while I'm in an important meeting."
-    },
-    {
-        id: "4",
-        category: "Babysister",
-        name: "Daniela Calvin",
-        role: 'provider',
-        date: "10 Mar",
-        time: "8:00 AM EST",
-        image: images.profile3 as ImageSourcePropType,
-        address: "S Miami Ave Miami, FL 33129 3251",
-        status: 'completed',
-        chipOption: {
-            id: "babysister",
-            label: "Babysister",
-            icon: "smile" as IconName
-        },
-        selectedChipId: "babysister",
-        phone: "305 555 1234",
-        description: "Pet sitting services needed during the weekend."
-    },
-];
-
 export const ServicesScreen = () => {
+    const { t } = useTranslation('auth');
+    const router = useRouter();
+    const { user } = useAuth();
     const [locationPanelVisible, setLocationPanelVisible] = useState(false);
     const [cancelServiceVisible, setCancelServiceVisible] = useState(false);
+    const [completedServiceVisible, setCompletedServiceVisible] = useState(false);
     const [rateServiceVisible, setRateServiceVisible] = useState(false);
-    const [currentLocation, setCurrentLocation] = useState<Location>({ id: '1', name: 'Miami, FL' });
-    const [services, setServices] = useState<ServiceData[]>(mockServices);
-    const navigation = useNavigation<AuthStackNavigationProp>();
+    const [selectedServiceToCancel, setSelectedServiceToCancel] = useState<BookService | null>(null);
+    const [selectedServiceToCompleted, setSelectedServiceToCompleted] = useState<BookService | null>(null);
+    const [selectedServiceToRate, setSelectedServiceToRate] = useState<BookService | null>(null);
+    const [createRating, { isLoading: isLoadingRating }] = useCreateRatingMutation();
 
-    // Filtrar servicios por estado
-    const pendingServices = services.filter(service => service.status === 'pending');
-    const completedServices = services.filter(service => service.status === 'completed');
+    const [updateBookServiceStatus, {isLoading: isLoadBookServiceUpdate}] = useUpdateBookServiceStatusMutation();
+    const { data: categoriesData, error: categoriesError } = useGetCategoriesQuery({ language: getDeviceLanguage() }, {
+        refetchOnMountOrArgChange: true,
+        refetchOnFocus: true,
+        refetchOnReconnect: true
+    });
+    const { data: bookServices, isLoading: isLoadBookServices, isFetching: isFetchingBookServices, error: bookServicesError } = useGetMyBookServicesQuery(undefined, {
+        refetchOnMountOrArgChange: true,
+        refetchOnFocus: true,
+        refetchOnReconnect: true,
+        pollingInterval: 60000,
+    });
+    const [currentLocation, setCurrentLocation] = useState<Location>({ id: '1', name: 'Miami, FL' });
+
+    const categories: ChipOption[] =
+    categoriesData?.categories?.map((c: any) => ({
+        id: c.id,
+        label: c.name,
+    })) ?? [];
+
+    const getCategoryOptions = useMemo(() => {
+        return (categoryIds: string[]): ChipOption[] => {
+          if (!categories || categories.length === 0) {
+            return [];
+          }
+          
+          return categoryIds
+            .map(id => {
+              const category = categories.find((cat: ChipOption) => cat.id === id);
+              return category ? { id: category.id, label: category.label } : null;
+            })
+            .filter(Boolean) as ChipOption[];
+        };
+    }, [categories]);
+
+    useEffect(() => {
+        if (categoriesError) {
+            Toast.show({
+            type: 'error',
+            text1: t("messages.msg25"),
+            text2: t("messages.msg26"),
+            });
+        }
+    }, [categoriesError]);
+
+    useEffect(() => {
+        if (bookServicesError) {
+            Toast.show({
+            type: 'error',
+            text1: t("services.msgerrorrservices"),
+            text2: t("services.msgcouldrservices"),
+            });
+        }
+    }, [bookServicesError]);
+
+    // Filtrar servicios por tipo de usuario
+    const otherBookings: BookService[] =
+    isLoadBookServices || isFetchingBookServices
+        ? []
+        : bookServices?.otherBookings ?? [];
+
+    const myBookings: BookService[] =
+    isLoadBookServices || isFetchingBookServices
+        ? []
+        : bookServices?.myBookings ?? [];
+
+    const sortBookingsByRatedLast = (bookings: BookService[]) => {
+        if (!bookings) return [];
+        return [...bookings].sort((a, b) => {
+            if (a.status === "rated" && b.status !== "rated") return 1;
+            if (a.status !== "rated" && b.status === "rated") return -1;
+            return 0;
+        });
+    };
+
+    const sortedMyBookings = useMemo(() => sortBookingsByRatedLast(myBookings), [myBookings]);
+    const sortedOtherBookings = useMemo(() => sortBookingsByRatedLast(otherBookings), [otherBookings]);
 
     const handleSelectLocation = (location: Location) => {
         setCurrentLocation(location);
     };
 
-    const handleCancelServicePress = () => {
+    const handleCancelServicePress = (service: BookService) => {
+        setSelectedServiceToCancel(service);
         setCancelServiceVisible(true);
     }
 
-    const handleRateServicePress = () => {
+    const handleConfirmCancel = async () => {
+        if (!selectedServiceToCancel?.id) {
+            Toast.show({
+                type: 'error',
+                text1: t("services.error"),
+                text2: t("services.servicecanerror"),
+            });
+            return;
+        }
+
+        try {
+            await updateBookServiceStatus({
+                id: selectedServiceToCancel.id,
+                status: 'cancelled'
+            }).unwrap();
+
+            Toast.show({
+                type: 'success',
+                text1: t("messages.msg22"),
+                text2: t("services.servicecancelled"),
+            });
+
+            setCancelServiceVisible(false);
+            setSelectedServiceToCancel(null);
+        } catch (error) {
+            console.error('Error cancelling service:', error);
+            Toast.show({
+                type: 'error',
+                text1: t("services.error"),
+                text2: t("services.failedtocancel"),
+            });
+        }
+    };
+
+    const handleCompletedServicePress = (service: BookService) => {
+        setSelectedServiceToCompleted(service);
+        setCompletedServiceVisible(true);
+    }
+
+    const handleConfirmCompleted = async () => {
+        if (!selectedServiceToCompleted?.id) {
+            Toast.show({
+                type: 'error',
+                text1: t("services.error"),
+                text2: t("services.servicecanerror"),
+            });
+            return;
+        }
+
+        try {
+            await updateBookServiceStatus({
+                id: selectedServiceToCompleted.id,
+                status: 'completed'
+            }).unwrap();
+
+            Toast.show({
+                type: 'success',
+                text1: t("messages.msg22"),
+                text2: t("services.servicecompleted"),
+            });
+
+            setSelectedServiceToCompleted(null);
+            setCompletedServiceVisible(false);
+        } catch (error) {
+            console.error('Error completing service:', error);
+            Toast.show({
+                type: 'error',
+                text1: t("services.error"),
+                text2: t("services.servicecompleted"),
+            });
+        }
+    };
+
+    const handleSubmitRating = async (rating: number, title: string, comment: string) => {
+        if (!selectedServiceToRate) {
+            Toast.show({
+                type: "error",
+                text1: "Error",
+                text2: "No hay un servicio seleccionado para calificar.",
+            });
+            return;
+        }
+
+        const isClientRating = selectedServiceToRate.client.id === user?.id;
+        const payload = {
+            ratedUserId: isClientRating ? selectedServiceToRate.provider.id : selectedServiceToRate.client.id,
+            serviceId: selectedServiceToRate.serviceId,
+            bookingId: selectedServiceToRate.id,
+            roleOfRater: isClientRating ? RoleOfRater.CLIENT : RoleOfRater.PROVIDER,
+            score: rating,
+            title: title,
+            body: comment,
+            visibility: RatingVisibility.PUBLIC,
+        };
+
+        try {
+            await createRating(payload).unwrap();
+
+            Toast.show({
+                type: "success",
+                text1: "Rating enviado",
+                text2: "Gracias por tu calificación.",
+            });
+
+            setRateServiceVisible(false);
+            setSelectedServiceToRate(null);
+        } catch (error: any) {
+            Toast.show({
+                type: "error",
+                text1: "Error al enviar rating",
+                text2: error?.data?.message ?? "Intenta nuevamente.",
+            });
+            throw error;
+        }
+    };
+
+    const handleRateServicePress = (service: BookService) => {
+        setSelectedServiceToRate(service);
         setRateServiceVisible(true);
     };
 
-    const navigateToChat = (service: ServiceData) => {
-        navigation.navigate('Chat', { service });
+    const navigateToChat = (service: BookService) => {
+        router.push({
+            pathname: '/chat',
+            params: { 
+                post: JSON.stringify(service) 
+            }
+        });
     };
 
     const renderSectionHeader = (title: string) => (
@@ -135,58 +262,96 @@ export const ServicesScreen = () => {
         </Box>
     );
 
+    const renderLoadSection = () => {
+        if (isLoadBookServices || isFetchingBookServices) {
+            return (
+            <Box marginTop="lg" style={getWallStyles.loadingContainer}>
+                <ActivityIndicator size="large" color={theme.colors.colorBrandPrimary} />
+            </Box>
+            );
+        }
+        return null;
+    };
+
     return (
         <>
-            <Box height="100%">
-                <ScrollView 
+            <Box height="84%">
+                <ScrollView
                     style={getServicesStyles.scrollView}
                     showsVerticalScrollIndicator={false}
                     contentContainerStyle={getServicesStyles.scrollContent}
+                    keyboardShouldPersistTaps="handled"
                 >
-                    <Box gap="md">
-                        {/* Servicios pendientes */}
-                        {pendingServices.length > 0 && (
+                    <TouchableWithoutFeedback onPress={() => {}}>
+                        <View>
                             <Box gap="md">
-                                {renderSectionHeader('Pending Services')}
-                                {pendingServices.map(service => (
-                                    <Box key={service.id}>
-                                        <ServicePost 
-                                            servicePost={service}
-                                            onCancel={handleCancelServicePress}
-                                            onDetail={() => navigateToChat(service)}
-                                        />
-                                    </Box>
-                                ))}
-                            </Box>
-                        )}
-                        
-                        {/* Servicios completados */}
-                        {completedServices.length > 0 && (
-                            <Box gap="md">
-                                {renderSectionHeader('Services Completed')}
-                                {completedServices.map(service => (
-                                    <Box key={service.id}>
-                                        <ServicePost 
-                                            servicePost={service}
-                                            onRate={handleRateServicePress}
-                                        />
-                                    </Box>
-                                ))}
-                            </Box>
-                        )}
+                                {/* Solicitudes de Mis Servicios */}
+                                {user?.role === "both" && (
+                                    <>
+                                    {renderSectionHeader(t("services.servicerequests") + ':')}
+                                    {renderLoadSection()}
 
-                        {/* Mensaje si no hay servicios */}
-                        {services.length === 0 && (
-                            <Box alignItems="center" justifyContent="center" padding="xl">
-                                <Typography variant="bodyLarge" color={theme.colors.colorGrey200}>
-                                    No tienes servicios disponibles
-                                </Typography>
+                                    {otherBookings.length > 0 && !isLoadBookServices && (
+                                    <Box gap="md">
+                                        {sortedOtherBookings.map(service => {
+                                        const serviceOptions = getCategoryOptions(service.categories || []);
+
+                                        return (
+                                            <Box key={service.id}>
+                                            <ServicePost
+                                                bookService={service}
+                                                serviceOptions={serviceOptions}
+                                                onRate={() => handleRateServicePress(service)}
+                                                onCancel={() => handleCancelServicePress(service)}
+                                                onDetail={() => navigateToChat(service)}
+                                                onCompleted={() =>  handleCompletedServicePress(service)}
+                                            />
+                                            </Box>
+                                        );
+                                        })}
+
+                                        {(isLoadBookServices || isFetchingBookServices) && (
+                                        <Box marginTop="lg" style={getWallStyles.loadingContainer}>
+                                            <ActivityIndicator
+                                            size="large"
+                                            color={theme.colors.colorBrandPrimary}
+                                            />
+                                        </Box>
+                                        )}
+                                    </Box>
+                                    )}
+                                </>
+                                )}
+
+                                {/* Servicios Contratados */}
+                                {renderSectionHeader(t("services.serviceshired") + ':')}
+                                {renderLoadSection()}
+                                
+                                {sortedMyBookings.length > 0 && !isLoadBookServices && (
+                                    <Box gap="md">
+                                    {sortedMyBookings.map(service => {
+                                        const serviceOptions = getCategoryOptions(service.categories || []);
+
+                                        return (
+                                            <Box key={service.id}>
+                                                <ServicePost
+                                                    bookService={service}
+                                                    serviceOptions={serviceOptions}
+                                                    onRate={() => handleRateServicePress(service)}
+                                                    onCancel={() => handleCancelServicePress(service)}
+                                                    onDetail={() => navigateToChat(service)}
+                                                />
+                                            </Box>
+                                        );
+                                    })}
+                                    </Box>
+                                )}
                             </Box>
-                        )}
-                    </Box>
+                        </View>
+                    </TouchableWithoutFeedback>
                 </ScrollView>
             </Box>
-    
+
             <LocationPanel
                 visible={locationPanelVisible}
                 onClose={() => setLocationPanelVisible(false)}
@@ -196,13 +361,33 @@ export const ServicesScreen = () => {
 
             <CancelService
                 visible={cancelServiceVisible}
-                onClose={() => setCancelServiceVisible(false)}
+                onClose={() => {
+                    setCancelServiceVisible(false);
+                    setSelectedServiceToCancel(null);
+                }}
+                onCancel={handleConfirmCancel}
+                isLoading={isLoadBookServiceUpdate}
             />
 
-            <RateService 
+            <CompletedService
+                visible={completedServiceVisible}
+                onClose={() => {
+                    setCompletedServiceVisible(false);
+                    setSelectedServiceToCompleted(null);
+                }}
+                onComplete={handleConfirmCompleted}
+                isLoading={isLoadBookServiceUpdate}
+            />
+
+            <RateService
                 visible={rateServiceVisible}
-                onClose={() => setRateServiceVisible(false)}
+                onClose={() => {
+                    setRateServiceVisible(false);
+                    setSelectedServiceToRate(null);
+                }}
+                onRate={handleSubmitRating}
+                isLoading={isLoadingRating}
             />
         </>
-    );
+        );
 };

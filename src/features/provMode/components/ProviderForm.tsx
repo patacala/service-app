@@ -24,7 +24,7 @@ interface ProviderFormProps {
   onClose: () => void;
   steps: StepConfig[];
   confirmationStep?: ConfirmationConfig;
-  onSubmit?: (data: any) => void;
+  onSubmit?: (data: any) => boolean | Promise<boolean>;
   onStepChange?: (step: number, data: any) => void;
   draggable?: boolean;
   enableScroll?: boolean;
@@ -32,6 +32,8 @@ interface ProviderFormProps {
   secondaryButtonText?: string;
   formData?: any;
   setFormData?: (data: any) => void;
+  primaryButtonDisabled?: boolean;
+  secondaryButtonDisabled?: boolean;
 }
 
 export const ProviderForm: React.FC<ProviderFormProps> = ({
@@ -46,7 +48,9 @@ export const ProviderForm: React.FC<ProviderFormProps> = ({
   primaryButtonText = "Continue",
   secondaryButtonText = "Go back",
   formData = {},
-  setFormData
+  setFormData,
+  primaryButtonDisabled = false,
+  secondaryButtonDisabled = false
 }) => {
   const theme = useTheme<Theme>();
   const styles = createStyles(theme);
@@ -61,7 +65,6 @@ export const ProviderForm: React.FC<ProviderFormProps> = ({
   
   // Usar formData externo o interno
   const currentFormData = formData || internalFormData;
-  const updateFormData = setFormData || setInternalFormData;
 
   // Resetear al abrir el modal
   useEffect(() => {
@@ -73,17 +76,20 @@ export const ProviderForm: React.FC<ProviderFormProps> = ({
     }
     
     wasVisible.current = visible;
-  }, [visible]);
+  }, [visible, setFormData]);
 
   // Notificar cambios de paso
   useEffect(() => {
     if (onStepChange) {
       onStepChange(currentStep, currentFormData);
     }
-  }, [currentStep, currentFormData]);
+  }, [currentStep, currentFormData, onStepChange]);
 
   // Validación para habilitar/deshabilitar el botón de continuar
   const canContinue = () => {
+    // Si está explícitamente deshabilitado desde props, retornar false
+    if (primaryButtonDisabled) return false;
+    
     if (currentStep <= totalSteps) {
       const currentStepConfig = steps[currentStep - 1];
       if (currentStepConfig.validation) {
@@ -94,21 +100,50 @@ export const ProviderForm: React.FC<ProviderFormProps> = ({
     return true;
   };
 
+  // Determinar si el botón secundario debe estar deshabilitado
+  const canGoBack = () => {
+    return !secondaryButtonDisabled;
+  };
+
   // Función para avanzar al siguiente paso
-  const handleContinue = () => {
+  const handleContinue = async () => {
+    // Prevenir múltiples ejecuciones si no puede continuar
+    if (!canContinue()) return;
+
     if (currentStep < totalSteps) {
       setCurrentStep(currentStep + 1);
     } else if (currentStep === totalSteps) {
-      if (hasConfirmation) {
-        setCurrentStep(totalSteps + 1);
-      }
-      
       if (onSubmit) {
-        onSubmit(currentFormData);
-      }
+        try {
+          const result = onSubmit(currentFormData);
 
-      if (!hasConfirmation) {
-        onClose();
+          if (result instanceof Promise) {
+            const success = await result;
+            if (success) {
+              if (hasConfirmation) {
+                setCurrentStep(totalSteps + 1);
+              } else {
+                onClose();
+              }
+            }
+          } else {
+            if (result) {
+              if (hasConfirmation) {
+                setCurrentStep(totalSteps + 1);
+              } else {
+                onClose();
+              }
+            }
+          }
+        } catch (error) {
+          console.error('Error en onSubmit:', error);
+        }
+      } else {
+        if (hasConfirmation) {
+          setCurrentStep(totalSteps + 1);
+        } else {
+          onClose();
+        }
       }
     } else if (hasConfirmation && currentStep === totalSteps + 1) {
       onClose();
@@ -117,6 +152,9 @@ export const ProviderForm: React.FC<ProviderFormProps> = ({
 
   // Función para volver al paso anterior
   const handleBack = () => {
+    // Prevenir navegación hacia atrás si está deshabilitado
+    if (!canGoBack()) return;
+
     if (currentStep > 1) {
       setCurrentStep(currentStep - 1);
     } else {
@@ -144,8 +182,8 @@ export const ProviderForm: React.FC<ProviderFormProps> = ({
             resizeMode="contain"
           />
         )}
-        <Box justifyContent="center" alignItems="center" gap="xl" marginVertical="xl" maxWidth={291}>
-          <Typography variant="headingPrimary" color="white">
+        <Box justifyContent="center" alignItems="center" marginVertical="xl" maxWidth={291}>
+          <Typography variant="headingPrimary" color="white" style={styles.centerText}>
             {confirmationStep.title}
           </Typography>
           <Typography variant="bodyMedium" color="white" style={styles.centerText}>
@@ -182,6 +220,11 @@ export const ProviderForm: React.FC<ProviderFormProps> = ({
     return currentStep <= totalSteps;
   };
 
+  // Determinar si mostrar el botón secundario
+  const shouldShowSecondaryButton = () => {
+    return currentStep <= totalSteps;
+  };
+
   return (
     <BottomModal
       visible={visible}
@@ -198,10 +241,11 @@ export const ProviderForm: React.FC<ProviderFormProps> = ({
       secondaryButtonText={secondaryButtonText}
       primaryButtonVariant="secondary"
       onPrimaryButtonPress={handleContinue}
-      primaryButtonDisabled={!canContinue() && currentStep <= totalSteps}
-      showSecondaryButton={currentStep <= totalSteps}
+      primaryButtonDisabled={!canContinue()}
+      showSecondaryButton={shouldShowSecondaryButton()}
       secondaryButtonIcon="left-arrow"
       secondaryButtonVariant="outlined"
+      secondaryButtonDisabled={!canGoBack()}
       onSecondaryButtonPress={handleBack}
       height={getCurrentHeight()}
       enableScroll={enableScroll}

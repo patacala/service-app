@@ -6,7 +6,6 @@ import {useDispatch, useSelector} from 'react-redux';
 import {RootState} from '../../../store';
 import {fetchFavoritesStart} from '../slices/favorites.slice';
 import {useNavigation} from '@react-navigation/native';
-import {Post} from '../../wall/slices/wall.slice';
 
 export const FavoritesScreen = () => {
   const dispatch = useDispatch();
