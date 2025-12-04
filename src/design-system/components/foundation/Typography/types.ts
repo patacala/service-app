@@ -13,12 +13,13 @@ export type TypographyVariant =
   | 'bodyBold'
   | 'bodyBold16';
 
-export type TypographyColorVariant = 'primary' | 'secondary';
+export type TypographyColorVariant = 'primary' | 'secondary' | 'colorFeedbackError';
 
 export interface TypographyStylesProps {
   variant: TypographyVariant;
   colorVariant?: TypographyColorVariant;
   color?: string;
+  truncate?: boolean;
 }
 
 export interface TypographyProps extends TypographyStylesProps, RNTextProps {

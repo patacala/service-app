@@ -3,7 +3,7 @@ import {initReactI18next} from 'react-i18next';
 import * as Localization from 'expo-localization'; 
 import {translations} from './translations';
 
-const getDeviceLanguage = () => {
+export const getDeviceLanguage = () => {
   try {
     const locales = Localization.getLocales();
     return locales && locales.length > 0 && locales[0].languageCode 
@@ -18,8 +18,8 @@ const getDeviceLanguage = () => {
 i18n.use(initReactI18next).init({
   compatibilityJSON: 'v4',
   resources: translations,
-  //lng: getDeviceLanguage(),
-  lng: 'en',
+  lng: getDeviceLanguage(),
+  /* lng: 'en', */
   fallbackLng: 'en',
   interpolation: {
     escapeValue: false,

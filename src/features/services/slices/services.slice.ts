@@ -32,23 +32,6 @@ const initialState: ServicesState = {
   error: null,
 };
 
-// Interface para los datos del servicio
-export interface ServiceData {
-  id: string;
-  category: string;
-  name: string;
-  role: 'user' | 'provider';
-  date: string;
-  time: string;
-  image?: ImageSourcePropType;
-  address: string;
-  status: 'pending' | 'completed';
-  chipOption: ChipOption;
-  selectedChipId?: string;
-  phone: string;
-  description: string;
-}
-
 const servicesSlice = createSlice({
   name: 'services',
   initialState,

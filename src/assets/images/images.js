@@ -27,7 +27,12 @@ const images = {
     vignette: require('./vignette.png'),
     addPhoto: require('./add-photo.png'),
     profileLarge1: require('./profile-large.png'),
-    iconEdit: require('./edit.png')
+    iconEdit: require('./edit.png'),
+    gmailLogo: require('./gmail.png'),
+    appleLogo: require('./apple.png'),
+    chat: require('./chat.png'),
+    message: require('./message.png'),
+    camera: require('./u_camera.png')
 };
   
 export default images;

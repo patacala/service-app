@@ -9,7 +9,7 @@ import images from '@/assets/images/images';
 
 // Tipo de props para el componente
 interface RatingReviewProps {
-  rating: number;
+  rating: string;
   reviewDate: string;
   username: string;
   reviewText: string;
@@ -18,16 +18,12 @@ interface RatingReviewProps {
 }
 
 export const RatingReview = ({ 
-  rating = 5.0,
-  reviewDate = '21 Apr',
-  username = 'Username_010',
-  reviewText = 'I hired them a month ago for a complete interior painting of my home, and the results are absolutely stunning.',
-  reviewImages = [
-    images.reviewImage1 as ImageSourcePropType, 
-    images.reviewImage2 as ImageSourcePropType, 
-    images.reviewImage3 as ImageSourcePropType
-  ],
-  reviewTitle = 'Awesome Work!'
+  rating,
+  reviewDate,
+  username,
+  reviewText,
+  reviewImages,
+  reviewTitle
 }: RatingReviewProps) => {
   
   // Función para renderizar estrellas basadas en la puntuación
@@ -91,7 +87,7 @@ export const RatingReview = ({
           </Typography>
           
           <Row spacing="sm" justifyContent="flex-start" marginTop="sm">
-            {reviewImages.map((image, index) => (
+            {reviewImages?.map((image, index) => (
               <Box key={`review-image-${index}`} width={60} height={60}>
                 <Image 
                   style={styles.imageReview} 
