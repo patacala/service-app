@@ -15,10 +15,7 @@
         "buildType": "apk",
         "gradleCommand": ":app:assembleDebug",
         "withoutCredentials": true,
-        "image": "latest",
-        "env": {
-          "EXPO_ANDROID_EXTRA_PROPERTIES": "org.gradle.jvmargs=-Xmx2048m\nandroid.enableJetifier=true"
-        }
+        "image": "latest"
       },
       "ios": {
         "simulator": true,
@@ -32,14 +29,10 @@
         "APP_ENV": "staging"
       },
       "android": {
-        "buildType": "apk",
-        "image": "latest",
-        "env": {
-          "EXPO_ANDROID_EXTRA_PROPERTIES": "org.gradle.jvmargs=-Xmx2048m\nandroid.enableJetifier=true"
-        }
+        "buildType": "apk"
       },
       "ios": {
-        "resourceClass": "m-medium"
+        "simulator": false
       }
     },
     "production": {
@@ -49,15 +42,10 @@
         "APP_ENV": "production"
       },
       "android": {
-        "buildType": "apk",
-        "image": "latest",
-        "env": {
-          "EXPO_ANDROID_EXTRA_PROPERTIES": "org.gradle.jvmargs=-Xmx2048m\nandroid.enableJetifier=true"
-        }
+        "buildType": "app-bundle"
       },
       "ios": {
-        "simulator": false,
-        "resourceClass": "m-medium"
+        "simulator": false
       }
     }
   },
