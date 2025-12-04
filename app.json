@@ -8,10 +8,13 @@
     "scheme": "awesome-app-expo",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
-   "ios": {
+    "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.pbarranco.contactmyapp",
-      "googleServicesFile": "./GoogleService-Info.plist"
+      "googleServicesFile": "./GoogleService-Info.plist",
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
+      }
     },
     "android": {
       "adaptiveIcon": {
@@ -20,7 +23,6 @@
       },
       "package": "com.pbarranco.contactmyapp",
       "versionCode": 1,
-      "package": "com.pbarranco.contactmyapp",
       "googleServicesFile": "./google-services.json",
       "permissions": [
         "android.permission.CAMERA",
@@ -45,6 +47,7 @@
       "@react-native-firebase/app",
       "@react-native-firebase/auth",
       "@react-native-google-signin/google-signin",
+      "./plugins/withFirebasePodfileConfig.js",
       [
         "expo-splash-screen",
         {
@@ -70,6 +73,12 @@
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "16f8da1a-6b41-4b19-9436-e2e2c46c162a"
+      }
     }
   }
 }
