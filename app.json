@@ -77,8 +77,9 @@
     "extra": {
       "router": {},
       "eas": {
-        "projectId": "16f8da1a-6b41-4b19-9436-e2e2c46c162a"
+        "projectId": "18830731-15d4-4e01-b32f-5e1571b65455"
       }
-    }
+    },
+    "owner": "contact-my-app"
   }
 }
