@@ -109,7 +109,7 @@ export const Post = ({ post, onPress }: PostProps) => {
                 {post.provider.name}
               </Typography>
               <Typography variant="bodyXSmall" color="white">
-                Service
+                Service...
               </Typography>
               <Box maxWidth={220}>
                 <Typography variant="bodyMedium" color="white" truncate>
