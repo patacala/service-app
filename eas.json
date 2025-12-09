@@ -17,11 +17,12 @@
         "image": "latest"
       },
       "ios": {
-        "simulator": true,
+        "simulator": false,
         "resourceClass": "m-medium"
       }
     },
     "preview": {
+      "developmentClient": true,
       "distribution": "internal",
       "env": {
         "APP_ENV": "staging"
@@ -30,7 +31,8 @@
         "buildType": "apk"
       },
       "ios": {
-        "simulator": false
+        "simulator": false,
+        "resourceClass": "m-medium"
       }
     },
     "production": {
