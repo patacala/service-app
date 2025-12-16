@@ -25,8 +25,8 @@ interface Location {
 }
 
 export const ServicesScreen = () => {
-    const { t } = useTranslation('auth');
     const router = useRouter();
+    const { t } = useTranslation('auth');
     const { user } = useAuth();
     const [locationPanelVisible, setLocationPanelVisible] = useState(false);
     const [cancelServiceVisible, setCancelServiceVisible] = useState(false);
