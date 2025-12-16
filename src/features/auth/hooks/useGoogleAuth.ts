@@ -46,11 +46,11 @@ export const useGoogleAuth = (): UseGoogleAuthReturn => {
       const token = await service.getIdToken(credential.user);
 
       // Debug: log successful Google + Firebase auth payload
-      console.log('[GoogleAuth] Firebase user:', {
+      /* console.log('[GoogleAuth] Firebase user:', {
         uid: credential.user.uid,
         email: credential.user.email,
         displayName: credential.user.displayName,
-      });
+      }); */
 
       return {
         token,

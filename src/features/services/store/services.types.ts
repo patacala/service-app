@@ -31,7 +31,7 @@ export interface Service {
     name: string;
     media: MediaProfile | null;
   };
-  rating: number;
+  rating: string;
   reviewsCount: number;
   city?: string;
   lat?: number;

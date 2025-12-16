@@ -77,7 +77,7 @@ export const LoginScreen = () => {
   const handleGoogleSignIn = async () => {
     console.log('before sign')
     const result = await googleSignIn();
-    console.log('results11111111111', result);
+    /* console.log('result:', result); */
     if (!result) {
       if (googleError && !googleError.includes('cancelled')) {
         Toast.show({
@@ -89,7 +89,7 @@ export const LoginScreen = () => {
       return;
     }
 
-    console.log('result+++++++++++', result);
+    /* console.log('result', result); */
     dispatch(setFirebaseToken(result.token));
 
     try {
