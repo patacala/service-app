@@ -110,6 +110,10 @@ export const ServicePost: React.FC<ServicePostProps> = ({
         />
         
         <Box position="relative" maxWidth={130}>
+          <Typography variant="bodySmall" color={theme.colors.colorGrey100}>
+            {bookService.shouldRate}
+          </Typography>
+          
           {(bookService.status === 'completed' || bookService.status === 'rated') && bookService.shouldRate && (
             <Button
               variant="transparent"
