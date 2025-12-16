@@ -268,7 +268,6 @@ export const ServicesDetailScreen = () => {
         player={player}
         fullscreenOptions={{ enable: true }}
         allowsPictureInPicture={false}
-        allowsFullscreen={true}
       />
     );
   };
