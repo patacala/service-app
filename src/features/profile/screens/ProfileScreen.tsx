@@ -46,6 +46,7 @@ import { ServiceFormData } from '../slices/profile.slice';
 import { useLocalSearchParams } from 'expo-router';
 import { MediaObject, DownloadedMedia, RNFileLike } from '@/features/media/store/media.types';
 import { Rating, useGetRatingsByUserQuery } from '@/features/ratings/store';
+import { useUserProfile } from '@/hooks/useUserProfile';
 
 // Validation Schema
 const profileSchema = z.object({
@@ -94,11 +95,7 @@ export const ProfileScreen = () => {
     refetchOnFocus: true,
     refetchOnReconnect: true
   }); 
-  const { data: profile, error: profileError } = useGetCurrentUserQuery(undefined, {
-    refetchOnMountOrArgChange: true,
-    refetchOnFocus: true,
-    refetchOnReconnect: true
-  });
+  const { error: profileError } = useUserProfile();
   const [updateProfile] = useUpdateProfileMutation();
 
   // Service Api
@@ -148,7 +145,7 @@ export const ProfileScreen = () => {
     label: c.name,
   })) ?? [];
 
-  const { logout, user } = useAuth();
+  const { logout, user, profile, profileUpdate } = useAuth();
 
   // Función para convertir IDs de categorías a ChipOptions
   const getCategoryOptions = useMemo(() => {
@@ -268,6 +265,7 @@ export const ProfileScreen = () => {
         };
 
         const response = await uploadImage({ file }).unwrap();
+
         uploadedMedia = response;
         uploadedImageId = response.id;
       }
@@ -279,12 +277,19 @@ export const ProfileScreen = () => {
         media: uploadedMedia,
       };
 
-      await updateProfile(updatedProfileData).unwrap();
-      if (profile.media && profile.media.length > 0) {
-        const currentMedia = profile.media[0];
-        await deleteImage(currentMedia.providerRef).unwrap();
-      } 
+      const oldMediaRef = profile.media?.[0]?.providerRef;
 
+      await updateProfile(updatedProfileData).unwrap();
+      await profileUpdate(profile);
+
+      if (oldMediaRef && uploadedMedia) {
+        try {
+          await deleteImage(oldMediaRef).unwrap();
+        } catch (error) {
+          console.log('Error deleting old image:', error);
+        }
+      } 
+      
       reset({
         name: data.name,
         email: data.email,
