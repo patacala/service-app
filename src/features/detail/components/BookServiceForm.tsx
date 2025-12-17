@@ -138,7 +138,7 @@ export const BookServiceForm: React.FC<BookServiceFormProps> = ({
       secondaryButtonIcon="left-arrow"
       secondaryButtonVariant="outlined"
       onSecondaryButtonPress={handleBack}
-      height={currentStep === 1 ? '88%': !contactProviderVisible ? '70%':'64%'}
+      height={currentStep === 1 ? '89%': !contactProviderVisible ? '70%':'64%'}
       enableScroll={true}
     >
       {currentStep === 1 ? (

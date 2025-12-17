@@ -13,7 +13,8 @@ import images from '@/assets/images/images';
 import { LocationPanel } from '@/features/wall/components/LocationPanel';
 import { RootState } from '@/store';
 import { setLocation } from '@/features/location/slices/location.slice';
-import { useGetCurrentUserQuery } from '@/features/auth/store';
+import { useAuth } from '@/infrastructure/auth/AuthContext';
+import { useUserProfile } from '@/hooks/useUserProfile';
 
 interface Location {
   id: string;
@@ -34,10 +35,9 @@ export const ScreenWrapper: React.FC<{
   const [locationPanelVisible, setLocationPanelVisible] = useState(false);
   const dispatch = useDispatch();
   const currentLocation = useSelector((state: RootState) => state.location.currentLocation);
-  const { data: profile, isLoading: isProfileLoading } = useGetCurrentUserQuery(undefined, {
-    refetchOnMountOrArgChange: true,
-  });
-
+  const { profile } = useAuth();
+  useUserProfile();
+  
   const handleSelectLocation = (location: Location) => {
     dispatch(setLocation(location));
   };
@@ -72,7 +72,7 @@ export const ScreenWrapper: React.FC<{
               <Typography variant="headingSecondary" color="white">
                 {Greeting()}
               </Typography>
-              {!isProfileLoading && profile?.name && (
+              {profile?.name && (
                 <Typography variant="bodyMedium" color="white" truncate>
                   {profile.name}
                 </Typography>
