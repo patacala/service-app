@@ -48,7 +48,7 @@ import { ServiceFormData } from '../slices/profile.slice';
 import { useLocalSearchParams } from 'expo-router';
 import { MediaObject, DownloadedMedia, RNFileLike } from '@/features/media/store/media.types';
 import { Rating, useGetRatingsByUserQuery } from '@/features/ratings/store';
-import { useUserProfile } from '@/hooks/useUserProfile';
+import { useUserProfile } from '@/features/auth/hooks/useUserProfile';
 
 // Validation Schema
 const profileSchema = z.object({
@@ -224,7 +224,7 @@ export const ProfileScreen = () => {
       reset({
         name: profile.name ?? '',
         email: profile.email ?? '',
-        phone: getPhoneDetail(profile.phone ?? '')?.number ?? '',
+        phone: profile.phone ?? '',
         city: profile.city ?? '',
         address: profile.address ?? '',
       });
