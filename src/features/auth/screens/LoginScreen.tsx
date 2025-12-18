@@ -10,6 +10,7 @@ import { Row } from '@/design-system/components/layout/Row/Row';
 import { getLoginStyles } from './login/login.style';
 import { setOtpConfirmationResult } from '@/infrastructure/auth/otpResultManager';
 import { usePhoneAuth } from '../hooks/usePhoneAuth';
+import { useAppleAuth } from '../hooks/useAppleAuth';
 import { useGoogleAuth } from '../hooks/useGoogleAuth';
 import { PhoneValidator } from '../utils/phoneValidator';
 import { useLoginWithFirebaseMutation } from '../store/auth.api';
@@ -26,13 +27,14 @@ export const LoginScreen = () => {
   const { login } = useAuth();
   
   const { loading: phoneLoading, sendCode, error: phoneError } = usePhoneAuth();
+  const { loading: appleLoading, signIn: appleSignIn, error: appleError } = useAppleAuth();
   const { loading: googleLoading, signIn: googleSignIn, error: googleError } = useGoogleAuth();
   const [loginWithFirebase, { isLoading: backendLoading }] = useLoginWithFirebaseMutation();
 
   const [phoneNumber, setPhoneNumber] = useState('');
   const [validationError, setValidationError] = useState('');
-
-  const loading = phoneLoading || googleLoading || backendLoading;
+  
+  const loading = phoneLoading || googleLoading || appleLoading || backendLoading;
 
   const handlePhoneChange = (value: string) => {
     const sanitized = PhoneValidator.sanitize(value);
@@ -74,10 +76,60 @@ export const LoginScreen = () => {
     });
   };
 
+  const handleAppleSignIn = async () => {
+    const result = await appleSignIn();
+    
+    if (!result) {
+      if (appleError && !appleError.includes('cancelled')) {
+        Toast.show({
+          type: 'error',
+          text1: 'Apple Sign-In Failed',
+          text2: appleError
+        });
+      }
+      return;
+    }
+
+    dispatch(setFirebaseToken(result.token));
+
+    try {
+      const authResponse = await loginWithFirebase(result.token).unwrap();
+      dispatch(setAuthData(authResponse));
+      await login(authResponse.token, authResponse.user);
+
+      if (authResponse.user.isNewUser) {
+        router.replace({
+          pathname: '/register',
+          params: {
+            email: result.email || '',
+            name: result.name || '',
+          },
+        });
+        Toast.show({
+          type: 'success',
+          text1: 'Welcome!',
+          text2: 'Complete your profile',
+        });
+      } else {
+        Toast.show({
+          type: 'success',
+          text1: 'Welcome back!',
+          text2: `Hi ${result.name || 'there'}`,
+        });
+        router.replace('/home');
+      }
+    } catch (error: any) {
+      Toast.show({
+        type: 'error',
+        text1: 'Authentication Failed',
+        text2: error?.message || 'Could not authenticate with server',
+      });
+    }
+  };
+
   const handleGoogleSignIn = async () => {
-    console.log('before sign')
     const result = await googleSignIn();
-    /* console.log('result:', result); */
+    
     if (!result) {
       if (googleError && !googleError.includes('cancelled')) {
         Toast.show({
@@ -89,7 +141,6 @@ export const LoginScreen = () => {
       return;
     }
 
-    /* console.log('result', result); */
     dispatch(setFirebaseToken(result.token));
 
     try {
@@ -158,7 +209,18 @@ export const LoginScreen = () => {
       </Row>
       
       <Box marginTop="lg" />
-      <Row justifyContent="center">
+      <Row justifyContent="center" gap="xl">
+        <TouchableOpacity
+          onPress={handleAppleSignIn}
+          disabled={loading}
+          activeOpacity={0.7}
+        >
+          <Image
+            source={images.appleLogo as ImageSourcePropType}
+            resizeMode="contain"
+            style={styles.logos}
+          />
+        </TouchableOpacity>
         <TouchableOpacity
           onPress={handleGoogleSignIn}
           disabled={loading}

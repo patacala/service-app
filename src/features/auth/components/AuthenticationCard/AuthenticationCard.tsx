@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { ImageSourcePropType, Keyboard } from 'react-native';
+import { ImageSourcePropType, Keyboard, ScrollView, TouchableWithoutFeedback } from 'react-native';
 import {
   Box,
   Typography,
@@ -53,77 +53,85 @@ export const AuthenticationCard: React.FC<AuthenticationCardProps> = ({
   }, []);
 
   return (
-    <SafeContainer
-      fluid
-      backgroundImage={images.backgroundImage as ImageSourcePropType}
-      backgroundOpacity={0.3}
-    >
-      {!keyboardVisible && (
-        <Box flex={1} justifyContent="center">
-          <Typography
-            variant="headingPrimary"
-            color="white"
-            style={{
-              textShadowColor: 'rgba(0, 0, 0, 0.75)',
-              textShadowRadius: 10,
-              fontSize: 50,
-              lineHeight: 60,
-              letterSpacing: 0,
-              padding: theme?.spacing.md,
-            }}
-          >
-            {formatMultilineText(mainTitle)}
-          </Typography>
-        </Box>
-      )}
-
-      {activeStepIndicator && (
-        <Box marginBottom="lg" justifyContent="center">
-          <StepIndicator
-            currentStep={currentStep}
-            totalSteps={totalSteps}
-            labels={labels}
-          />
-        </Box>
-      )}
-
-      <Box variant="card" style={{ backgroundColor: 'transparent' }}>
-        <Box>
-          <Box paddingBottom="xs">
-            <Typography variant="headingSecondary" color="white">
-              {formatMultilineText(defaultTitleText)}
-            </Typography>
-            <Typography variant="headingPrimary" color="white">
-              {formatMultilineText(subtitle)}
-            </Typography>
-            <Box marginTop="sm">
-              <Typography variant="bodyMedium" color="white">
-                {formatMultilineText(message)}
+    <TouchableWithoutFeedback onPress={() => Keyboard.dismiss()}>
+      <SafeContainer
+        fluid
+        backgroundImage={images.backgroundImage as ImageSourcePropType}
+        backgroundOpacity={0.3}
+      >
+        <ScrollView
+          contentContainerStyle={{ flexGrow: 1 }}
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
+        >
+          {!keyboardVisible && (
+            <Box flex={1} justifyContent="center">
+              <Typography
+                variant="headingPrimary"
+                color="white"
+                style={{
+                  textShadowColor: 'rgba(0, 0, 0, 0.75)',
+                  textShadowRadius: 10,
+                  fontSize: 50,
+                  lineHeight: 60,
+                  letterSpacing: 0,
+                  padding: theme?.spacing.md,
+                }}
+              >
+                {formatMultilineText(mainTitle)}
               </Typography>
             </Box>
-          </Box>
-
-          <Box variant="form" paddingBottom="md">
-            {children}
-          </Box>
-        </Box>
-        <Box variant="footer">
-          <Button
-            variant="secondary"
-            label={defaultPrimaryButtonText}
-            onPress={onPrimaryButtonPress}
-            disabled={primaryButtonDisabled}
-          />
-          {onSecondaryButtonPress && (
-            <Button
-              variant="outlined"
-              label={defaultSecondaryButtonText}
-              leftIcon={secondaryButtonLeftIcon}
-              onPress={onSecondaryButtonPress}
-            />
           )}
-        </Box>
-      </Box>
-    </SafeContainer>
+
+          {activeStepIndicator && (
+            <Box marginBottom="lg" justifyContent="center">
+              <StepIndicator
+                currentStep={currentStep}
+                totalSteps={totalSteps}
+                labels={labels}
+              />
+            </Box>
+          )}
+
+          <Box variant="card" style={{ backgroundColor: 'transparent' }}>
+            <Box>
+              <Box paddingBottom="xs">
+                <Typography variant="headingSecondary" color="white">
+                  {formatMultilineText(defaultTitleText)}
+                </Typography>
+                <Typography variant="headingPrimary" color="white">
+                  {formatMultilineText(subtitle)}
+                </Typography>
+                <Box marginTop="sm">
+                  <Typography variant="bodyMedium" color="white">
+                    {formatMultilineText(message)}
+                  </Typography>
+                </Box>
+              </Box>
+
+              <Box variant="form" paddingBottom="md">
+                {children}
+              </Box>
+            </Box>
+            <Box variant="footer">
+              <Button
+                variant="secondary"
+                label={defaultPrimaryButtonText}
+                onPress={onPrimaryButtonPress}
+                disabled={primaryButtonDisabled}
+              />
+              {onSecondaryButtonPress && (
+                <Button
+                  variant="outlined"
+                  label={defaultSecondaryButtonText}
+                  leftIcon={secondaryButtonLeftIcon}
+                  onPress={onSecondaryButtonPress}
+                />
+              )}
+            </Box>
+          </Box>
+        </ScrollView>
+      </SafeContainer>
+    </TouchableWithoutFeedback>
   );
 };
