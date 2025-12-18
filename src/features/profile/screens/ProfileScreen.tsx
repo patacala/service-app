@@ -10,6 +10,8 @@ import {
   FlatList,
   View,
   ActivityIndicator,
+  KeyboardAvoidingView,
+  Platform,
 } from 'react-native';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -712,230 +714,236 @@ export const ProfileScreen = () => {
 
   // Contenido de My Profile
   const renderMyProfileContent = () => (
-    <ScrollView
-      showsVerticalScrollIndicator={false}
-      keyboardShouldPersistTaps="handled"
-      contentContainerStyle={{
-        flexGrow: 1,
-        paddingBottom: 70,
-      }}
+    <KeyboardAvoidingView
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      style={{ flex: 1 }}
+      keyboardVerticalOffset={100}
     >
-      <TouchableWithoutFeedback onPress={() => Keyboard.dismiss()}>
-        <Box marginTop="lg" paddingHorizontal="md" paddingBottom="xl">
-          
-          {/* Profile Header */}
-          <Box width="100%" justifyContent="center" alignItems="center" marginBottom="lg" gap="sm">
-            <TouchableOpacity onPress={pickImage} activeOpacity={0.8}>
-              <Box style={getProfileStyles.profileImage} position="relative">
-                <Image
-                  source={{
-                    uri: profileImage
-                      ? profileImage
-                      : profile?.media?.[0]?.variants?.profileThumbnail?.url ?? 
-                      'https://imagedelivery.net/uusH4IRLf6yhlCMhPld_6A/d6201e99-87ce-450d-e6c1-91e3463f3600/profileThumbnail',
-                  }}
-                  resizeMode="contain"
-                  style={getProfileStyles.image}
-                />
-                {/* <Box 
-                  position="absolute"
-                  bottom={0}
-                  left={0}
-                  right={0}
-                  backgroundColor="colorBaseBlack"
-                >
-                  <Icon name="picture" color="colorBaseWhite" size={16} />
-                </Box> */}
-              </Box>
-            </TouchableOpacity>
-            <Typography variant="bodyMedium" color={theme.colors.colorBaseWhite}>
-              ID 92347451
-            </Typography>
-          </Box>
-
-          {/* Form */}
-          <Box marginBottom="xl" gap="md">
-            {/* Name */}
-            <Controller
-              control={control}
-              name="name"
-              render={({ field: { onChange, onBlur, value } }) => (
-                <Box>
-                  <Input
-                    label={t("profile.name-label")}
-                    value={value}
-                    onChangeValue={onChange}
-                    onBlur={onBlur}
-                    placeholder={t("profile.name-placeholder")}
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
+        contentContainerStyle={{
+          flexGrow: 1,
+          paddingBottom: 70,
+        }}
+      >
+        <TouchableWithoutFeedback onPress={() => Keyboard.dismiss()}>
+          <Box marginTop="lg" paddingHorizontal="md" paddingBottom="xl">
+            
+            {/* Profile Header */}
+            <Box width="100%" justifyContent="center" alignItems="center" marginBottom="lg" gap="sm">
+              <TouchableOpacity onPress={pickImage} activeOpacity={0.8}>
+                <Box style={getProfileStyles.profileImage} position="relative">
+                  <Image
+                    source={{
+                      uri: profileImage
+                        ? profileImage
+                        : profile?.media?.[0]?.variants?.profileThumbnail?.url ?? 
+                        'https://imagedelivery.net/uusH4IRLf6yhlCMhPld_6A/d6201e99-87ce-450d-e6c1-91e3463f3600/profileThumbnail',
+                    }}
+                    resizeMode="contain"
+                    style={getProfileStyles.image}
                   />
-                  {errors.name && (
-                    <Box marginTop="xs">
-                      <Typography variant="bodySmall" color={theme.colors.colorFeedbackError}>
-                        {errors.name.message}
-                      </Typography>
-                    </Box>
-                  )}
+                  {/* <Box 
+                    position="absolute"
+                    bottom={0}
+                    left={0}
+                    right={0}
+                    backgroundColor="colorBaseBlack"
+                  >
+                    <Icon name="picture" color="colorBaseWhite" size={16} />
+                  </Box> */}
                 </Box>
-              )}
-            />
+              </TouchableOpacity>
+              <Typography variant="bodyMedium" color={theme.colors.colorBaseWhite}>
+                ID 92347451
+              </Typography>
+            </Box>
 
-            {/* Email */}
-            <Controller
-              control={control}
-              name="email"
-              render={({ field: { onChange, onBlur, value } }) => (
-                <Box>
-                  <Input
-                    label={t("profile.email-label")}
-                    value={value}
-                    onChangeValue={onChange}
-                    onBlur={onBlur}
-                    placeholder={t("profile.email-placeholder")}
-                    keyboardType="email-address"
-                    autoCapitalize="none"
-                    editable={false}
-                  />
-                  {errors.email && (
-                    <Box marginTop="xs">
-                      <Typography variant="bodySmall" color={theme.colors.colorFeedbackError}>
-                        {errors.email.message}
-                      </Typography>
-                    </Box>
-                  )}
-                </Box>
-              )}
-            />
+            {/* Form */}
+            <Box marginBottom="xl" gap="md">
+              {/* Name */}
+              <Controller
+                control={control}
+                name="name"
+                render={({ field: { onChange, onBlur, value } }) => (
+                  <Box>
+                    <Input
+                      label={t("profile.name-label")}
+                      value={value}
+                      onChangeValue={onChange}
+                      onBlur={onBlur}
+                      placeholder={t("profile.name-placeholder")}
+                    />
+                    {errors.name && (
+                      <Box marginTop="xs">
+                        <Typography variant="bodySmall" color={theme.colors.colorFeedbackError}>
+                          {errors.name.message}
+                        </Typography>
+                      </Box>
+                    )}
+                  </Box>
+                )}
+              />
 
-            {/* Phone */}
-            <Controller
-              control={control}
-              name="phone"
-              render={({ field: { onChange, onBlur, value } }) => (
-                <Box>
-                  <Row spacing="none" gap="sm" justify="space-between">
-                    <Box style={getProfileStyles.prefix} padding="md">
-                      <Typography variant="bodyRegular" colorVariant="secondary">
-                        +1
-                      </Typography>
-                    </Box>
-                    <Box flex={1}>
-                      <Input
-                        label={t('signupCompletion.number')}
-                        variant="numeric"
-                        value={value}
-                        onChangeValue={(text) => {
-                          const formatted = formatPhoneNumber(text);
-                          onChange(formatted);
-                        }}
-                        onBlur={onBlur}
-                        keyboardType="phone-pad"
-                        maxLength={12}
-                        style={{ width: '100%' }}
-                        editable={false}
-                      />
-                    </Box>
-                  </Row>
-                  {errors.phone && (
-                    <Box marginTop="xs">
-                      <Typography variant="bodySmall" color={theme.colors.colorFeedbackError}>
-                        {errors.phone.message}
-                      </Typography>
-                    </Box>
-                  )}
-                </Box>
-              )}
-            />
+              {/* Email */}
+              <Controller
+                control={control}
+                name="email"
+                render={({ field: { onChange, onBlur, value } }) => (
+                  <Box>
+                    <Input
+                      label={t("profile.email-label")}
+                      value={value}
+                      onChangeValue={onChange}
+                      onBlur={onBlur}
+                      placeholder={t("profile.email-placeholder")}
+                      keyboardType="email-address"
+                      autoCapitalize="none"
+                      editable={false}
+                    />
+                    {errors.email && (
+                      <Box marginTop="xs">
+                        <Typography variant="bodySmall" color={theme.colors.colorFeedbackError}>
+                          {errors.email.message}
+                        </Typography>
+                      </Box>
+                    )}
+                  </Box>
+                )}
+              />
 
-            {/* City */}
-            <Controller
-              control={control}
-              name="city"
-              render={({ field: { onChange, onBlur, value } }) => (
-                <Box>
-                  <Input
-                    label={t("profile.city-label")}
-                    icon="transfer"
-                    value={value}
-                    onChangeValue={onChange}
-                    onBlur={onBlur}
-                    placeholder={t("profile.email-placeholder")}
-                  />
-                  {errors.city && (
-                    <Box marginTop="xs">
-                      <Typography variant="bodySmall" color={theme.colors.colorFeedbackError}>
-                        {errors.city.message}
-                      </Typography>
-                    </Box>
-                  )}
-                </Box>
-              )}
-            />
+              {/* Phone */}
+              <Controller
+                control={control}
+                name="phone"
+                render={({ field: { onChange, onBlur, value } }) => (
+                  <Box>
+                    <Row spacing="none" gap="sm" justify="space-between">
+                      <Box style={getProfileStyles.prefix} padding="md">
+                        <Typography variant="bodyRegular" colorVariant="secondary">
+                          +1
+                        </Typography>
+                      </Box>
+                      <Box flex={1}>
+                        <Input
+                          label={t('signupCompletion.number')}
+                          variant="numeric"
+                          value={value}
+                          onChangeValue={(text) => {
+                            const formatted = formatPhoneNumber(text);
+                            onChange(formatted);
+                          }}
+                          onBlur={onBlur}
+                          keyboardType="phone-pad"
+                          maxLength={12}
+                          style={{ width: '100%' }}
+                          editable={false}
+                        />
+                      </Box>
+                    </Row>
+                    {errors.phone && (
+                      <Box marginTop="xs">
+                        <Typography variant="bodySmall" color={theme.colors.colorFeedbackError}>
+                          {errors.phone.message}
+                        </Typography>
+                      </Box>
+                    )}
+                  </Box>
+                )}
+              />
 
-            {/* Address */}
-            <Controller
-              control={control}
-              name="address"
-              render={({ field: { onChange, onBlur, value } }) => (
-                <Box>
-                  <Input
-                    label={t("profile.address-label")}
-                    icon="transfer"
-                    value={value}
-                    onChangeValue={onChange}
-                    onBlur={onBlur}
-                    placeholder={t("profile.address-placeholder")}
-                  />
-                  {errors.address && (
-                    <Box marginTop="xs">
-                      <Typography variant="bodySmall" color={theme.colors.colorFeedbackError}>
-                        {errors.address.message}
-                      </Typography>
-                    </Box>
-                  )}
-                </Box>
-              )}
-            />
-          </Box>
+              {/* City */}
+              <Controller
+                control={control}
+                name="city"
+                render={({ field: { onChange, onBlur, value } }) => (
+                  <Box>
+                    <Input
+                      label={t("profile.city-label")}
+                      icon="transfer"
+                      value={value}
+                      onChangeValue={onChange}
+                      onBlur={onBlur}
+                      placeholder={t("profile.email-placeholder")}
+                    />
+                    {errors.city && (
+                      <Box marginTop="xs">
+                        <Typography variant="bodySmall" color={theme.colors.colorFeedbackError}>
+                          {errors.city.message}
+                        </Typography>
+                      </Box>
+                    )}
+                  </Box>
+                )}
+              />
 
-          {/* Actions */}
-          <Box width="100%" justifyContent="center" alignItems="center" gap="xl">
-            <Box width="100%">
-              <Button
-                variant="secondary"
-                label={t("profile.profilesave")}
-                onPress={handleSubmit(onSubmit, onError)}
-                disabled={
-                  (!isValid && !isAvatarDirty) || 
-                  (!isDirty && !isAvatarDirty) || 
-                  isSaving 
-                }
+              {/* Address */}
+              <Controller
+                control={control}
+                name="address"
+                render={({ field: { onChange, onBlur, value } }) => (
+                  <Box>
+                    <Input
+                      label={t("profile.address-label")}
+                      icon="transfer"
+                      value={value}
+                      onChangeValue={onChange}
+                      onBlur={onBlur}
+                      placeholder={t("profile.address-placeholder")}
+                    />
+                    {errors.address && (
+                      <Box marginTop="xs">
+                        <Typography variant="bodySmall" color={theme.colors.colorFeedbackError}>
+                          {errors.address.message}
+                        </Typography>
+                      </Box>
+                    )}
+                  </Box>
+                )}
               />
             </Box>
-            
-            <TouchableOpacity onPress={handleHelpPress} activeOpacity={0.7}>
-              <Row spacing="sm" alignItems="center">
-                <Icon name="sound" color="colorBaseWhite" />
-                <Typography variant="bodyMedium" color={theme.colors.colorBaseWhite}>
-                  {t("profile.help")}
-                </Typography>
-              </Row>
-            </TouchableOpacity>
 
-            <Box marginTop="lg" marginBottom="xl">
-              <TouchableOpacity onPress={handleLogout} activeOpacity={0.7}>
+            {/* Actions */}
+            <Box width="100%" justifyContent="center" alignItems="center" gap="xl">
+              <Box width="100%">
+                <Button
+                  variant="secondary"
+                  label={t("profile.profilesave")}
+                  onPress={handleSubmit(onSubmit, onError)}
+                  disabled={
+                    (!isValid && !isAvatarDirty) || 
+                    (!isDirty && !isAvatarDirty) || 
+                    isSaving 
+                  }
+                />
+              </Box>
+              
+              <TouchableOpacity onPress={handleHelpPress} activeOpacity={0.7}>
                 <Row spacing="sm" alignItems="center">
-                  <Icon name="left-arrow" color="colorFeedbackError" />
-                  <Typography variant="bodyMedium" color={theme.colors.colorFeedbackError}>
-                    {t("profile.logout")}
+                  <Icon name="sound" color="colorBaseWhite" />
+                  <Typography variant="bodyMedium" color={theme.colors.colorBaseWhite}>
+                    {t("profile.help")}
                   </Typography>
                 </Row>
               </TouchableOpacity>
-            </Box>
 
+              <Box marginTop="lg" marginBottom="xl">
+                <TouchableOpacity onPress={handleLogout} activeOpacity={0.7}>
+                  <Row spacing="sm" alignItems="center">
+                    <Icon name="left-arrow" color="colorFeedbackError" />
+                    <Typography variant="bodyMedium" color={theme.colors.colorFeedbackError}>
+                      {t("profile.logout")}
+                    </Typography>
+                  </Row>
+                </TouchableOpacity>
+              </Box>
+
+            </Box>
           </Box>
-        </Box>
-      </TouchableWithoutFeedback>
-    </ScrollView>
+        </TouchableWithoutFeedback>
+      </ScrollView>
+    </KeyboardAvoidingView>
   );
 
   // Contenido de Portfolio
@@ -1124,7 +1132,7 @@ export const ProfileScreen = () => {
       key: editingServiceId ?? 'new',
       topText: "Build your portfolio",
       title: editingServiceId ? "Edit Service" : "New Services",
-      height: "78%",
+      height: "75%",
       component: (
         <InfoMain 
           key={editingServiceId ?? 'new-info'}
@@ -1148,7 +1156,7 @@ export const ProfileScreen = () => {
     {
       topText: "Build your portfolio",
       title: "Detail Information", 
-      height: "97%",
+      height: "90%",
       component: (
         <DetailInfo 
           onDescriptionChange={handleDescriptionChange}
@@ -1167,7 +1175,7 @@ export const ProfileScreen = () => {
     {
       title: "Detail Service",
       topText: "Build your portfolio", 
-      height: "81%",
+      height: "75%",
       component: (
         <DetailService 
           onAddressServiceChange={handleAddressServiceChange}
