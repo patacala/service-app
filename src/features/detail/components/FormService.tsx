@@ -74,9 +74,9 @@ export const FormService: React.FC<FormServiceProps> = ({
     if (!useSavedAddress) {
       setManualAddress(address);
 
-      const savedAddress = initialValues.address || profile?.address || '';
-      setAddress(savedAddress);
-      onAddressChange?.(savedAddress);
+      const profileAddress = profile?.address || '';
+      setAddress(profileAddress);
+      onAddressChange?.(profileAddress);
     } else {
       setAddress(manualAddress);
       onAddressChange?.(manualAddress);
@@ -84,7 +84,6 @@ export const FormService: React.FC<FormServiceProps> = ({
 
     setUseSavedAddress(!useSavedAddress);
   };
-
 
   return (
     <>
@@ -115,6 +114,7 @@ export const FormService: React.FC<FormServiceProps> = ({
           icon="transfer"
           value={address}
           onChangeValue={handleAddressChange}
+          editable={!useSavedAddress}
         />
 
         {profile?.address && (

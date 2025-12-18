@@ -139,7 +139,7 @@ export const BookServiceForm: React.FC<BookServiceFormProps> = ({
       secondaryButtonVariant="outlined"
       onSecondaryButtonPress={handleBack}
       height={currentStep === 1 ? '89%': !contactProviderVisible ? '70%':'64%'}
-      enableScroll={true}
+      enableScroll={false}
     >
       {currentStep === 1 ? (
         <FormService
