@@ -14,7 +14,7 @@ import { LocationPanel } from '@/features/wall/components/LocationPanel';
 import { RootState } from '@/store';
 import { setLocation } from '@/features/location/slices/location.slice';
 import { useAuth } from '@/infrastructure/auth/AuthContext';
-import { useUserProfile } from '@/hooks/useUserProfile';
+import { useUserProfile } from '@/features/auth/hooks/useUserProfile';
 
 interface Location {
   id: string;
