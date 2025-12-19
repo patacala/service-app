@@ -2,7 +2,8 @@ import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import Toast from 'react-native-toast-message';
 import { useRouter } from 'expo-router';
-import { Image, ImageSourcePropType, TouchableOpacity } from 'react-native';
+import { Image, ImageSourcePropType, Platform, TouchableOpacity } from 'react-native';
+import images from '@/assets/images/images';
 
 import { Box, Input, theme, Typography } from '@/design-system';
 import { AuthenticationCard } from '../components/AuthenticationCard/AuthenticationCard';
@@ -16,13 +17,15 @@ import { PhoneValidator } from '../utils/phoneValidator';
 import { useLoginWithFirebaseMutation } from '../store/auth.api';
 import { useDispatch } from 'react-redux';
 import { setAuthData, setFirebaseToken } from '../store/auth.slice';
-import images from '@/assets/images/images';
 import { useAuth } from '@/infrastructure/auth/AuthContext';
+import { Dimensions } from 'react-native';
 
 export const LoginScreen = () => {
   const router = useRouter();
   const { t } = useTranslation('auth');
   const styles = getLoginStyles(theme);
+  const { width: screenWidth } = Dimensions.get('window');
+
   const dispatch = useDispatch();
   const { login } = useAuth();
   
@@ -35,6 +38,7 @@ export const LoginScreen = () => {
   const [validationError, setValidationError] = useState('');
   
   const loading = phoneLoading || googleLoading || appleLoading || backendLoading;
+  const inputWidth = (screenWidth * 250) / screenWidth;
 
   const handlePhoneChange = (value: string) => {
     const sanitized = PhoneValidator.sanitize(value);
@@ -204,23 +208,25 @@ export const LoginScreen = () => {
           value={phoneNumber}
           onChangeText={handlePhoneChange}
           error={validationError}
-          style={{ width: 250 }}
+          style={{ width: inputWidth }}
         />
       </Row>
       
       <Box marginTop="lg" />
       <Row justifyContent="center" gap="xl">
-        <TouchableOpacity
-          onPress={handleAppleSignIn}
-          disabled={loading}
-          activeOpacity={0.7}
-        >
-          <Image
-            source={images.appleLogo as ImageSourcePropType}
-            resizeMode="contain"
-            style={styles.logos}
-          />
-        </TouchableOpacity>
+        {Platform.OS === 'ios' &&
+          <TouchableOpacity
+            onPress={handleAppleSignIn}
+            disabled={loading}
+            activeOpacity={0.7}
+          >
+            <Image
+              source={images.appleLogo as ImageSourcePropType}
+              resizeMode="contain"
+              style={styles.logos}
+            />
+          </TouchableOpacity>
+        }
         <TouchableOpacity
           onPress={handleGoogleSignIn}
           disabled={loading}
