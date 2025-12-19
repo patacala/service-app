@@ -10,6 +10,7 @@ interface InitialValues {
   dateTime?: Date | null;
   address?: string;
   comments?: string;
+  useSavedAddress?: boolean;
 }
 
 interface FormServiceProps {
@@ -17,6 +18,7 @@ interface FormServiceProps {
   onDateTimeChange?: (date: Date) => void;
   onAddressChange?: (address: string) => void;
   onCommentChange?: (comment: string) => void;
+  onUseSavedAddressChange?: (value: boolean) => void;
   initialValues?: InitialValues;
 }
 
@@ -25,13 +27,14 @@ export const FormService: React.FC<FormServiceProps> = ({
   onDateTimeChange,
   onAddressChange,
   onCommentChange,
+  onUseSavedAddressChange,
   initialValues = {},
 }) => {
   const { profile } = useAuth();
   const [address, setAddress] = useState<string>(initialValues.address || '');
   const [comment, setComment] = useState<string>(initialValues.comments || '');
   const [selectedDate, setSelectedDate] = useState<Date | null>(initialValues.dateTime || null);
-  const [useSavedAddress, setUseSavedAddress] = useState(false);
+  const [useSavedAddress, setUseSavedAddress] = useState(initialValues.useSavedAddress ?? false);
   const [manualAddress, setManualAddress] = useState('');
   
   const isFirstMount = useRef(true);
@@ -83,6 +86,7 @@ export const FormService: React.FC<FormServiceProps> = ({
     }
 
     setUseSavedAddress(!useSavedAddress);
+    onUseSavedAddressChange?.(!useSavedAddress);
   };
 
   return (
