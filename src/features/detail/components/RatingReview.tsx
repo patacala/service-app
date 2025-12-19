@@ -26,7 +26,6 @@ export const RatingReview = ({
   reviewTitle
 }: RatingReviewProps) => {
   
-  // Función para renderizar estrellas basadas en la puntuación
   const renderStars = (count: number, size: number) => {
     const stars = [];
     for (let i = 0; i < count; i++) {
