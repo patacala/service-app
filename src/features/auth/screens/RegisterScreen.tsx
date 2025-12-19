@@ -178,19 +178,7 @@ export const RegisterScreen = () => {
         onChangeText={(value) => handleInputChange('city', value)}
         error={errors.city}
       />
-      {RegisterFormData.phone ? (
-        // Mostrar campo EMAIL si ya hay phone
-        <Input
-          label={t('signup.email')}
-          placeholder={t('signup.text-input-email')}
-          autoCapitalize="none"
-          keyboardType="email-address"
-          value={RegisterFormData.email}
-          onChangeText={(value) => handleInputChange('email', value)}
-          error={errors.email}
-        />
-      ) : (
-        // Mostrar campo PHONE si no hay phone
+      {!RegisterFormData.email ? (
         <Row justify="space-between">
           <Box style={styles.prefix} padding="md">
             <Typography variant="bodyRegular" colorVariant="secondary">+1</Typography>
@@ -205,6 +193,33 @@ export const RegisterScreen = () => {
             style={{ width: 250 }}
           />
         </Row>
+      ) : (
+        <>
+          <Input
+            label={t('signup.email')}
+            placeholder={t('signup.text-input-email')}
+            autoCapitalize="none"
+            keyboardType="email-address"
+            value={RegisterFormData.email}
+            onChangeText={(value) => handleInputChange('email', value)}
+            error={errors.email}
+            editable={false}
+          />
+          <Row justify="space-between">
+            <Box style={styles.prefix} padding="md">
+              <Typography variant="bodyRegular" colorVariant="secondary">+1</Typography>
+            </Box>
+            <Input
+              label={t('signupCompletion.number')}
+              placeholder={t('signupCompletion.text-input-number')}
+              keyboardType="numeric"
+              value={RegisterFormData.phone}
+              onChangeText={value => handleInputChange('phone', value.replace(/[^0-9]/g, '').slice(0, 10))}
+              error={errors.phone}
+              style={{ width: 250 }}
+            />
+          </Row>
+        </>
       )}
 
     </AuthenticationCard>
