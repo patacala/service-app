@@ -1,12 +1,16 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useTheme } from '@shopify/restyle';
 import { Box, Input, Theme, Typography } from '@/design-system';
+import { Pressable } from 'react-native';
+import { Row } from '@/design-system/components/layout/Row/Row';
+import { useAuth } from '@/infrastructure/auth/AuthContext';
 
 // Interfaz para los valores iniciales
 interface InitialValues {
   dateTime?: Date | null;
   address?: string;
   comments?: string;
+  useSavedAddress?: boolean;
 }
 
 interface FormServiceProps {
@@ -14,6 +18,7 @@ interface FormServiceProps {
   onDateTimeChange?: (date: Date) => void;
   onAddressChange?: (address: string) => void;
   onCommentChange?: (comment: string) => void;
+  onUseSavedAddressChange?: (value: boolean) => void;
   initialValues?: InitialValues;
 }
 
@@ -22,14 +27,16 @@ export const FormService: React.FC<FormServiceProps> = ({
   onDateTimeChange,
   onAddressChange,
   onCommentChange,
+  onUseSavedAddressChange,
   initialValues = {},
 }) => {
-  const theme = useTheme<Theme>();
-
+  const { profile } = useAuth();
   const [address, setAddress] = useState<string>(initialValues.address || '');
   const [comment, setComment] = useState<string>(initialValues.comments || '');
   const [selectedDate, setSelectedDate] = useState<Date | null>(initialValues.dateTime || null);
-
+  const [useSavedAddress, setUseSavedAddress] = useState(initialValues.useSavedAddress ?? false);
+  const [manualAddress, setManualAddress] = useState('');
+  
   const isFirstMount = useRef(true);
 
   // Efecto para actualizar estados si cambian los valores iniciales
@@ -60,14 +67,30 @@ export const FormService: React.FC<FormServiceProps> = ({
 
   const handleAddressChange = (value: string) => {
     setAddress(value);
-    if (onAddressChange) onAddressChange(value);
+    setUseSavedAddress(false);
+    onAddressChange?.(value);
   };
 
   const formattedDate = selectedDate ? formatDateTime(selectedDate) : '';
 
+  const handleToggleUseSavedAddress = () => {
+    if (!useSavedAddress) {
+      setManualAddress(address);
+
+      const profileAddress = profile?.address || '';
+      setAddress(profileAddress);
+      onAddressChange?.(profileAddress);
+    } else {
+      setAddress(manualAddress);
+      onAddressChange?.(manualAddress);
+    }
+
+    setUseSavedAddress(!useSavedAddress);
+    onUseSavedAddressChange?.(!useSavedAddress);
+  };
+
   return (
     <>
-      {/* 🔥 Nombre del servicio en vez de chips */}
       <Box marginTop="sm">
         <Typography variant="bodyMedium" color="white">Service Selected</Typography>
         <Box backgroundColor="colorGrey600" marginTop='md' padding="sm" borderRadius={15}>
@@ -95,7 +118,44 @@ export const FormService: React.FC<FormServiceProps> = ({
           icon="transfer"
           value={address}
           onChangeValue={handleAddressChange}
+          editable={!useSavedAddress}
         />
+
+        {profile?.address && (
+          <Box maxWidth={171}>
+            <Pressable
+              onPress={handleToggleUseSavedAddress}
+              accessibilityRole="checkbox"
+              accessibilityState={{ checked: useSavedAddress }}
+              hitSlop={10}
+            >
+              <Row marginLeft="sm">
+                <Box
+                  width={18}
+                  height={18}
+                  borderRadius={4}
+                  borderWidth={1}
+                  borderColor="colorBaseWhite"
+                  alignItems="center"
+                  justifyContent="center"
+                  backgroundColor={useSavedAddress ? "colorGrey300" : "colorBaseBlack"}
+                >
+                  {useSavedAddress && (
+                    <Box
+                      width={11}
+                      height={11}
+                      borderRadius={2}
+                      backgroundColor="colorBaseWhite"
+                    />
+                  )}
+                </Box>
+                <Typography variant="bodySmall" color="white">
+                  Use profile address
+                </Typography>
+              </Row>
+            </Pressable>
+          </Box>
+        )}
       </Box>
 
       {/* Comments */}

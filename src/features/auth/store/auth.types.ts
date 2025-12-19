@@ -1,4 +1,4 @@
-import { ImageObject, MediaVariant } from "@/features/media/store/media.types";
+import { DownloadedMedia, MediaObject, MediaVariant } from "@/features/media/store/media.types";
 
 // Request
 export interface RegisterRequest {
@@ -37,7 +37,7 @@ export interface ProfilePartial {
   name: string;
   city: string;
   address: string;
-  media?: ImageObject;
+  media?: MediaObject;
 }
 
 // Response

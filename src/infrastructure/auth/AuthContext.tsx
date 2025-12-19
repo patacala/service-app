@@ -1,6 +1,7 @@
 import React, { createContext, useEffect, useState, ReactNode, useContext } from 'react';
 import { SessionManager } from '@/infrastructure/session';
 import { useRouter } from 'expo-router';
+import { Profile } from '@/features/auth/store/auth.types';
 
 interface BackendUser {
   id: string;
@@ -9,30 +10,25 @@ interface BackendUser {
   role: string;
   isNewUser: boolean;
 }
-
-interface Profile {
-  name: string;
-  email: string;
-  phone: string;
-  location_city: string;
-  address: string;
-}
-
 type AuthContextType = {
   user: BackendUser | null;
+  profile: Profile | null;
   loading: boolean;
   token: string | null;
   login: (backendToken: string, userData: BackendUser | null) => Promise<void>;
   userUpdate: (userData: BackendUser | null) => Promise<void>;
+  profileUpdate: (profileData: Profile | null) => Promise<void>;
   logout: () => Promise<void>;
 };
 
 export const AuthContext = createContext<AuthContextType>({
   user: null,
+  profile: null,
   loading: true,
   token: null,
   login: async () => {},
   userUpdate: async () => {},
+  profileUpdate: async () => {},
   logout: async () => {},
 });
 
@@ -40,6 +36,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [loading, setLoading] = useState(true);
   const [sessionToken, setSessionToken] = useState<string | null>(null);
   const [sessionUser, setSessionUser] = useState<BackendUser | null>(null);
+  const [sessionProfile, setSessionProfile] = useState<Profile | null>(null);
 
   const sessionManager = SessionManager.getInstance();
   const router = useRouter();
@@ -55,10 +52,15 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     setSessionUser(sessionManager.user);
   };
 
+  const profileUpdate = async (profileData: Profile | null) => {
+    setSessionProfile(profileData);
+  };
+
   const logout = async () => {
     await sessionManager.clearSession();
     setSessionToken(null);
     setSessionUser(null);
+    setSessionProfile(null);
     router.replace('/intro');
   };
 
@@ -82,10 +84,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     <AuthContext.Provider
       value={{
         user: sessionUser,
+        profile: sessionProfile,
         loading,
         token: sessionToken,
         login,
         userUpdate,
+        profileUpdate,
         logout,
       }}
     >
@@ -94,5 +98,4 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   );
 };
 
-// Hook personalizado para consumir fácilmente el contexto en cualquier componente
 export const useAuth = () => useContext(AuthContext);

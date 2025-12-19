@@ -41,7 +41,9 @@ export const BookServiceForm: React.FC<BookServiceFormProps> = ({
     address: '',
     comments: '',
     responsibleName: '',
-    phoneNumber: ''
+    phoneNumber: '',
+    useSavedAddress: false,
+    useSavedNamePhone: false
   });
 
   useEffect(() => {
@@ -54,7 +56,9 @@ export const BookServiceForm: React.FC<BookServiceFormProps> = ({
         address: '',
         comments: '',
         responsibleName: '',
-        phoneNumber: ''
+        phoneNumber: '',
+        useSavedAddress: false,
+        useSavedNamePhone: false
       });
     }
     wasVisible.current = visible;
@@ -72,12 +76,20 @@ export const BookServiceForm: React.FC<BookServiceFormProps> = ({
     setServiceData(prev => ({ ...prev, address }));
   };
 
+  const handleUseSavedAddressChange = (value: boolean) => {
+    setServiceData(prev => ({ ...prev, useSavedAddress: value }));
+  };
+
   const handleResponsibleNameChange = (name: string) => {
     setServiceData(prev => ({ ...prev, responsibleName: name }));
   };
 
   const handlePhoneNumberChange = (phone: string) => {
     setServiceData(prev => ({ ...prev, phoneNumber: phone }));
+  };
+
+  const handleUseSavedNamePhoneChange = (value: boolean) => {
+    setServiceData(prev => ({ ...prev, useSavedNamePhone: value }));
   };
 
   const canContinue = () => {
@@ -138,8 +150,8 @@ export const BookServiceForm: React.FC<BookServiceFormProps> = ({
       secondaryButtonIcon="left-arrow"
       secondaryButtonVariant="outlined"
       onSecondaryButtonPress={handleBack}
-      height={currentStep === 1 ? '88%': !contactProviderVisible ? '70%':'64%'}
-      enableScroll={true}
+      height={currentStep === 1 ? '89%': !contactProviderVisible ? '58%':'64%'}
+      enableScroll={false}
     >
       {currentStep === 1 ? (
         <FormService
@@ -147,10 +159,12 @@ export const BookServiceForm: React.FC<BookServiceFormProps> = ({
           onDateTimeChange={handleDateTimeChange}
           onAddressChange={handleAddressChange}
           onCommentChange={handleTextChange}
+          onUseSavedAddressChange={handleUseSavedAddressChange}
           initialValues={{
             dateTime: serviceData.dateTime,
             address: serviceData.address,
-            comments: serviceData.comments
+            comments: serviceData.comments,
+            useSavedAddress: serviceData.useSavedAddress
           }}
         />
       ) : (
@@ -158,9 +172,11 @@ export const BookServiceForm: React.FC<BookServiceFormProps> = ({
           <FormResponsible
             onNameChange={handleResponsibleNameChange}
             onPhoneChange={handlePhoneNumberChange}
+            onUseSavedNamePhoneChange={handleUseSavedNamePhoneChange}
             initialValues={{
               name: serviceData.responsibleName,
-              phone: serviceData.phoneNumber
+              phone: serviceData.phoneNumber,
+              useSavedNamePhone: serviceData.useSavedNamePhone
             }}
           />
         ) : (
