@@ -72,7 +72,8 @@ export const ChatScreen = () => {
     const [isRejected, setIsRejected] = useState(initialStatusRef.current === 'rejected');
     const [isCancelled, setIsCancelled] = useState(initialStatusRef.current === 'cancelled');
     const [isCompleted, setIsCompleted] = useState(initialStatusRef.current === 'completed');
-    const isChatBlocked = isRejected || isCancelled || isCompleted;
+    const [isRated, setIsRated] = useState(initialStatusRef.current === 'rated');
+    const isChatBlocked = isRejected || isCancelled || isCompleted || isRated;
 
     const [message, setMessage] = useState('');
     const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -255,6 +256,7 @@ export const ChatScreen = () => {
             setIsRejected(false);
             setIsCancelled(false);
             setIsCompleted(false);
+            setIsRated(false);
 
             Animated.timing(buttonsOpacity, {
                 toValue: 0,
@@ -285,6 +287,7 @@ export const ChatScreen = () => {
             setIsAccepted(false);
             setIsCancelled(false);
             setIsCompleted(false);
+            setIsRated(false);
 
             Animated.timing(buttonsOpacity, {
                 toValue: 0,
