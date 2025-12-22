@@ -213,10 +213,6 @@ export const Input = forwardRef<TextInput, ExpandableInputProps>(({
         break;
       case 'date':
         setIcon(initialRightIcon || (dateMode === 'time' ? 'clock' : 'date'));
-        if (!value) {
-          setInputValue(formatDateTime(selectedDate));
-          setHasText(true);
-        }
         break;
       case 'textarea':
         // Configuraciones específicas para textarea
@@ -815,6 +811,7 @@ export const Input = forwardRef<TextInput, ExpandableInputProps>(({
             onBlur={handleBlur}
             onChangeText={handleChangeText}
             editable={!isDisabled && (variant !== 'date')}
+            pointerEvents={variant === 'date' ? 'none' : 'auto'}
             multiline={isMultiline || variant === 'textarea' || expandable}
             numberOfLines={variant === 'textarea' ? numberOfLines : undefined}
             maxLength={variant === 'textarea' ? maxLength : undefined}
