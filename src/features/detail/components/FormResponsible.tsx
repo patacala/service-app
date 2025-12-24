@@ -104,13 +104,13 @@ export const FormResponsible: React.FC<FormResponsibleProps> = ({
   return (
     <>
       <Box marginTop="sm" marginBottom="md">
-        <Typography variant="bodyMedium" color="white">Responsible for</Typography>
+        <Typography variant="bodyMedium" color="white">{t('details.Responsiblefor')}</Typography>
       </Box>
 
       <Box marginBottom="md">
         <Input
-          label="Name"
-          placeholder="Input your name"
+          label={t('details.inputname')}
+          placeholder={t('details.inputplacename')}
           value={name}
           onChangeValue={handleNameChange}
           editable={!useProfileData}
@@ -123,8 +123,8 @@ export const FormResponsible: React.FC<FormResponsibleProps> = ({
           </Box>
             
           <Input
-            label={t('signupCompletion.number')}
-            placeholder={t('signupCompletion.text-input-number')}
+            label={t('details.inputphone')}
+            placeholder={t('details.inputplacephone')}
             variant='numeric'
             value={phone}
             onChangeValue={handlePhoneChange}
@@ -166,7 +166,7 @@ export const FormResponsible: React.FC<FormResponsibleProps> = ({
                 )}
               </Box>
               <Typography variant="bodySmall" color="white">
-                Use profile data
+                {t('details.profiledata')}
               </Typography>
             </Row>
           </Pressable>
