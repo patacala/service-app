@@ -37,7 +37,7 @@ import { ProviderForm } from '@/features/provMode/components/ProviderForm';
 
 /* import { GoogleSignin } from '@react-native-google-signin/google-signin'; */
 import { useAuth } from '@/infrastructure/auth/AuthContext';
-import { ProfilePartial, useGetCurrentUserQuery, useUpdateProfileMutation } from '@/features/auth/store';
+import { ProfilePartial, useUpdateProfileMutation } from '@/features/auth/store';
 import { useGetCategoriesQuery } from '@/infrastructure/services/api';
 import { useCreateServiceMutation, useUpdateServiceMutation, useGetMyServicesQuery } from '@/features/services/store';
 import { useCreateVideoDirectUploadUrlMutation, useDeleteImageMutation, useUploadImageMutation, useUploadVideoToDirectUrlMutation } from '@/features/media/store/media.api';
