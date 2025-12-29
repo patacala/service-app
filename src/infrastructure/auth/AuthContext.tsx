@@ -1,4 +1,4 @@
-import React, { createContext, useEffect, useState, ReactNode, useContext } from 'react';
+import React, { createContext, useEffect, useState, ReactNode, useContext, useCallback } from 'react';
 import { SessionManager } from '@/infrastructure/session';
 import { useRouter } from 'expo-router';
 import { Profile } from '@/features/auth/store/auth.types';
@@ -41,28 +41,28 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const sessionManager = SessionManager.getInstance();
   const router = useRouter();
 
-  const login = async (backendToken: string, userData: BackendUser | null) => {
+  const login = useCallback(async (backendToken: string, userData: BackendUser | null) => {
     await sessionManager.setSession(backendToken, userData);
     setSessionToken(sessionManager.token);
     setSessionUser(sessionManager.user);
-  };
+  }, [sessionManager]);
 
-  const userUpdate = async (userData: BackendUser | null) => {
+  const userUpdate = useCallback(async (userData: BackendUser | null) => {
     await sessionManager.updateUser(userData);
     setSessionUser(sessionManager.user);
-  };
+  }, [sessionManager]);
 
-  const profileUpdate = async (profileData: Profile | null) => {
+  const profileUpdate = useCallback(async (profileData: Profile | null) => {
     setSessionProfile(profileData);
-  };
+  }, []);
 
-  const logout = async () => {
+  const logout = useCallback(async () => {
     await sessionManager.clearSession();
     setSessionToken(null);
     setSessionUser(null);
     setSessionProfile(null);
-    router.replace('/intro');
-  };
+    router.replace('/(auth)/intro');
+  }, [router, sessionManager]);
 
   useEffect(() => {
     const initializeSession = async () => {
@@ -72,13 +72,15 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         setSessionToken(sessionManager.token);
         setSessionUser(sessionManager.user);
       } catch (error) {
-        await logout();
+        if (error) {
+          await logout();
+        }
       } finally {
         setLoading(false);
       }
     };
     initializeSession();
-  }, []);
+  }, [sessionManager, logout]);
 
   return (
     <AuthContext.Provider

@@ -4,14 +4,6 @@ import { useTheme } from '@shopify/restyle';
 import { Box, Button, Theme, Typography } from '@/design-system';
 import images from '@/assets/images/images';
 
-// Interfaz para los valores iniciales
-interface InitialValues {
-  selectedServiceId?: string;
-  dateTime?: Date | null;
-  address?: string;
-  comments?: string;
-}
-
 interface FormServiceProps {
   onButtonPress?: () => void;
 }

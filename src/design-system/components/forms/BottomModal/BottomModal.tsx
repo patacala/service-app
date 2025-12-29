@@ -1,4 +1,4 @@
-import React, { useRef, useEffect, useState } from 'react';
+import React, { useRef, useEffect, useState, useCallback } from 'react';
 import {
   Modal,
   Dimensions,
@@ -102,7 +102,7 @@ export const BottomModal = React.forwardRef<
     }
     prevHeight.current = currentModalHeight;
     isFirstRender.current = false;
-  }, [currentModalHeight, internalVisible]);
+  }, [currentModalHeight, internalVisible, animatedHeight]);
 
   useEffect(() => {
     const keyboardWillShowListener = Keyboard.addListener(
@@ -135,16 +135,13 @@ export const BottomModal = React.forwardRef<
       keyboardWillShowListener.remove();
       keyboardWillHideListener.remove();
     };
-  }, [enableScroll]);
+  }, [enableScroll, keyboardAnim]);
 
-  useEffect(() => {
-    if (prevStep.current !== currentStep && !isClosing.current && !isStepChanging.current) {
-      animateStepChange();
-    }
-    prevStep.current = currentStep;
-  }, [currentStep]);
+  const completeStepChange = useCallback(() => {
+    isStepChanging.current = false;
+  }, []);
 
-  const animateStepChange = () => {
+  const animateStepChange = useCallback(() => {
     if (isStepChanging.current) return;
     isStepChanging.current = true;
 
@@ -161,13 +158,22 @@ export const BottomModal = React.forwardRef<
         });
       }
     });
-  };
+  }, [animatedHeight, translateY, screenHeight, completeStepChange]);
 
-  const completeStepChange = () => {
-    isStepChanging.current = false;
-  };
+  useEffect(() => {
+    if (prevStep.current !== currentStep && !isClosing.current && !isStepChanging.current) {
+      animateStepChange();
+    }
+    prevStep.current = currentStep;
+  }, [currentStep, animateStepChange]);
 
-  const closeWithAnimation = () => {
+  const finishClose = useCallback(() => {
+    isClosing.current = false;
+    setInternalVisible(false);
+    onClose?.();
+  }, [onClose]);
+
+  const closeWithAnimation = useCallback(() => {
     if (isClosing.current) return;
     isClosing.current = true;
     Keyboard.dismiss();
@@ -180,13 +186,7 @@ export const BottomModal = React.forwardRef<
         });
       }
     });
-  };
-
-  const finishClose = () => {
-    isClosing.current = false;
-    setInternalVisible(false);
-    onClose();
-  };
+  }, [animatedHeight, translateY, opacity, finishClose]);
 
   React.useImperativeHandle(ref, () => ({
     closeWithAnimation
@@ -205,7 +205,7 @@ export const BottomModal = React.forwardRef<
     } else if (!visible && internalVisible && !isClosing.current) {
       closeWithAnimation();
     }
-  }, [visible, internalVisible]);
+  }, [visible, internalVisible, animatedHeight, closeWithAnimation, currentModalHeight, opacity, translateY]);
 
   const panGesture = Gesture.Pan()
     .minPointers(1)
@@ -255,12 +255,12 @@ export const BottomModal = React.forwardRef<
 
   const handlePrimaryButtonPress = () => {
     Keyboard.dismiss();
-    onPrimaryButtonPress ? onPrimaryButtonPress() : closeWithAnimation();
+    onPrimaryButtonPress && closeWithAnimation();
   };
 
   const handleSecondaryButtonPress = () => {
     Keyboard.dismiss();
-    onSecondaryButtonPress ? onSecondaryButtonPress() : closeWithAnimation();
+    onSecondaryButtonPress && closeWithAnimation();
   };
 
   const shouldShowButtons = showPrimaryButton || showSecondaryButton;
@@ -427,3 +427,5 @@ export const BottomModal = React.forwardRef<
     </Modal>
   );
 });
+
+BottomModal.displayName = 'BottomModal';
