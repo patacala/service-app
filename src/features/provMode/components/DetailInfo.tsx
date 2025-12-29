@@ -4,7 +4,7 @@ import { useTheme } from '@shopify/restyle';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { Box, ChipOption, GroupChipSelector, Input, Theme, Typography } from '@/design-system';
+import { Box, ChipOption, GroupChipSelector, Input, Theme, Typography, Button } from '@/design-system';
 import { Row } from '@/design-system/components/layout/Row/Row';
 import { Icon } from '@/design-system/components/layout/Icon';
 import images from "@/assets/images/images";
@@ -96,7 +96,7 @@ export const DetailInfo: React.FC<DetailInfoProps> = ({
     if (initialValues.media && initialValues.media.length > 0) {
         generateInitialThumbnails();
     }
-  }, [initialValues.media, media]);
+  }, [initialValues.media]);
 
   useEffect(() => {
     const validMedia = media.filter(m => m.uri.trim() !== '');
