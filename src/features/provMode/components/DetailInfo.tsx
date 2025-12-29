@@ -4,9 +4,8 @@ import { useTheme } from '@shopify/restyle';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { Box, ChipOption, GroupChipSelector, Input, Theme, Typography, Button } from '@/design-system';
+import { Box, ChipOption, GroupChipSelector, Input, Theme, Typography } from '@/design-system';
 import { Row } from '@/design-system/components/layout/Row/Row';
-import { useTranslation } from 'react-i18next';
 import { Icon } from '@/design-system/components/layout/Icon';
 import images from "@/assets/images/images";
 import * as ImagePicker from 'expo-image-picker';
@@ -50,7 +49,6 @@ export const DetailInfo: React.FC<DetailInfoProps> = ({
   maxMedia = 10,
 }) => {
   const theme = useTheme<Theme>();
-  const { t } = useTranslation('auth');
   const scrollViewRef = useRef<ScrollView>(null);
 
   const {
@@ -98,7 +96,7 @@ export const DetailInfo: React.FC<DetailInfoProps> = ({
     if (initialValues.media && initialValues.media.length > 0) {
         generateInitialThumbnails();
     }
-  }, [initialValues.media]);
+  }, [initialValues.media, media]);
 
   useEffect(() => {
     const validMedia = media.filter(m => m.uri.trim() !== '');

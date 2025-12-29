@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { StyleSheet, Image, ImageSourcePropType } from 'react-native';
 import { useTheme } from '@shopify/restyle';
-import { BottomModal, Box, Input, Theme, Typography, Button } from '@/design-system';
+import { BottomModal, Box, Input, Theme, Typography } from '@/design-system';
 import { Row } from '@/design-system/components/layout/Row/Row';
 import { useTranslation } from 'react-i18next';
 import images from '@/assets/images/images';

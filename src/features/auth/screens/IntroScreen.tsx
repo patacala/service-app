@@ -13,10 +13,6 @@ export const IntroScreen = () => {
     router.push('/login');
   };
 
-  const handleSignUp = () => {
-    router.push('/register');
-  };
-
   return (
     <SafeContainer
       backgroundImage={backgroundImage as ImageSourcePropType}
