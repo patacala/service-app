@@ -87,6 +87,7 @@ export const InfoMain: React.FC<InfoMainProps> = ({
     initialValues.phone,
     initialValues.city,
     initialValues.address,
+    initialValues
   ]);
 
   const {
