@@ -83,7 +83,10 @@ export const InfoMain: React.FC<InfoMainProps> = ({
   const [secondGroupSelected, setSecondGroupSelected] = useState<string[]>([]);
   const [searchTerm, setSearchTerm] = useState<string>('');
   const dynamicSchema = useMemo(() => createDynamicSchema(initialValues), [
-    initialValues
+    initialValues.title,
+    initialValues.phone,
+    initialValues.city,
+    initialValues.address,
   ]);
 
   const {
@@ -152,31 +155,31 @@ export const InfoMain: React.FC<InfoMainProps> = ({
   useEffect(() => {
     const formIsValid = isValid && secondGroupOptions.length > 0;
     onValidationChange?.(formIsValid);
-  }, [isValid, secondGroupOptions.length, onValidationChange]);
+  }, [isValid, secondGroupOptions.length]);
 
   useEffect(() => {
     if (onTitleChange && watchedValues.title !== initialValues.title) {
       onTitleChange(watchedValues.title);
     }
-  }, [watchedValues.title, initialValues.title, onTitleChange]);
+  }, [watchedValues.title]);
 
   useEffect(() => {
     if (onPhoneChange && watchedValues.phone !== initialValues.phone) {
       onPhoneChange(watchedValues.phone);
     }
-  }, [watchedValues.phone, initialValues.phone, onPhoneChange]);
+  }, [watchedValues.phone]);
 
   useEffect(() => {
     if (onCityChange && watchedValues.city !== initialValues.city) {
       onCityChange(watchedValues.city);
     }
-  }, [watchedValues.city, initialValues.city, onCityChange]);
+  }, [watchedValues.city]);
 
   useEffect(() => {
     if (onAddressChange && watchedValues.address !== initialValues.address) {
       onAddressChange(watchedValues.address);
     }
-  }, [watchedValues.address, initialValues.address, onAddressChange]);
+  }, [watchedValues.address]);
 
   useEffect(() => {
     if (initialValues.selectedServices && 
