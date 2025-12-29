@@ -1,5 +1,5 @@
 import {StyleSheet} from 'react-native';
-import {theme, Theme} from '../../../theme';
+import {Theme} from '../../../theme';
 import {TypographyVariant} from './types';
 
 const TYPOGRAPHY_VARIANTS = {

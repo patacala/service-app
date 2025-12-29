@@ -1,15 +1,14 @@
 import React from 'react';
 import {ImageBackground, ImageSourcePropType} from 'react-native';
 import {SafeAreaView} from 'react-native-safe-area-context';
-import {createBox} from '@shopify/restyle';
+import {createBox,useTheme} from '@shopify/restyle';
 import {Theme} from '../../../theme';
-import {useTheme} from '@shopify/restyle';
 
 const Box = createBox<Theme>();
 
 export type SafeContainerProps = React.ComponentProps<typeof Box> & {
   fluid?: boolean;
-  edges?: Array<'top' | 'right' | 'bottom' | 'left'>;
+  edges?: ('top' | 'right' | 'bottom' | 'left')[];
   backgroundImage?: ImageSourcePropType;
   backgroundOpacity?: number;
 };

@@ -16,7 +16,7 @@ export const Otp = forwardRef<OtpRef, OtpProps>(({
   onChangeValue,
 }, ref) => {
   const [otpValues, setOtpValues] = useState<string[]>(Array(qtyDigits).fill(''));
-  const inputRefs = useRef<Array<TextInput | null>>(Array(qtyDigits).fill(null));
+  const inputRefs = useRef<(TextInput | null)[]>(Array(qtyDigits).fill(null));
 
   // Exponer métodos
   useImperativeHandle(ref, () => ({
@@ -87,3 +87,5 @@ export const Otp = forwardRef<OtpRef, OtpProps>(({
     </TouchableWithoutFeedback>
   );
 });
+
+Otp.displayName = 'Otp';

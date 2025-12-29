@@ -1,4 +1,4 @@
-import React, {useState, useRef, useEffect, forwardRef} from 'react';
+import React, {useState, useRef, useEffect, forwardRef, useCallback} from 'react';
 import {
   TextInput, 
   TouchableOpacity, 
@@ -77,6 +77,17 @@ export const Input = forwardRef<TextInput, ExpandableInputProps>(({
   const [isMultiline, setIsMultiline] = useState(variant === 'textarea' || (expandable && (props.multiline || false)));
   const [hasNewlines, setHasNewlines] = useState(value ? value.includes('\n') : false);
 
+  // Extraer valores de estilos
+  const normalTopPosition = styles.labelInput?.top as number;
+  const focusedTopPosition = styles.labelFocused?.top as number;
+  const normalFontSize = styles.labelText?.fontSize as number;
+  const focusedFontSize = styles.labelTextFocused?.fontSize as number;
+
+  // Animación para la posición Y del label
+  const labelPositionY = useRef(new Animated.Value(hasText ? focusedTopPosition : normalTopPosition)).current;
+  // Animación para el tamaño de fuente
+  const labelFontSize = useRef(new Animated.Value(hasText ? focusedFontSize : normalFontSize)).current;
+
   // Función para formatear la fecha y/o hora
   const formatDateTime = (date: Date): string => {
     const options: Intl.DateTimeFormatOptions = {
@@ -115,6 +126,42 @@ export const Input = forwardRef<TextInput, ExpandableInputProps>(({
     isFirstMount.current = false;
   }, []);
 
+  // Nueva función para animar el label basado en un estado específico
+  const animateLabel = useCallback((shouldElevate: boolean) => {
+    const normalTopPosition = styles.labelInput?.top as number;
+    const focusedTopPosition = styles.labelFocused?.top as number;
+    const normalFontSize = styles.labelText?.fontSize as number;
+    const focusedFontSize = styles.labelTextFocused?.fontSize as number;
+
+    if (shouldElevate) {
+      Animated.parallel([
+        Animated.timing(labelPositionY, {
+          toValue: focusedTopPosition,
+          duration: 0,
+          useNativeDriver: false,
+        }),
+        Animated.timing(labelFontSize, {
+          toValue: focusedFontSize,
+          duration: 0,
+          useNativeDriver: false,
+        }),
+      ]).start();
+    } else {
+      Animated.parallel([
+        Animated.timing(labelPositionY, {
+          toValue: normalTopPosition,
+          duration: 200,
+          useNativeDriver: false,
+        }),
+        Animated.timing(labelFontSize, {
+          toValue: normalFontSize,
+          duration: 200,
+          useNativeDriver: false,
+        }),
+      ]).start();
+    }
+  }, [styles, labelPositionY, labelFontSize]);
+
   // Actualizar estado interno cuando cambia value prop
   useEffect(() => {
     if (value !== undefined) {
@@ -148,43 +195,7 @@ export const Input = forwardRef<TextInput, ExpandableInputProps>(({
         animateLabel(Boolean(value));
       }
     }
-  }, [value, variant]);
-  
-  // Nueva función para animar el label basado en un estado específico
-  const animateLabel = (shouldElevate: boolean) => {
-    const normalTopPosition = styles.labelInput?.top as number;
-    const focusedTopPosition = styles.labelFocused?.top as number;
-    const normalFontSize = styles.labelText?.fontSize as number;
-    const focusedFontSize = styles.labelTextFocused?.fontSize as number;
-    
-    if (shouldElevate) {
-      Animated.parallel([
-        Animated.timing(labelPositionY, {
-          toValue: focusedTopPosition,
-          duration: 0, // Hacer inmediato
-          useNativeDriver: false,
-        }),
-        Animated.timing(labelFontSize, {
-          toValue: focusedFontSize,
-          duration: 0, // Hacer inmediato
-          useNativeDriver: false,
-        }),
-      ]).start();
-    } else {
-      Animated.parallel([
-        Animated.timing(labelPositionY, {
-          toValue: normalTopPosition,
-          duration: 200,
-          useNativeDriver: false,
-        }),
-        Animated.timing(labelFontSize, {
-          toValue: normalFontSize,
-          duration: 200,
-          useNativeDriver: false,
-        }),
-      ]).start();
-    }
-  };
+  }, [value, variant, animateLabel, expandable, isFocused]);
   
   // Configurar propiedades específicas según la variante
   useEffect(() => {
@@ -225,17 +236,6 @@ export const Input = forwardRef<TextInput, ExpandableInputProps>(({
       
     }
   }, [variant, initialRightIcon, initialSecureTextEntry, props.keyboardType, hasText, selectedDate, dateMode]);
-
-  // Extraer valores de estilos
-  const normalTopPosition = styles.labelInput?.top as number;
-  const focusedTopPosition = styles.labelFocused?.top as number;
-  const normalFontSize = styles.labelText?.fontSize as number;
-  const focusedFontSize = styles.labelTextFocused?.fontSize as number;
-
-  // Animación para la posición Y del label
-  const labelPositionY = useRef(new Animated.Value(hasText ? focusedTopPosition : normalTopPosition)).current;
-  // Animación para el tamaño de fuente
-  const labelFontSize = useRef(new Animated.Value(hasText ? focusedFontSize : normalFontSize)).current;
 
   useEffect(() => {
     // Cuando el input tiene foco o texto, animamos el label hacia arriba
@@ -845,3 +845,5 @@ export const Input = forwardRef<TextInput, ExpandableInputProps>(({
     </Box>
   );
 });
+
+Input.displayName = 'Input';

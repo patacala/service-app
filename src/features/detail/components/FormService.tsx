@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { useTheme } from '@shopify/restyle';
-import { Box, Input, Theme, Typography } from '@/design-system';
+import { Box, Input, Typography } from '@/design-system';
 import { Pressable } from 'react-native';
 import { Row } from '@/design-system/components/layout/Row/Row';
 import { useAuth } from '@/infrastructure/auth/AuthContext';
@@ -114,15 +113,6 @@ export const FormService: React.FC<FormServiceProps> = ({
           onDateChange={handleDateTimeChange}
           value={formattedDate}
         />
-        <Input
-          label={t("details.address")}
-          placeholder={t("details.address")}
-          icon="transfer"
-          value={address}
-          onChangeValue={handleAddressChange}
-          editable={!useSavedAddress}
-        />
-
         {profile?.address && (
           <Box maxWidth={190}>
             <Pressable
@@ -158,6 +148,14 @@ export const FormService: React.FC<FormServiceProps> = ({
             </Pressable>
           </Box>
         )}
+        <Input
+          label={t("details.address")}
+          placeholder={t("details.address")}
+          icon="transfer"
+          value={address}
+          onChangeValue={handleAddressChange}
+          editable={!useSavedAddress}
+        />
       </Box>
 
       {/* Comments */}
