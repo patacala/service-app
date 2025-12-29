@@ -1,5 +1,5 @@
 import {createSlice, PayloadAction} from '@reduxjs/toolkit';
-import {UserRole} from '../../assembler/navigation/types';
+import { UserRole } from './slices/auth.slice';
 
 interface AuthState {
   isAuthenticated: boolean;

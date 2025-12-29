@@ -1,5 +1,5 @@
 import { GoogleSignin } from '@react-native-google-signin/google-signin';
-import auth, { FirebaseAuthTypes } from '@/infrastructure/config/firebase';
+import firebaseAuth, { FirebaseAuthTypes } from '@/infrastructure/config/firebase';
 
 /**
  * Single Responsibility: Handle ONLY Google Sign-In with Firebase
@@ -23,24 +23,18 @@ export class GoogleAuthService {
     await GoogleSignin.hasPlayServices({ showPlayServicesUpdateDialog: true });
 
     // Get user info from Google
-    const signInResult = await GoogleSignin.signIn();
-    let idToken = signInResult.idToken;
+    await GoogleSignin.signIn();
+    const tokens = await GoogleSignin.getTokens();
 
-    // Fallback: some environments require an explicit getTokens() call
-    if (!idToken) {
-      const tokens = await GoogleSignin.getTokens();
-      idToken = tokens.idToken;
-    }
-
-    if (!idToken) {
+    if (!tokens.idToken) {
       throw new Error('No ID token returned from Google Sign-In');
     }
 
     // Create Firebase credential
-    const googleCredential = auth.GoogleAuthProvider.credential(idToken);
+    const googleCredential = firebaseAuth.GoogleAuthProvider.credential(tokens.idToken);
 
     // Sign in to Firebase with Google credential
-    return auth().signInWithCredential(googleCredential);
+    return firebaseAuth().signInWithCredential(googleCredential);
   }
 
   async signOut(): Promise<void> {

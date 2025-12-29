@@ -19,7 +19,7 @@ import { useCreateAccountProvServiceMutation } from '@/features/services/store';
 import { useCreateVideoDirectUploadUrlMutation, useDeleteImageMutation, useUploadImageMutation, useUploadVideoToDirectUrlMutation } from '@/features/media/store/media.api';
 import { useAuth } from "@/infrastructure/auth/AuthContext";
 import { router } from "expo-router";
-import { DownloadedMedia, MediaObject, RNFileLike } from "@/features/media/store/media.types";
+import { MediaObject, RNFileLike } from "@/features/media/store/media.types";
 
 interface Location {
   id: string;
@@ -40,7 +40,7 @@ export const ProvModeScreen = () => {
       refetchOnFocus: true,
       refetchOnReconnect: true
   });
-  const [createAccountProvService, { isLoading: isLoadingCreateAccountProvService }] = useCreateAccountProvServiceMutation();
+  const [createAccountProvService] = useCreateAccountProvServiceMutation();
   
   // Mutations para manejo de imágenes y videos
   const [uploadImage] = useUploadImageMutation();
@@ -87,7 +87,7 @@ export const ProvModeScreen = () => {
         text2: t("messages.msg21"),
       });
     }
-  }, [categoriesError]);
+  }, [categoriesError, t]);
   
   useEffect(() => {
     if (profileError) {
@@ -97,7 +97,7 @@ export const ProvModeScreen = () => {
         text2: t("messages.msg35")
       });
     }
-  }, [profileError]);
+  }, [profileError, t]);
 
   const uploadMediaFromFormData = async (
     mediaUris: string[]
@@ -147,7 +147,7 @@ export const ProvModeScreen = () => {
       }
 
       return await Promise.all(uploadPromises);
-    } catch (error: any) {
+    } catch {
       for (const media of uploadedMediaForCleanup) {
         if (media.id) {
           try {
@@ -174,7 +174,6 @@ export const ProvModeScreen = () => {
 
   const handleProviderSubmit = async (data: ProviderFormData) => {
     let finalUploadedMedia: MediaObject[] = [];
-    let mediaDownloaded: DownloadedMedia[] = []; 
     setIsSubmitting(true);
 
     try {

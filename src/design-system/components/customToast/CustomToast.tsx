@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { StyleSheet } from 'react-native';
 import { BaseToast, ErrorToast } from 'react-native-toast-message';
 
 export const toastConfig = {
