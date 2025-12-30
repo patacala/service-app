@@ -79,3 +79,5 @@ export const SendCode = forwardRef(({
     />
   );
 });
+
+SendCode.displayName = 'SendCode';

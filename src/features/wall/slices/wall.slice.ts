@@ -2,7 +2,6 @@ import {createSlice, PayloadAction, createAsyncThunk} from '@reduxjs/toolkit';
 import { ImageSourcePropType } from 'react-native';
 import { Float } from 'react-native/Libraries/Types/CodegenTypes';
 import { IconName } from '@/design-system/components/layout/Icon';
-import { Media } from '@/features/media/store/media.types';
 
 export interface CardPost {
   id: string;
@@ -27,7 +26,7 @@ export interface CardPost {
   distance: number;
   location: string;
   isFavorite: boolean;
-  media: Media[];
+  media: [];
 }
 
 export interface Post {
@@ -57,11 +56,11 @@ interface WallState {
     maxPrice?: number;
     tags?: string[];
   };
-  categories: Array<{ id: string; label: string; icon?: IconName }>;
-  pinnedServices: Array<{ id: string; label: string; icon?: IconName }>;
-  allServices: Array<{ id: string; label: string }>;
-  locations: Array<{ id: string; name: string }>;
-  recentLocations: Array<{ id: string; name: string }>;
+  categories: { id: string; label: string; icon?: IconName }[];
+  pinnedServices: { id: string; label: string; icon?: IconName }[];
+  allServices: { id: string; label: string }[];
+  locations: { id: string; name: string }[];
+  recentLocations: { id: string; name: string }[];
 }
 
 const initialState: WallState = {
@@ -259,7 +258,7 @@ export const fetchPosts = createAsyncThunk(
     try {
       await new Promise(resolve => setTimeout(resolve, 500));    
       return samplePosts;
-    } catch (error) {
+    } catch {
       return rejectWithValue('Error al cargar los posts');
     }
   }
@@ -272,7 +271,7 @@ export const fetchCategories = createAsyncThunk(
     try {
       await new Promise(resolve => setTimeout(resolve, 300));
       return sampleCategories;
-    } catch (error) {
+    } catch {
       return rejectWithValue('Error al cargar las categorías');
     }
   }
@@ -288,7 +287,7 @@ export const fetchServices = createAsyncThunk(
         pinnedServices: samplePinnedServices,
         allServices: sampleAllServices
       };
-    } catch (error) {
+    } catch {
       return rejectWithValue('Error al cargar los servicios');
     }
   }
@@ -301,7 +300,7 @@ export const fetchLocations = createAsyncThunk(
     try {
       await new Promise(resolve => setTimeout(resolve, 300));
       return sampleLocations;
-    } catch (error) {
+    } catch {
       return rejectWithValue('Error al cargar las ubicaciones');
     }
   }

@@ -36,7 +36,7 @@ export const OtpScreen = () => {
     otpRef.current?.clear();
     otpRef.current?.focusFirst();
     clearAll();
-  }, []);
+  }, [clearAll]);
 
   useEffect(() => {
     if (loginError) {
@@ -46,7 +46,7 @@ export const OtpScreen = () => {
         text2: 'Error al autenticar con el servidor'
       });
     }
-  }, [loginError]);
+  }, [loginError, t]);
 
   const handleResendCode = async () => {
     try {
@@ -60,7 +60,7 @@ export const OtpScreen = () => {
       
       otpRef.current?.clear();
       otpRef.current?.focusFirst();
-    } catch (err: any) {
+    } catch {
       Toast.show({
         type: 'error',
         text1: t("messages.msg8"),

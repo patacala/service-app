@@ -30,72 +30,70 @@ import { MediaDto } from "@/features/messages/store/messages.types";
 export const ChatScreen = () => {
     const router = useRouter();
     const { post } = useLocalSearchParams<{ post?: string }>();
+    
     const [uploadImage] = useUploadImageMutation();
     const [deleteImage] = useDeleteImageMutation();
-
-    let servicePost: BookService | null = null;
-    try {
-        servicePost = post ? JSON.parse(post) : null;
-    } catch (error) {
-        console.error('Error parsing post data:', error);
-    }
-
-    if (!servicePost) {
-        useEffect(() => {
-            Alert.alert('Error', 'Service data not found', [
-                { text: 'OK', onPress: () => router.back() }
-            ]);
-        }, []);
-        
-        return (
-            <SafeContainer fluid backgroundColor="colorBaseBlack" paddingHorizontal="md">
-                <Box flex={1} justifyContent="center" alignItems="center">
-                    <Typography variant="bodyMedium" color={theme.colors.colorBaseWhite}>
-                        Loading...
-                    </Typography>
-                </Box>
-            </SafeContainer>
-        );
-    }
-
-    const bookServiceId = servicePost.id;
-    const currentUserId = servicePost.bookingType === 'provider'
-        ? servicePost.provider?.id
-        : servicePost.client?.id;
-
     const [updateBookServiceStatus, { isLoading: isLoadUpdateBookServiceSta }] = useUpdateBookServiceStatusMutation();
     const [createMessage] = useCreateMessageMutation();
-
-    const initialStatusRef = useRef(servicePost.status);
-
-    const [isAccepted, setIsAccepted] = useState(initialStatusRef.current === 'accepted');
-    const [isRejected, setIsRejected] = useState(initialStatusRef.current === 'rejected');
-    const [isCancelled, setIsCancelled] = useState(initialStatusRef.current === 'cancelled');
-    const [isCompleted, setIsCompleted] = useState(initialStatusRef.current === 'completed');
-    const isChatBlocked = isRejected || isCancelled || isCompleted;
-
+    const [isAccepted, setIsAccepted] = useState(false);
+    const [isRejected, setIsRejected] = useState(false);
+    const [isCancelled, setIsCancelled] = useState(false);
+    const [isCompleted, setIsCompleted] = useState(false);
+    const [isRated, setIsRated] = useState(false);
     const [message, setMessage] = useState('');
     const [messages, setMessages] = useState<ChatMessage[]>([]);
+
     const scrollViewRef = useRef<ScrollView>(null);
     const buttonsOpacity = useRef(new Animated.Value(1)).current;
     const channelRef = useRef<any>(null);
     const messagesLoadedRef = useRef(false);
+    const initialStatusRef = useRef<string | null>(null);
 
     const { data: serverMessages = [], isLoading: isLoadingMessages } = useGetMessagesQuery(
-        { bookServiceId: bookServiceId },
-        { skip: !bookServiceId }
+        { bookServiceId: '' },
+        { skip: true }
     );
+
+    let servicePost: BookService | null = null;
+    try {
+        const parsedPost = post ? JSON.parse(post) : null;
+        servicePost = parsedPost;
+    } catch (error) {
+        console.error('Error parsing post data:', error);
+    }
+
+    const bookServiceId = servicePost?.id || '';
+    const currentUserId = servicePost 
+        ? (servicePost.bookingType === 'provider'
+            ? servicePost.provider?.id
+            : servicePost.client?.id)
+        : '';
+
+    const isChatBlocked = isRejected || isCancelled || isCompleted || isRated;
+
+    useEffect(() => {
+        if (!servicePost) {
+            Alert.alert('Error', 'Service data not found', [
+                { text: 'OK', onPress: () => router.back() },
+            ]);
+        } else if (initialStatusRef.current === null) {
+            initialStatusRef.current = servicePost.status;
+            setIsAccepted(servicePost.status === 'accepted');
+            setIsRejected(servicePost.status === 'rejected');
+            setIsCancelled(servicePost.status === 'cancelled');
+            setIsCompleted(servicePost.status === 'completed');
+            setIsRated(servicePost.status === 'rated');
+        }
+    }, [servicePost, router]);
 
     const getProfileImage = (
         senderId: string,
         servicePost: BookService
     ) => {
         const isProviderSender = senderId === servicePost.provider?.id;
-
         if (isProviderSender) {
             return servicePost.provider?.media?.profileThumbnail?.url ?? null;
         }
-
         return servicePost.client?.media?.profileThumbnail?.url ?? null;
     };
 
@@ -142,14 +140,14 @@ export const ChatScreen = () => {
                     position: file.position
                 }))
             };
-        } catch (error) {
-            console.error('Error in fetchMessageWithMedia:', error);
+        } catch (e) {
+            console.error('Error in fetchMessageWithMedia:', e);
             return null;
         }
     };
 
     useEffect(() => {
-        if (!bookServiceId || !currentUserId) return;
+        if (!bookServiceId || !currentUserId || !servicePost) return;
 
         const channel = supabase
             .channel(`chat_${bookServiceId}`)
@@ -204,10 +202,10 @@ export const ChatScreen = () => {
                 supabase.removeChannel(channelRef.current);
             }
         };
-    }, [bookServiceId, currentUserId]);
+    }, [bookServiceId, currentUserId, servicePost]);
 
     useEffect(() => {
-        if (serverMessages.length > 0 && currentUserId && !messagesLoadedRef.current) {
+        if (serverMessages.length > 0 && currentUserId && !messagesLoadedRef.current && servicePost) {
             const formatted = serverMessages.map((msg: any) => {
                 const isReceived = msg.senderId !== currentUserId;
                 const imageProfile = getProfileImage(msg.senderId, servicePost);
@@ -223,7 +221,7 @@ export const ChatScreen = () => {
             messagesLoadedRef.current = true;
             scrollToBottom();
         }
-    }, [serverMessages, currentUserId]);
+    }, [serverMessages, currentUserId, servicePost]);
 
     useEffect(() => {
         const keyboardDidShowListener = Keyboard.addListener('keyboardDidShow', scrollToBottom);
@@ -255,6 +253,7 @@ export const ChatScreen = () => {
             setIsRejected(false);
             setIsCancelled(false);
             setIsCompleted(false);
+            setIsRated(false);
 
             Animated.timing(buttonsOpacity, {
                 toValue: 0,
@@ -263,8 +262,8 @@ export const ChatScreen = () => {
             }).start(() => {
                 setTimeout(() => scrollToBottom(), 150);
             });
-        } catch (error) {
-            console.error('Error accepting service:', error);
+        } catch (e) {
+            console.error('Error accepting service:', e);
             Alert.alert('Error', 'Failed to accept the service. Please try again.');
         }
     };
@@ -285,6 +284,7 @@ export const ChatScreen = () => {
             setIsAccepted(false);
             setIsCancelled(false);
             setIsCompleted(false);
+            setIsRated(false);
 
             Animated.timing(buttonsOpacity, {
                 toValue: 0,
@@ -293,14 +293,14 @@ export const ChatScreen = () => {
             }).start(() => {
                 setTimeout(() => scrollToBottom(), 150);
             });
-        } catch (error) {
-            console.error('Error rejecting service:', error);
+        } catch (e) {
+            console.error('Error rejecting service:', e);
             Alert.alert('Error', 'Failed to reject the service. Please try again.');
         }
     };
 
     const handleSendMessage = async (payload?: { text: string; image: string | null }) => {
-        if (isChatBlocked || !bookServiceId || !currentUserId) return;
+        if (isChatBlocked || !bookServiceId || !currentUserId || !servicePost) return;
 
         const textToSend = payload?.text ?? message.trim();
         const imageLocalUri = payload?.image ?? null;
@@ -361,8 +361,8 @@ export const ChatScreen = () => {
                             )
                         );
                     }
-                } catch (error) {
-                    console.error("Error uploading image:", error);
+                } catch (e) {
+                    console.error("Error uploading image:", e);
                     setMessages(prev =>
                         prev.map(m =>
                             m === tempMessage
@@ -384,8 +384,8 @@ export const ChatScreen = () => {
                 media: mediaToSend
             }).unwrap();
 
-        } catch (error) {
-            console.error("Error sending message:", error);
+        } catch (e) {
+            console.error("Error sending message:", e);
             
             if (uploadedImageId) {
                 try {
@@ -404,6 +404,18 @@ export const ChatScreen = () => {
     const handleInputFocus = () => {
         scrollToBottom();
     };
+
+    if (!servicePost) {        
+        return (
+            <SafeContainer fluid backgroundColor="colorBaseBlack" paddingHorizontal="md">
+                <Box flex={1} justifyContent="center" alignItems="center">
+                    <Typography variant="bodyMedium" color={theme.colors.colorBaseWhite}>
+                        Loading...
+                    </Typography>
+                </Box>
+            </SafeContainer>
+        );
+    }
 
     const showActionButtons = servicePost.status === 'pending' && servicePost.bookingType === 'provider';
     

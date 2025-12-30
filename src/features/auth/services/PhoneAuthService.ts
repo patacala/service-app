@@ -1,4 +1,4 @@
-import auth, { FirebaseAuthTypes } from '@/infrastructure/config/firebase';
+import firebaseAuth, { FirebaseAuthTypes } from '@/infrastructure/config/firebase';
 
 /**
  * Single Responsibility: Handle ONLY Firebase phone authentication
@@ -9,18 +9,18 @@ export class PhoneAuthService {
       throw new Error('Phone number must include country code');
     }
     
-    return await auth().signInWithPhoneNumber(phoneNumber);
+    return await firebaseAuth().signInWithPhoneNumber(phoneNumber);
   }
 
   async verifyCode(
     confirmation: FirebaseAuthTypes.ConfirmationResult,
     code: string
-  ): Promise<FirebaseAuthTypes.UserCredential> {
+  ): Promise<FirebaseAuthTypes.UserCredential | null> {
     if (code.length !== 6 || !/^\d{6}$/.test(code)) {
       throw new Error('Invalid OTP code format');
     }
 
-    return confirmation.confirm(code);
+    return await confirmation.confirm(code);
   }
 
   async getIdToken(user: FirebaseAuthTypes.User): Promise<string> {

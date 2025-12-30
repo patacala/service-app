@@ -1,4 +1,4 @@
-import { DownloadedMedia, MediaObject, MediaVariant } from "@/features/media/store/media.types";
+import { MediaObject, MediaVariant } from "@/features/media/store/media.types";
 
 // Request
 export interface RegisterRequest {

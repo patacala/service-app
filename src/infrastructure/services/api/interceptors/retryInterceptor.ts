@@ -1,5 +1,5 @@
 import { AxiosError, AxiosInstance } from 'axios';
-import NetworkConfig from '@/config/network';
+import { NetworkConfig } from '@/config/network';
 
 /**
  * Configura un interceptor de reintentos para solicitudes fallidas

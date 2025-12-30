@@ -91,7 +91,7 @@ export const ChatInput = forwardRef<TextInput, ChatInputProps>(({
         }),
       ]).start();
     }
-  }, [isFocused, hasText]);
+  }, [isFocused, hasText, focusedTopPosition, normalTopPosition, focusedFontSize, normalFontSize, labelPositionY, labelFontSize]);
 
   const handleContentSizeChange = (event: any) => {
     const { height } = event.nativeEvent.contentSize;
@@ -287,3 +287,5 @@ export const ChatInput = forwardRef<TextInput, ChatInputProps>(({
     </Box>
   );
 });
+
+ChatInput.displayName = 'ChatInput';

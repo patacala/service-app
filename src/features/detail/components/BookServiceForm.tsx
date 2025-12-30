@@ -5,6 +5,7 @@ import { FormResponsible } from './FormResponsible';
 import { ContactProvider } from './ContactProvider';
 import { useRouter } from 'expo-router';
 import { Service } from '@/features/services/store';
+import { useTranslation } from 'react-i18next';
 
 interface BookServiceFormProps {
   visible: boolean;
@@ -29,6 +30,7 @@ export const BookServiceForm: React.FC<BookServiceFormProps> = ({
   service,
   onSubmit
 }) => {
+  const { t } = useTranslation('auth');
   const router = useRouter();
   const [currentStep, setCurrentStep] = useState<number>(1);
   const [contactProviderVisible, setContactProviderVisible] = useState<boolean>(false);
@@ -134,15 +136,15 @@ export const BookServiceForm: React.FC<BookServiceFormProps> = ({
     <BottomModal
       visible={visible}
       onClose={onClose}
-      title={!contactProviderVisible ? "Book Service":""}
-      subtitle={!contactProviderVisible ?"Complete your painter request":""}
+      title={!contactProviderVisible ? t("details.bookservicesmall"):""}
+      subtitle={!contactProviderVisible ? t("details.subtitlecomplete"):""}
       draggable={true}
       activateSteps={!contactProviderVisible}
       currentStep={currentStep}
       totalSteps={2}
       showPrimaryButton={!contactProviderVisible}
-      primaryButtonText={currentStep === 2 ? (!contactProviderVisible ? "Complete Request" : "Contact Provider") : "Continue"}
-      secondaryButtonText={currentStep === 2 ? "Go back" : "Cancel"}
+      primaryButtonText={currentStep === 2 ? (!contactProviderVisible ? t("details.completerequest"): t("details.contactprovider")) : t("details.btncontinue")}
+      secondaryButtonText={currentStep === 2 ? t("details.btngoback") : t("details.btncancel")}
       primaryButtonVariant="secondary"
       onPrimaryButtonPress={handleContinue}
       primaryButtonDisabled={disabled || (!contactProviderVisible ? !canContinue() : false)}

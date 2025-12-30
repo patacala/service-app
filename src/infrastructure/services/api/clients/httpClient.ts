@@ -1,7 +1,7 @@
 import axios, { AxiosInstance } from 'axios';
 import { SessionManager } from '@/infrastructure/session';
 import { proceedLogout } from '@/infrastructure/auth/proceedLogout';
-import NetworkConfig from '@/config/network';
+import { NetworkConfig } from '@/config/network';
 import { setupRetryInterceptor } from '../interceptors/retryInterceptor';
 
 const httpClient: AxiosInstance = axios.create({

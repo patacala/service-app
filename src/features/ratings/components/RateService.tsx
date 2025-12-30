@@ -1,5 +1,5 @@
-import React, { useEffect, useRef, useState } from "react";
-import { Animated, Image, ImageSourcePropType, ActivityIndicator } from "react-native";
+import React, { useCallback, useEffect, useRef, useState } from "react";
+import { Animated, Image, ImageSourcePropType } from "react-native";
 import { Box, Typography, Rate, Button, BottomModal, Input } from "@/design-system";
 import images from "@/assets/images/images";
 
@@ -25,15 +25,7 @@ export const RateService: React.FC<RateServiceProps> = ({
   const formOpacity = useRef(new Animated.Value(0)).current;
   const rateComponentOpacity = useRef(new Animated.Value(1)).current;
 
-  useEffect(() => {
-    if (visible) {
-      setTimeout(() => resetState(), 50);
-    } else {
-      resetState();
-    }
-  }, [visible]);
-
-  const resetState = () => {
+  const resetState = useCallback(() => {
     rateTextOpacity.stopAnimation();
     formOpacity.stopAnimation();
     rateComponentOpacity.stopAnimation();
@@ -46,7 +38,15 @@ export const RateService: React.FC<RateServiceProps> = ({
     rateTextOpacity.setValue(1);
     formOpacity.setValue(0);
     rateComponentOpacity.setValue(1);
-  };
+  }, [rateTextOpacity, formOpacity, rateComponentOpacity]);
+  
+  useEffect(() => {
+    if (visible) {
+      setTimeout(() => resetState(), 50);
+    } else {
+      resetState();
+    }
+  }, [visible, resetState]);
 
   const animateToForm = () => {
     Animated.parallel([

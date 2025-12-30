@@ -2,7 +2,6 @@ import React from "react";
 import { Image, ImageSourcePropType } from "react-native";
 import { Box, Typography, Button, BottomModal } from "@/design-system";
 import images from "@/assets/images/images";
-import { useTranslation } from "react-i18next";
 
 interface CompletedServiceProps {
   visible: boolean;
@@ -17,8 +16,6 @@ export const CompletedService: React.FC<CompletedServiceProps> = ({
   onComplete = () => console.log("Service completed"),
   isLoading = false,
 }) => {
-    const { t } = useTranslation('auth');
-    
     const handleCancel = () => {
         if (!isLoading) {
             onComplete();

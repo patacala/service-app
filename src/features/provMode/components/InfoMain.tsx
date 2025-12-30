@@ -3,7 +3,6 @@ import { StyleSheet } from 'react-native';
 import { useTheme } from '@shopify/restyle';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import Toast from 'react-native-toast-message';
 import { z } from 'zod';
 import { Box, ChipOption, GroupChipSelector, Input, Theme, Typography } from '@/design-system';
 import { Row } from '@/design-system/components/layout/Row/Row';
@@ -88,6 +87,7 @@ export const InfoMain: React.FC<InfoMainProps> = ({
     initialValues.phone,
     initialValues.city,
     initialValues.address,
+    initialValues
   ]);
 
   const {

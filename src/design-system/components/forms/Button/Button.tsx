@@ -48,6 +48,75 @@ export const Button: React.FC<ButtonProps> = ({
   
   const containerStyle = buttonStyles.container;
 
+  const [sliding, setSliding] = useState(false);
+  const dragX = useRef(new Animated.Value(0)).current;
+  const buttonOpacity = useRef(new Animated.Value(1)).current;
+  const backgroundOpacity = useRef(new Animated.Value(0)).current;
+  const panResponder = useRef<any>(null);
+
+  const buttonWidth = width || Dimensions.get('window').width - 40;
+  const thumbSize = height - 8;
+  const maxSlide = buttonWidth - thumbSize - 8;
+  const thumbColor = slideThumbColor || '#3D3D3D';
+
+  // EFFECT para reiniciar el botón si cambia disabled
+  useEffect(() => {
+    if (disabled && sliding) {
+      Animated.spring(dragX, {
+        toValue: 0,
+        friction: 5,
+        tension: 40,
+        useNativeDriver: false
+      }).start(() => {
+        setSliding(false);
+        backgroundOpacity.setValue(0);
+      });
+    }
+  }, [disabled, sliding, dragX, backgroundOpacity]);
+
+  // EFFECT para crear el pan responder una sola vez
+  useEffect(() => {
+    if (!panResponder.current) {
+      panResponder.current = PanResponder.create({
+        onStartShouldSetPanResponder: () => !disabled,
+        onMoveShouldSetPanResponder: () => !disabled,
+        
+        onPanResponderGrant: () => {
+          setSliding(true);
+        },
+        
+        onPanResponderMove: (_, gestureState) => {
+          const newX = Math.max(0, Math.min(gestureState.dx, maxSlide));
+          dragX.setValue(newX);
+          const progress = newX / maxSlide;
+          backgroundOpacity.setValue(progress);
+        },
+        
+        onPanResponderRelease: (_, gestureState) => {
+          if (gestureState.dx > maxSlide * 0.9) {
+            Animated.timing(dragX, {
+              toValue: maxSlide,
+              duration: 100,
+              useNativeDriver: false
+            }).start(() => {
+              if (onPress) onPress();
+            });
+          } else {
+            Animated.spring(dragX, {
+              toValue: 0,
+              friction: 5,
+              tension: 40,
+              useNativeDriver: false
+            }).start(() => {
+              setSliding(false);
+              backgroundOpacity.setValue(0);
+            });
+          }
+        }
+      });
+    }
+  }, [disabled, dragX, backgroundOpacity, maxSlide, onPress]);
+
   // Función para renderizar diferentes tipos de iconos
   const renderIconContent = (
     iconProp: any, 
@@ -56,7 +125,6 @@ export const Button: React.FC<ButtonProps> = ({
     defaultWSize: number, 
     defaultHSize: number
   ) => {
-    // Ajustar el color del icono si está deshabilitado
     const iconColor = disabled ? "colorGrey300" : defaultColor;
     
     if (typeof iconProp === 'string') {
@@ -115,7 +183,6 @@ export const Button: React.FC<ButtonProps> = ({
   const renderLeftIcon = () => {
     if (!leftIcon) return null;
     
-    // Si la variante es transparent, usamos el estilo específico para ella
     if (variant === 'transparent') {
       return (
         <Box style={buttonStyles.transparentIcon} paddingRight="sm">
@@ -124,7 +191,6 @@ export const Button: React.FC<ButtonProps> = ({
       );
     }
     
-    // Estilo normal para leftIcon
     return (
       <Box style={[buttonStyles.withIcon, buttonStyles.leftIcon]}>
         {renderIconContent(leftIcon, getIconColor(), 20, iconWidth || 20, iconHeight || 12)}
@@ -136,7 +202,6 @@ export const Button: React.FC<ButtonProps> = ({
   const renderRightIcon = () => {
     if (!rightIcon) return null;
     
-    // Si la variante es transparent, usamos el estilo específico para ella
     if (variant === 'transparent') {
       return (
         <Box style={buttonStyles.transparentIcon} paddingLeft="md">
@@ -145,7 +210,6 @@ export const Button: React.FC<ButtonProps> = ({
       );
     }
     
-    // Estilo normal para rightIcon
     return (
       <Box style={[buttonStyles.withIcon, buttonStyles.rightIcon]}>
         {renderIconContent(rightIcon, getIconColor(), 20, iconWidth || 20, iconHeight || 12)}
@@ -155,84 +219,6 @@ export const Button: React.FC<ButtonProps> = ({
 
   // Para la variante slide (botón deslizable)
   if (variant === 'slide') {
-    // Estado y refs para la animación del slide
-    const [sliding, setSliding] = useState(false);
-    const dragX = useRef(new Animated.Value(0)).current;
-    const buttonOpacity = useRef(new Animated.Value(1)).current;
-    const backgroundOpacity = useRef(new Animated.Value(0)).current;
-    
-    // Configurar dimensiones
-    const buttonWidth = width || Dimensions.get('window').width - 40;
-    const thumbSize = height - 8; // 4px de margen en cada lado
-    const maxSlide = buttonWidth - thumbSize - 8;
-    
-    // Color de fondo del botón slide (transparente por defecto)
-    const bgColor = slideBackgroundColor || 'transparent';
-    
-    // Color del círculo deslizable (mezcla de 3D3D3D y 7F7F7F por defecto)
-    const thumbColor = slideThumbColor || '#3D3D3D';
-    
-    // Reiniciar el botón si cambia disabled
-    useEffect(() => {
-      if (disabled && sliding) {
-        Animated.spring(dragX, {
-          toValue: 0,
-          friction: 5,
-          tension: 40,
-          useNativeDriver: false
-        }).start(() => {
-          setSliding(false);
-          backgroundOpacity.setValue(0);
-        });
-      }
-    }, [disabled]);
-    
-    // Crear el pan responder para manejar el gesto de arrastre
-    const panResponder = useRef(
-      PanResponder.create({
-        onStartShouldSetPanResponder: () => !disabled,
-        onMoveShouldSetPanResponder: () => !disabled,
-        
-        onPanResponderGrant: () => {
-          setSliding(true);
-        },
-        
-        onPanResponderMove: (_, gestureState) => {
-          const newX = Math.max(0, Math.min(gestureState.dx, maxSlide));
-          dragX.setValue(newX);
-          
-          // Animar la opacidad del fondo basado en el progreso del deslizamiento
-          const progress = newX / maxSlide;
-          backgroundOpacity.setValue(progress);
-        },
-        
-        onPanResponderRelease: (_, gestureState) => {
-          // Si llegó al 90% del camino, considerar como completado
-          if (gestureState.dx > maxSlide * 0.9) {
-            Animated.timing(dragX, {
-              toValue: maxSlide,
-              duration: 100,
-              useNativeDriver: false
-            }).start(() => {
-              if (onPress) onPress();
-            });
-          } else {
-            // Si no llegó lo suficientemente lejos, volver al inicio
-            Animated.spring(dragX, {
-              toValue: 0,
-              friction: 5,
-              tension: 40,
-              useNativeDriver: false
-            }).start(() => {
-              setSliding(false);
-              backgroundOpacity.setValue(0);
-            });
-          }
-        }
-      })
-    ).current;
-    
-    // Estilo interpolado para el fondo de progreso
     const progressStyle = {
       width: dragX.interpolate({
         inputRange: [0, maxSlide],
@@ -254,7 +240,6 @@ export const Button: React.FC<ButtonProps> = ({
           borderWidth: 1,
         }
       ]}>
-        {/* Fondo de progreso */}
         <Animated.View
           style={[
             buttonStyles.slideProgressBackground,
@@ -267,7 +252,6 @@ export const Button: React.FC<ButtonProps> = ({
           ]}
         />
         
-        {/* Texto del botón */}
         <Box
           flex={1}
           alignItems="center"
@@ -281,9 +265,8 @@ export const Button: React.FC<ButtonProps> = ({
           </Typography>
         </Box>
         
-        {/* Círculo deslizable */}
         <Animated.View
-          {...panResponder.panHandlers}
+          {...panResponder.current?.panHandlers}
           style={[
             buttonStyles.slideThumb,
             {

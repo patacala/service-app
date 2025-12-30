@@ -37,7 +37,7 @@ import { ProviderForm } from '@/features/provMode/components/ProviderForm';
 
 /* import { GoogleSignin } from '@react-native-google-signin/google-signin'; */
 import { useAuth } from '@/infrastructure/auth/AuthContext';
-import { ProfilePartial, useGetCurrentUserQuery, useUpdateProfileMutation } from '@/features/auth/store';
+import { ProfilePartial, useUpdateProfileMutation } from '@/features/auth/store';
 import { useGetCategoriesQuery } from '@/infrastructure/services/api';
 import { useCreateServiceMutation, useUpdateServiceMutation, useGetMyServicesQuery } from '@/features/services/store';
 import { useCreateVideoDirectUploadUrlMutation, useDeleteImageMutation, useUploadImageMutation, useUploadVideoToDirectUrlMutation } from '@/features/media/store/media.api';
@@ -141,11 +141,14 @@ export const ProfileScreen = () => {
     pricePerHour: 62
   });
 
-  const categories: ChipOption[] =
-  categoriesData?.categories?.map((c: any) => ({
-    id: c.id,
-    label: c.name,
-  })) ?? [];
+  const categories: ChipOption[] = useMemo(() => {
+    return (
+      categoriesData?.categories?.map((c: any) => ({
+        id: c.id,
+        label: c.name,
+      })) ?? []
+    );
+  }, [categoriesData?.categories]);
 
   const { logout, user, profile, profileUpdate } = useAuth();
 
@@ -164,23 +167,6 @@ export const ProfileScreen = () => {
         .filter(Boolean) as ChipOption[];
     };
   }, [categories]);
-
-  const getPhoneDetail = (phoneNumber: string) => {
-      if (typeof phoneNumber !== 'string' || phoneNumber.trim() === '') {
-          return null;
-      }
-
-      const cleanNumber = phoneNumber.replace(/\s+/g, '');
-      const regex = /^\+1(\d{10})$/;
-      const match = cleanNumber.match(regex);
-
-      if (match) {
-          const number = match[1];
-          return { prefix: '+1', number };
-      }
-
-      return null;
-  };
 
   const {
     control,
@@ -207,7 +193,7 @@ export const ProfileScreen = () => {
         text2: t("messages.msg21"),
       });
     }
-  }, [categoriesError]);
+  }, [categoriesError, t]);
 
   useEffect(() => {
     if (profileError) {
@@ -217,7 +203,7 @@ export const ProfileScreen = () => {
         text2: t("messages.msg35")
       });
     }
-  }, [profileError]);
+  }, [profileError, t]);
 
   useEffect(() => {
     if (profile) {
@@ -245,7 +231,7 @@ export const ProfileScreen = () => {
         setProfileImage(selectedFile.uri);
         setIsAvatarDirty(true);
       }
-    } catch (error) {
+    } catch {
       Alert.alert('Error', t("messages.msg36"));
     }
   };
@@ -306,7 +292,7 @@ export const ProfileScreen = () => {
         text1: t('messages.msg22'),
         text2: t('messages.msg37'),
       });
-    } catch (error: any) {
+    } catch {
       if (uploadedImageId) {
         try {
           await deleteImage(uploadedImageId).unwrap();
@@ -382,7 +368,7 @@ export const ProfileScreen = () => {
           if (videoUrl) {
             try {
               return await getVideoThumbnail(videoUrl);
-            } catch (error) {
+            } catch {
               return null;
             }
           }
@@ -424,7 +410,7 @@ export const ProfileScreen = () => {
       const thumbnailUrl = `https://customer-${customerCode}.cloudflarestream.com/${videoId}/thumbnails/thumbnail.jpg`;
       
       return thumbnailUrl;
-    } catch (e) {
+    } catch {
       return null;
     }
   };
@@ -504,7 +490,7 @@ export const ProfileScreen = () => {
       }
 
       return await Promise.all(uploadPromises);
-    } catch (error: any) {
+    } catch {
       for (const media of uploadedMediaForCleanup) {
         if (media.id) {
           try {

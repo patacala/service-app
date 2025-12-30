@@ -62,7 +62,7 @@ export const RegisterScreen = () => {
       }
     };
     loadSavedData();
-  }, []);
+  }, [getData]);
 
   const validateForm = () => {
     let isValid = true;
@@ -135,7 +135,7 @@ export const RegisterScreen = () => {
       await setData('registerForm', payload);
 
       router.push('/register-completion');
-    } catch (err: any) {
+    } catch {
       Toast.show({
         type: 'error',
         text1: t("messages.msg19"),

@@ -1,4 +1,4 @@
-import { getAuthToken, removeAuthToken, setAuthToken, getUserData, removeUserData, setUserData, getUserProfile, setUserProfile, removeUserProfile } from './storage';
+import { getAuthToken, removeAuthToken, setAuthToken, getUserData, removeUserData, setUserData } from './storage';
 
 interface BackendUser {
   id: string;
@@ -6,14 +6,6 @@ interface BackendUser {
   email: string;
   role: string;
   isNewUser: boolean;
-}
-
-interface Profile {
-  name: string;
-  email: string;
-  phone: string;
-  location_city: string;
-  address: string;
 }
 
 export class SessionManager {

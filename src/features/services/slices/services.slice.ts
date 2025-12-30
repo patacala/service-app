@@ -1,6 +1,5 @@
 import { IconName } from '@/design-system/components/layout/Icon';
 import {createSlice, PayloadAction} from '@reduxjs/toolkit';
-import { ImageSourcePropType } from 'react-native';
 
 export interface Service {
   id: string;

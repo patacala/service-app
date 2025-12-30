@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import Toast from 'react-native-toast-message';
 import { useRouter } from 'expo-router';
-import { Image, ImageSourcePropType, Platform, TouchableOpacity } from 'react-native';
+import { Image, ImageSourcePropType, Platform, TouchableOpacity , Dimensions } from 'react-native';
 import images from '@/assets/images/images';
 
 import { Box, Input, theme, Typography } from '@/design-system';
@@ -18,7 +18,7 @@ import { useLoginWithFirebaseMutation } from '../store/auth.api';
 import { useDispatch } from 'react-redux';
 import { setAuthData, setFirebaseToken } from '../store/auth.slice';
 import { useAuth } from '@/infrastructure/auth/AuthContext';
-import { Dimensions } from 'react-native';
+
 
 export const LoginScreen = () => {
   const router = useRouter();

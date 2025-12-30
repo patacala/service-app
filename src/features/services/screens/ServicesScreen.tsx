@@ -51,11 +51,14 @@ export const ServicesScreen = () => {
     });
     const [currentLocation, setCurrentLocation] = useState<Location>({ id: '1', name: 'Miami, FL' });
 
-    const categories: ChipOption[] =
-    categoriesData?.categories?.map((c: any) => ({
-        id: c.id,
-        label: c.name,
-    })) ?? [];
+    const categories = useMemo<ChipOption[]>(() => {
+        return (
+            categoriesData?.categories?.map((c: any) => ({
+            id: c.id,
+            label: c.name,
+            })) ?? []
+        );
+    }, [categoriesData?.categories]);
 
     const getCategoryOptions = useMemo(() => {
         return (categoryIds: string[]): ChipOption[] => {
@@ -80,7 +83,7 @@ export const ServicesScreen = () => {
             text2: t("messages.msg26"),
             });
         }
-    }, [categoriesError]);
+    }, [categoriesError, t]);
 
     useEffect(() => {
         if (bookServicesError) {
@@ -90,18 +93,19 @@ export const ServicesScreen = () => {
             text2: t("services.msgcouldrservices"),
             });
         }
-    }, [bookServicesError]);
+    }, [bookServicesError, t]);
 
-    // Filtrar servicios por tipo de usuario
-    const otherBookings: BookService[] =
-    isLoadBookServices || isFetchingBookServices
-        ? []
-        : bookServices?.otherBookings ?? [];
+    const otherBookings = useMemo<BookService[]>(() => {
+        return isLoadBookServices || isFetchingBookServices
+            ? []
+            : bookServices?.otherBookings ?? [];
+    }, [isLoadBookServices, isFetchingBookServices, bookServices?.otherBookings]);
 
-    const myBookings: BookService[] =
-    isLoadBookServices || isFetchingBookServices
-        ? []
-        : bookServices?.myBookings ?? [];
+    const myBookings = useMemo<BookService[]>(() => {
+        return isLoadBookServices || isFetchingBookServices
+            ? []
+            : bookServices?.myBookings ?? [];
+    }, [isLoadBookServices, isFetchingBookServices, bookServices?.myBookings]);
 
     const sortBookingsByRatedLast = (bookings: BookService[]) => {
         if (!bookings) return [];

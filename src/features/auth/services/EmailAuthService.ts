@@ -1,4 +1,4 @@
-import auth, { FirebaseAuthTypes } from '@/infrastructure/config/firebase';
+import firebaseAuth, { FirebaseAuthTypes } from '@/infrastructure/config/firebase';
 
 /**
  * Single Responsibility: Handle ONLY Firebase email/password authentication
@@ -13,7 +13,7 @@ export class EmailAuthService {
       throw new Error('Password must be at least 6 characters');
     }
 
-    return auth().signInWithEmailAndPassword(email, password);
+    return firebaseAuth().signInWithEmailAndPassword(email, password);
   }
 
   async createAccount(email: string, password: string): Promise<FirebaseAuthTypes.UserCredential> {
@@ -25,7 +25,7 @@ export class EmailAuthService {
       throw new Error('Password must be at least 6 characters');
     }
 
-    return auth().createUserWithEmailAndPassword(email, password);
+    return firebaseAuth().createUserWithEmailAndPassword(email, password);
   }
 
   async sendPasswordReset(email: string): Promise<void> {
@@ -33,7 +33,7 @@ export class EmailAuthService {
       throw new Error('Invalid email format');
     }
 
-    return auth().sendPasswordResetEmail(email);
+    return firebaseAuth().sendPasswordResetEmail(email);
   }
 
   async getIdToken(user: FirebaseAuthTypes.User): Promise<string> {

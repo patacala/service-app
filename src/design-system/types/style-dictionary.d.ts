@@ -5,11 +5,11 @@ declare module 'style-dictionary' {
       [key: string]: {
         transformGroup?: string;
         buildPath: string;
-        files: Array<{
+        files: {
           destination: string;
           format: string;
           options?: Record<string, unknown>;
-        }>;
+        }[];
       };
     };
   }

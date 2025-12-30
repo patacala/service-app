@@ -61,13 +61,13 @@ export const RegisterCompletionScreen = () => {
               : [],
           });
         }
-      } catch (error) {
+      } catch {
         return false;
       }
     };
 
     loadAndMergeData();
-  }, []);
+  }, [getData]);
 
   useEffect(() => {
     if (categoriesError) {
@@ -77,13 +77,13 @@ export const RegisterCompletionScreen = () => {
         text2: t("messages.msg21"),
       });
     }
-  }, [categoriesError]);
+  }, [categoriesError, t]);
 
   // Función para guardar automáticamente los datos
   const saveFormData = useCallback(async (updatedFormData: CompletionFormData) => {
     try {
       await setData('registerCompletionForm', updatedFormData);
-    } catch (error) {
+    } catch {
       return false;
     }
   }, [setData]);
@@ -130,7 +130,7 @@ export const RegisterCompletionScreen = () => {
       await removeData('registerForm');
 
       router.replace('/home');
-    } catch (error: any) {
+    } catch {
       Toast.show({
         type: 'error',
         text1: t("messages.msg24"),

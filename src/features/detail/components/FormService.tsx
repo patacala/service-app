@@ -1,9 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { useTheme } from '@shopify/restyle';
-import { Box, Input, Theme, Typography } from '@/design-system';
+import { Box, Input, Typography } from '@/design-system';
 import { Pressable } from 'react-native';
 import { Row } from '@/design-system/components/layout/Row/Row';
 import { useAuth } from '@/infrastructure/auth/AuthContext';
+import { useTranslation } from 'react-i18next';
 
 // Interfaz para los valores iniciales
 interface InitialValues {
@@ -30,6 +30,7 @@ export const FormService: React.FC<FormServiceProps> = ({
   onUseSavedAddressChange,
   initialValues = {},
 }) => {
+  const { t } = useTranslation('auth');
   const { profile } = useAuth();
   const [address, setAddress] = useState<string>(initialValues.address || '');
   const [comment, setComment] = useState<string>(initialValues.comments || '');
@@ -92,7 +93,7 @@ export const FormService: React.FC<FormServiceProps> = ({
   return (
     <>
       <Box marginTop="sm">
-        <Typography variant="bodyMedium" color="white">Service Selected</Typography>
+        <Typography variant="bodyMedium" color="white">{t("details.serviceselected")}</Typography>
         <Box backgroundColor="colorGrey600" marginTop='md' padding="sm" borderRadius={15}>
           <Typography variant="bodyLarge" color="white">
             {serviceName}
@@ -102,27 +103,18 @@ export const FormService: React.FC<FormServiceProps> = ({
 
       {/* Schedule Service */}
       <Box marginTop="md">
-        <Typography variant="bodyMedium" color="white">Schedule Service</Typography>
+        <Typography variant="bodyMedium" color="white">{t("details.scheduleservice")}</Typography>
       </Box>
       <Box gap="md" marginVertical="md">
         <Input
-          label="Date & Time"
+          label={t("details.date&time")}
           variant="date"
           dateMode="datetime"
           onDateChange={handleDateTimeChange}
           value={formattedDate}
         />
-        <Input
-          label="Address"
-          placeholder="Input your address"
-          icon="transfer"
-          value={address}
-          onChangeValue={handleAddressChange}
-          editable={!useSavedAddress}
-        />
-
         {profile?.address && (
-          <Box maxWidth={171}>
+          <Box maxWidth={190}>
             <Pressable
               onPress={handleToggleUseSavedAddress}
               accessibilityRole="checkbox"
@@ -150,22 +142,30 @@ export const FormService: React.FC<FormServiceProps> = ({
                   )}
                 </Box>
                 <Typography variant="bodySmall" color="white">
-                  Use profile address
+                  {t("details.profileaddress")}
                 </Typography>
               </Row>
             </Pressable>
           </Box>
         )}
+        <Input
+          label={t("details.address")}
+          placeholder={t("details.address")}
+          icon="transfer"
+          value={address}
+          onChangeValue={handleAddressChange}
+          editable={!useSavedAddress}
+        />
       </Box>
 
       {/* Comments */}
       <Box>
-        <Typography variant="bodyMedium" color="white">Comments or Petitions</Typography>
+        <Typography variant="bodyMedium" color="white">{t("details.commentspetitions")}</Typography>
       </Box>
       <Box marginVertical="md">  
         <Input
-          label="Write here"
-          placeholder="Escribe aquí"
+          label={t("details.writehere")}
+          placeholder={t("details.writehere")}
           variant="textarea"
           numberOfLines={6}
           maxLength={500}

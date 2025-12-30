@@ -107,7 +107,7 @@ export const FilterActionSheet: React.FC<FilterActionSheetProps> = ({
         initialValues.maxPrice || 62
       ]);
     }
-  }, [visible]);
+  }, [visible, initialValues.maxPrice, initialValues.minPrice, initialValues.tags, setSelectedTags]);
 
   return (
     <BottomModal

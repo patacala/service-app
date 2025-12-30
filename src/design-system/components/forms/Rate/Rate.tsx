@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { TouchableOpacity, Image, ImageSourcePropType, StyleSheet } from 'react-native';
+import { TouchableOpacity, Image, ImageSourcePropType } from 'react-native';
 import { Box } from '../../layout/Box';
 import { Typography } from '../../foundation/Typography';
 import images from "@/assets/images/images";
