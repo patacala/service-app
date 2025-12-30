@@ -104,41 +104,11 @@ export const FormResponsible: React.FC<FormResponsibleProps> = ({
   return (
     <>
       <Box marginTop="sm" marginBottom="md">
-        <Typography variant="bodyMedium" color="white">Responsible for</Typography>
+        <Typography variant="bodyMedium" color="white">{t('details.Responsiblefor')}</Typography>
       </Box>
-
-      <Box marginBottom="md">
-        <Input
-          label="Name"
-          placeholder="Input your name"
-          value={name}
-          onChangeValue={handleNameChange}
-          editable={!useProfileData}
-        />
-      </Box>
-      <Box gap='md' marginBottom="md">
-        <Row spacing="none" gap="sm" justify='space-between'>
-          <Box style={styles.prefix} padding="md">
-            <Typography variant="bodyRegular" colorVariant="secondary">+1</Typography>
-          </Box>
-            
-          <Input
-            label={t('signupCompletion.number')}
-            placeholder={t('signupCompletion.text-input-number')}
-            variant='numeric'
-            value={phone}
-            onChangeValue={handlePhoneChange}
-            editable={!useProfileData}
-            style={{
-              width: 265
-            }}
-          />
-        </Row>
-      </Box>
-
       {/* Checkbox para usar datos del perfil */}
       {profile?.name && profile?.phone && (
-        <Box maxWidth={200} marginBottom="xl">
+        <Box maxWidth={200} marginBottom="md">
           <Pressable
             onPress={handleToggleUseProfileData}
             accessibilityRole="checkbox"
@@ -166,12 +136,40 @@ export const FormResponsible: React.FC<FormResponsibleProps> = ({
                 )}
               </Box>
               <Typography variant="bodySmall" color="white">
-                Use profile data
+                {t('details.profiledata')}
               </Typography>
             </Row>
           </Pressable>
         </Box>
       )}
+      <Box marginBottom="md">
+        <Input
+          label={t('details.inputname')}
+          placeholder={t('details.inputplacename')}
+          value={name}
+          onChangeValue={handleNameChange}
+          editable={!useProfileData}
+        />
+      </Box>
+      <Box gap='md' marginBottom="md">
+        <Row spacing="none" gap="sm" justify='space-between'>
+          <Box style={styles.prefix} padding="md">
+            <Typography variant="bodyRegular" colorVariant="secondary">+1</Typography>
+          </Box>
+            
+          <Input
+            label={t('details.inputphone')}
+            placeholder={t('details.inputplacephone')}
+            variant='numeric'
+            value={phone}
+            onChangeValue={handlePhoneChange}
+            editable={!useProfileData}
+            style={{
+              width: 265
+            }}
+          />
+        </Row>
+      </Box>
     </>
   );
 };

@@ -1,12 +1,11 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { Dimensions, StyleSheet, Image, ImageSourcePropType } from 'react-native';
+import React, { useState, useEffect, useCallback } from 'react';
+import { Dimensions } from 'react-native';
 import { useTheme } from '@shopify/restyle';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { Box, ChipOption, GroupChipSelector, Input, Theme, Typography } from '@/design-system';
 import { Row } from '@/design-system/components/layout/Row/Row';
-import { useTranslation } from 'react-i18next';
 import { Icon } from '@/design-system/components/layout/Icon';
 import MultiSlider from '@ptomasroos/react-native-multi-slider';
 
@@ -44,8 +43,6 @@ export const DetailService: React.FC<DetailServiceProps> = ({
   initialValues = {},
 }) => {
   const theme = useTheme<Theme>();
-  const { t } = useTranslation('auth');
-  
   const {
     control,
     formState: { errors, isValid }
@@ -83,7 +80,7 @@ export const DetailService: React.FC<DetailServiceProps> = ({
     }, 500); // Debounce de 500ms
 
     return () => clearTimeout(timer);
-  }, [priceValue]); // Solo depende de priceValue, no del callback
+  }, [priceValue, onPricePerHourChange]);
 
   // Manejar cambio del slider - completamente independiente
   const handleSliderChange = useCallback((values: number[]) => {

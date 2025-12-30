@@ -1,18 +1,11 @@
 import {useEffect} from 'react';
-import {FlatList, ListRenderItem} from 'react-native';
 import {Box} from '../../../design-system/components/layout/Box';
 import {Typography} from '../../../design-system/components/foundation/Typography';
-import {useDispatch, useSelector} from 'react-redux';
-import {RootState} from '../../../store';
+import {useDispatch} from 'react-redux';
 import {fetchFavoritesStart} from '../slices/favorites.slice';
-import {useNavigation} from '@react-navigation/native';
 
 export const FavoritesScreen = () => {
   const dispatch = useDispatch();
-  const navigation = useNavigation();
-  const {items: favorites, isLoading} = useSelector(
-    (state: RootState) => state.favorites,
-  );
 
   useEffect(() => {
     dispatch(fetchFavoritesStart());

@@ -90,18 +90,30 @@ export const Post = ({ post, onPress }: PostProps) => {
                 resizeMode="contain"
                 style={getProfileStyles.profileImageAll}
               />
-              <View
-                style={[styles.rating, { paddingLeft: theme.spacing.sm }]}
-              >
-                <View style={{ paddingRight: theme.spacing.xs }}>
-                  <Icon name="star" size={13} color="colorBaseWhite" />
-                  <View style={styles.secondStar}>
-                    <Icon name="star" fillColor="colorBaseBlack" size={13} color="colorBaseWhite" />
-                  </View>
-                </View>
-                <Typography variant="bodyXSmall" color="white">
-                  {post.rating}
-                </Typography>
+              <View style={[styles.rating, { paddingLeft: theme.spacing.sm }]}>
+                {Number(post.rating) > 0 ? (
+                  <>
+                    <View style={{ paddingRight: theme.spacing.xs }}>
+                      <Icon name="star" size={13} color="colorBaseWhite" />
+                      <View style={styles.secondStar}>
+                        <Icon
+                          name="star"
+                          fillColor="colorBaseBlack"
+                          size={13}
+                          color="colorBaseWhite"
+                        />
+                      </View>
+                    </View>
+
+                    <Typography variant="bodyXSmall" color="white">
+                      {post.rating}
+                    </Typography>
+                  </>
+                ) : (
+                  <Typography variant="bodyXSmall" color="white">
+                    New
+                  </Typography>
+                )}
               </View>
             </View>
             <Box>

@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef } from 'react';
 import {
   StyleSheet,
   Image,
@@ -33,6 +33,7 @@ import { getProfileStyles } from '@/features/profile/screens/profile/profile.sty
 import { useVideoPlayer, VideoView } from 'expo-video';
 import { ImageViewer } from '@/design-system/components/ImageViewer/ImageViewer';
 import { Rating, useGetRatingsByServiceQuery } from '@/features/ratings/store';
+import { useTranslation } from 'react-i18next';
 
 const { width } = Dimensions.get('window');
 
@@ -42,6 +43,7 @@ type VideoPlayerWrapperProps = {
 };
 
 export const ServicesDetailScreen = () => {
+  const { t } = useTranslation('auth');
   const params = useLocalSearchParams();
   const router = useRouter();
   const scrollViewRef = useRef<ScrollView>(null);
@@ -67,9 +69,9 @@ export const ServicesDetailScreen = () => {
   const [dotPressInProgress, setDotPressInProgress] = useState(false);
   const [serviceBookVisible, setServiceBookVisible] = useState(false);
   const itemsDetail = [
-    { id: 'portfolio', label: 'Portfolio' },
-    { id: 'bookingdetail', label: 'Service Detail' },
-    { id: 'userreviews', label: 'User Reviews' },
+    { id: 'portfolio', label: t("details.portfolio")},
+    { id: 'bookingdetail', label: t("details.servicedetail")},
+    { id: 'userreviews', label: t("details.userreviews")},
   ];
   const imageGallery = post.media;
   const slideWidth = width - theme.spacing.md * 2;
@@ -438,7 +440,7 @@ export const ServicesDetailScreen = () => {
                   <Row spacing="xs" alignItems="flex-start">
                     <Icon size={20} name="tag" color="colorBaseWhite"></Icon>
                     <Box marginLeft="xs">
-                      <Typography variant="bodySmall" color={theme.colors.colorGrey200}>Price</Typography>
+                      <Typography variant="bodySmall" color={theme.colors.colorGrey200}>{t("details.price")}</Typography>
                       <Typography variant="bodyLarge" color={theme.colors.colorBaseWhite}>
                         ${post.price}/hr
                       </Typography>
@@ -447,7 +449,7 @@ export const ServicesDetailScreen = () => {
                   <Row spacing="xs" alignItems="flex-start">
                     <Icon size={20} name="location" color="colorBaseWhite"></Icon>
                     <Box marginLeft="xs">
-                      <Typography variant="bodySmall" color={theme.colors.colorGrey200}>Location</Typography>
+                      <Typography variant="bodySmall" color={theme.colors.colorGrey200}>{t("details.location")}</Typography>
                       <Typography variant="bodyLarge" color={theme.colors.colorBaseWhite}>
                         {post.city}
                       </Typography>
@@ -496,7 +498,7 @@ export const ServicesDetailScreen = () => {
       >
         <Button
           variant="secondary"
-          label={"Book Service"}
+          label={t("details.bookservice")}
           onPress={() => setServiceBookVisible(true)}
         />
       </Box>

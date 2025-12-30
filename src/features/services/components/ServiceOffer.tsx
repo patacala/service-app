@@ -1,10 +1,10 @@
 import React from 'react';
 import { ImageSourcePropType } from 'react-native';
 import { useTheme } from '@shopify/restyle';
-import { Box, Typography, GroupChipSelector, Button, Theme } from '@/design-system';
+import { Box, Typography, GroupChipSelector, Button, Theme , ChipOption } from '@/design-system';
 import { Row } from '@/design-system/components/layout/Row/Row';
 import { Icon } from '@/design-system/components/layout/Icon';
-import { ChipOption } from '@/design-system';
+
 import images from '@/assets/images/images';
 import { MyService } from '../store';
 

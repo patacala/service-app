@@ -2,7 +2,6 @@ import { useEffect, useState } from 'react';
 import { FlatList, Image, ImageSourcePropType, ListRenderItem, ActivityIndicator } from 'react-native';
 import { Box } from '../../../design-system/components/layout/Box';
 import { Typography } from '../../../design-system/components/foundation/Typography';
-import { CardPost } from '../slices/wall.slice';
 import { Button, ChipOption, GroupChipSelector, Input, theme } from '@/design-system';
 import { Row } from '@/design-system/components/layout/Row/Row';
 import images from '@/assets/images/images';
@@ -85,7 +84,7 @@ export const WallScreen: React.FC<WallScreenProps> = () => {
         text2: t("messages.msg26"),
       });
     }
-  }, [categoriesError]);
+  }, [categoriesError, t]);
 
   useEffect(() => {
     if (isErrorServices) {
@@ -95,20 +94,9 @@ export const WallScreen: React.FC<WallScreenProps> = () => {
         text2: t("messages.msg29"),
       });
     }
-  }, [isErrorServices]);
+  }, [isErrorServices, t]);
 
   const posts = data?.data || [];
-  const getCategoryNames = (categoryIds: string[]) => {
-    if (!categoryIds || categoryIds.length === 0 || !categories) return t("messages.msg27");
-    
-    return categoryIds
-      .map(id => {
-        const category = categories.find((cat: any) => cat.id === id);
-        return category ? category.label : `Category ${id}`;
-      })
-      .join(', ');
-  };
-
   const handleCategoryChange = (selectedIds: string[]) => {
     let newSelectedIds = [...selectedIds];
 
