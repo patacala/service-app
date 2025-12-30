@@ -1,2 +1,2 @@
-export * from './SubcriptionPlans';
 export * from './types';
+export { SubscriptionPlans } from './SubcriptionPlans';

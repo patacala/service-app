@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { useAuth, AuthProvider } from '@/infrastructure/auth/AuthContext';
-import { Stack, usePathname, useRouter, useSegments } from 'expo-router';
+import { Stack, usePathname, useRouter } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { Provider } from 'react-redux';
 import { ThemeProvider } from '@/design-system/theme/ThemeProvider';
@@ -36,7 +36,7 @@ function RootLayoutNav() {
     }
     
     setNavigationReady(true);
-  }, [user, loading, needsOnboarding, pathname]);
+  }, [user, loading, needsOnboarding, pathname, router]);
 
   if (loading || !navigationReady) {
     return null;

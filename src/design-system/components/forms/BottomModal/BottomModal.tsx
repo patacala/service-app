@@ -102,7 +102,7 @@ export const BottomModal = React.forwardRef<
     }
     prevHeight.current = currentModalHeight;
     isFirstRender.current = false;
-  }, [currentModalHeight, internalVisible]);
+  }, [currentModalHeight, internalVisible, animatedHeight]);
 
   useEffect(() => {
     const keyboardWillShowListener = Keyboard.addListener(
@@ -135,14 +135,7 @@ export const BottomModal = React.forwardRef<
       keyboardWillShowListener.remove();
       keyboardWillHideListener.remove();
     };
-  }, [enableScroll]);
-
-  useEffect(() => {
-    if (prevStep.current !== currentStep && !isClosing.current && !isStepChanging.current) {
-      animateStepChange();
-    }
-    prevStep.current = currentStep;
-  }, [currentStep]);
+  }, [enableScroll, keyboardAnim]);
 
   const animateStepChange = () => {
     if (isStepChanging.current) return;
@@ -162,6 +155,13 @@ export const BottomModal = React.forwardRef<
       }
     });
   };
+
+  useEffect(() => {
+    if (prevStep.current !== currentStep && !isClosing.current && !isStepChanging.current) {
+      animateStepChange();
+    }
+    prevStep.current = currentStep;
+  }, [currentStep, animateStepChange]);
 
   const completeStepChange = () => {
     isStepChanging.current = false;
@@ -205,7 +205,7 @@ export const BottomModal = React.forwardRef<
     } else if (!visible && internalVisible && !isClosing.current) {
       closeWithAnimation();
     }
-  }, [visible, internalVisible]);
+  }, [visible, internalVisible, animatedHeight, closeWithAnimation, currentModalHeight, opacity]);
 
   const panGesture = Gesture.Pan()
     .minPointers(1)
@@ -427,3 +427,5 @@ export const BottomModal = React.forwardRef<
     </Modal>
   );
 });
+
+BottomModal.displayName = 'BottomModal';
