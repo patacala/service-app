@@ -20,8 +20,8 @@ i18next
   .init({
     compatibilityJSON: 'v4',
     resources: translations,
-    lng: getDeviceLanguage(),
-    /* lng: 'en', */
+    /* lng: getDeviceLanguage(), */
+    lng: 'en',
     fallbackLng: 'en',
     interpolation: {
       escapeValue: false,
