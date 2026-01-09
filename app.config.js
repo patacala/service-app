@@ -28,7 +28,7 @@ export default {
     newArchEnabled: true,
     ios: {
       supportsTablet: true,
-      bundleIdentifier: "com.pbarranco.contactmyapp",
+      bundleIdentifier: process.env.EXPO_PUBLIC_BUNDLEIDENTIFIER,
       googleServicesFile: "./GoogleService-Info.plist",
       infoPlist: {
         ITSAppUsesNonExemptEncryption: false
@@ -39,7 +39,7 @@ export default {
         foregroundImage: "./assets/images/adaptive-icon.png",
         backgroundColor: "#ffffff"
       },
-      package: "com.pbarranco.contactmyapp",
+      package: process.env.EXPO_PUBLIC_BUNDLEIDENTIFIER,
       versionCode: 1,
       googleServicesFile: "./google-services.json",
       permissions: [
