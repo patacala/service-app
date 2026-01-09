@@ -35,3 +35,4 @@ jobs:
         run: eas build --profile development --platform ios --non-interactive
         env:
           EXPO_TOKEN: tmWRGGxM5Fr9mssl611Y3vJH6WCM7WTe_91OMrBS
+          EXPO_PUBLIC_EXPO_PROJECT_ID: 18830731-15d4-4e01-b32f-5e1571b65455
