@@ -1,0 +1,37 @@
+name: EAS Build iOS
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: 8
+
+      - name: Setup EAS
+        uses: expo/expo-github-action@v8
+        with:
+          eas-version: latest
+          token: tmWRGGxM5Fr9mssl611Y3vJH6WCM7WTe_91OMrBS
+
+      - name: Install dependencies
+        run: pnpm install
+
+      - name: Build iOS with EAS
+        run: eas build --profile development --platform ios --non-interactive
+        env:
+          EXPO_TOKEN: tmWRGGxM5Fr9mssl611Y3vJH6WCM7WTe_91OMrBS
