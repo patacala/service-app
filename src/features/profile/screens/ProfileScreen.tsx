@@ -61,13 +61,16 @@ const profileSchema = z.object({
   email: z
     .string()
     .email('Please enter a valid email address')
-    .min(1, 'Email is required'),
+    .optional()
+    .or(z.literal('')),
   
   phone: z
     .string()
     .min(10, 'Phone number must be at least 10 digits')
     .max(15, 'Phone number must be less than 15 digits')
-    .regex(/^[\d\s\-\+\(\)]+$/, 'Please enter a valid phone number'),
+    .regex(/^[\d\s\-\+\(\)]+$/, 'Please enter a valid phone number')
+    .optional()
+    .or(z.literal('')),
   
   city: z
     .string()
@@ -78,7 +81,10 @@ const profileSchema = z.object({
     .string()
     .min(5, 'Address must be at least 5 characters')
     .max(100, 'Address is too long'),
-});
+}).refine(
+  (data) => !!(data.email?.trim() || data.phone?.trim()),
+  { message: 'Email or phone is required', path: ['email'] }
+);
 
 type ProfileFormData = z.infer<typeof profileSchema>;
 
@@ -786,7 +792,7 @@ export const ProfileScreen = () => {
                       placeholder={t("profile.email-placeholder")}
                       keyboardType="email-address"
                       autoCapitalize="none"
-                      editable={false}
+                      editable={!profile?.email?.trim()}
                     />
                     {errors.email && (
                       <Box marginTop="xs">
@@ -824,7 +830,7 @@ export const ProfileScreen = () => {
                           keyboardType="phone-pad"
                           maxLength={12}
                           style={{ width: '100%' }}
-                          editable={false}
+                          editable={!profile?.phone?.trim()}
                         />
                       </Box>
                     </Row>

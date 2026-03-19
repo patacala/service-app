@@ -28,26 +28,38 @@ export const RegisterScreen = () => {
   const router = useRouter();
   const params = useLocalSearchParams<Partial<RegisterScreenParams>>();
   const { name, email, phonenumber } = params;
-  
+
+  const registeredWithEmail = !!email && email.trim() !== '';
+  const registeredWithPhone = !!phonenumber && phonenumber.trim() !== '';
+
   const { t } = useTranslation('auth');
   const { getData, setData, removeData } = useDataManager();
   const styles = getLoginStyles(theme);
 
-  const [RegisterFormData, setRegisterFormData] = useState<RegisterFormData>({
+  const [registerFormData, setRegisterFormData] = useState<RegisterFormData>({
     name: name || '',
     city: '',
     email: email || '',
-    phone: phonenumber || ''
+    phone: phonenumber || '',
   });
 
   const [errors, setErrors] = useState<FormErrors>({
     name: '',
     city: '',
     email: '',
-    phone: ''
+    phone: '',
   });
 
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const isFormIncomplete =
+    !registerFormData.name.trim() ||
+    !registerFormData.city.trim() ||
+    (!registerFormData.email.trim() && !registerFormData.phone.trim());
+
+  useEffect(() => {
+    setErrors({ name: '', city: '', email: '', phone: '' });
+  }, []);
 
   useEffect(() => {
     const loadSavedData = async () => {
@@ -55,9 +67,10 @@ export const RegisterScreen = () => {
       if (savedFormData) {
         setRegisterFormData((prev) => ({
           ...prev,
-          name: savedFormData.name || '',
-          city: savedFormData.city || '',
-          email: savedFormData.email || ''
+          name: savedFormData.name || prev.name,
+          city: savedFormData.city || prev.city,
+          email: savedFormData.email || prev.email,
+          phone: savedFormData.phone || prev.phone,
         }));
       }
     };
@@ -66,45 +79,32 @@ export const RegisterScreen = () => {
 
   const validateForm = () => {
     let isValid = true;
-    const newErrors: FormErrors = { ...errors };
-
+    const newErrors: FormErrors = { name: '', city: '', email: '', phone: '' };
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-    if (!RegisterFormData.name.trim()) {
+    if (!registerFormData.name.trim()) {
       newErrors.name = t('signup.name-required');
       isValid = false;
-    } else {
-      newErrors.name = '';
     }
 
-    if (!RegisterFormData.city.trim()) {
+    if (!registerFormData.city.trim()) {
       newErrors.city = t('signupCompletion.text-input-city');
       isValid = false;
-    } else {
-      newErrors.city = '';
     }
 
-    if (RegisterFormData.phone) {
-      if (!RegisterFormData.email.trim()) {
-        newErrors.email = t('signup.email-required');
-        isValid = false;
-      } else if (!emailRegex.test(RegisterFormData.email)) {
+    // ✅ Si el campo viene bloqueado por params no valida ni pone error
+    if (registeredWithEmail || registeredWithPhone) {
+      // campos bloqueados y llenos — no valida nada
+    } else if (registerFormData.email.trim()) {
+      if (!emailRegex.test(registerFormData.email)) {
         newErrors.email = t('signup.email-invalid');
         isValid = false;
-      } else {
-        newErrors.email = '';
       }
-
-      newErrors.phone = '';
-    } else {
-      if (!RegisterFormData.phone.trim() || RegisterFormData.phone.length !== 10) {
+    } else if (registerFormData.phone.trim()) {
+      if (registerFormData.phone.length !== 10) {
         newErrors.phone = t('login.phone-invalid');
         isValid = false;
-      } else {
-        newErrors.phone = '';
       }
-
-      newErrors.email = '';
     }
 
     setErrors(newErrors);
@@ -112,7 +112,7 @@ export const RegisterScreen = () => {
   };
 
   const handleInputChange = (field: keyof RegisterFormData, value: string) => {
-    const updatedFormData = { ...RegisterFormData, [field]: value };
+    const updatedFormData = { ...registerFormData, [field]: value };
     setRegisterFormData(updatedFormData);
 
     if (errors[field as keyof FormErrors]) {
@@ -126,20 +126,19 @@ export const RegisterScreen = () => {
 
     try {
       const payload: RegisterPayload = {
-        name: RegisterFormData.name,
-        city: RegisterFormData.city,
-        email: RegisterFormData.email,
-        phone: RegisterFormData.phone
+        name: registerFormData.name,
+        city: registerFormData.city,
+        email: registerFormData.email,
+        phone: registerFormData.phone,
       };
 
       await setData('registerForm', payload);
-
       router.push('/register-completion');
     } catch {
       Toast.show({
         type: 'error',
-        text1: t("messages.msg19"),
-        text2: t("messages.msg18"),
+        text1: t('messages.msg19'),
+        text2: t('messages.msg18'),
       });
     } finally {
       setIsSubmitting(false);
@@ -160,13 +159,13 @@ export const RegisterScreen = () => {
       subtitle={t('signup.sub-title')}
       onPrimaryButtonPress={handleRegister}
       onSecondaryButtonPress={handleGoBack}
-      primaryButtonDisabled={isSubmitting}
+      primaryButtonDisabled={isSubmitting || isFormIncomplete}
     >
       <Input
         label={t('signup.name')}
         placeholder={t('signup.text-input-name')}
         autoCapitalize="words"
-        value={RegisterFormData.name}
+        value={registerFormData.name}
         onChangeText={(value) => handleInputChange('name', value)}
         error={errors.name}
       />
@@ -174,33 +173,19 @@ export const RegisterScreen = () => {
         label={t('signupCompletion.city')}
         placeholder={t('signupCompletion.text-input-city')}
         autoCapitalize="words"
-        value={RegisterFormData.city}
+        value={registerFormData.city}
         onChangeText={(value) => handleInputChange('city', value)}
         error={errors.city}
       />
-      {!RegisterFormData.email ? (
-        <Row justify="space-between">
-          <Box style={styles.prefix} padding="md">
-            <Typography variant="bodyRegular" colorVariant="secondary">+1</Typography>
-          </Box>
-          <Input
-            label={t('signupCompletion.number')}
-            placeholder={t('signupCompletion.text-input-number')}
-            keyboardType="numeric"
-            value={RegisterFormData.phone}
-            onChangeText={value => handleInputChange('phone', value.replace(/[^0-9]/g, '').slice(0, 10))}
-            error={errors.phone}
-            style={{ width: 250 }}
-          />
-        </Row>
-      ) : (
+
+      {registeredWithEmail ? (
         <>
           <Input
             label={t('signup.email')}
             placeholder={t('signup.text-input-email')}
             autoCapitalize="none"
             keyboardType="email-address"
-            value={RegisterFormData.email}
+            value={registerFormData.email}
             onChangeText={(value) => handleInputChange('email', value)}
             error={errors.email}
             editable={false}
@@ -213,15 +198,34 @@ export const RegisterScreen = () => {
               label={t('signupCompletion.number')}
               placeholder={t('signupCompletion.text-input-number')}
               keyboardType="numeric"
-              value={RegisterFormData.phone}
-              onChangeText={value => handleInputChange('phone', value.replace(/[^0-9]/g, '').slice(0, 10))}
+              value={registerFormData.phone}
+              onChangeText={(value) =>
+                handleInputChange('phone', value.replace(/[^0-9]/g, '').slice(0, 10))
+              }
               error={errors.phone}
               style={{ width: 250 }}
             />
           </Row>
         </>
+      ) : (
+        <Row justify="space-between">
+          <Box style={styles.prefix} padding="md">
+            <Typography variant="bodyRegular" colorVariant="secondary">+1</Typography>
+          </Box>
+          <Input
+            label={t('signupCompletion.number')}
+            placeholder={t('signupCompletion.text-input-number')}
+            keyboardType="numeric"
+            value={registerFormData.phone}
+            onChangeText={(value) =>
+              handleInputChange('phone', value.replace(/[^0-9]/g, '').slice(0, 10))
+            }
+            error={errors.phone}
+            style={{ width: 250 }}
+            editable={!registeredWithPhone}
+          />
+        </Row>
       )}
-
     </AuthenticationCard>
   );
 };

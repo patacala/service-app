@@ -17,7 +17,9 @@ export const getWallStyles = StyleSheet.create({
       gap: 25,
     },
     withoutResult: {
-      maxWidth: 291
+      flex: 1,
+      justifyContent: 'center',
+      alignItems: 'center',
     },
     textWithoutResult: {
       textAlign: "center"
