@@ -196,15 +196,22 @@ export const WallScreen: React.FC<WallScreenProps> = () => {
           ]}
           showsVerticalScrollIndicator={false}
           ListEmptyComponent={
-            <Box style={getWallStyles.withoutResult} justifyContent="center" alignItems="center">
+            <Box 
+              style={getWallStyles.withoutResult} 
+              justifyContent="center" 
+              alignItems="center"
+              flex={1}
+            >
               <Image
                 source={images.withoutResult as ImageSourcePropType}
                 resizeMode="contain"
               />
-              <Box marginTop="lg">
-                <Typography style={getWallStyles.textWithoutResult}
+              <Box marginTop="lg" alignItems="center">
+                <Typography 
+                  style={getWallStyles.textWithoutResult}
                   variant="bodyMedium"
-                  color={theme.colors.colorBaseWhite}>
+                  color={theme.colors.colorBaseWhite}
+                >
                   {t("messages.msg30")}
                 </Typography>
               </Box>

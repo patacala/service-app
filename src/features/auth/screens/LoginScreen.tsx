@@ -107,6 +107,7 @@ export const LoginScreen = () => {
           params: {
             email: result.email || '',
             name: result.name || '',
+            phonenumber: '',
           },
         });
         Toast.show({
